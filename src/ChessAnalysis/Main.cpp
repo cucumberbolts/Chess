@@ -3,28 +3,15 @@
 #include <iostream>
 
 int main() {
-    Engine* engine = Engine::Create("stockfish_14_x64_avx2.exe");
+    const char* stockfish14 = "stockfish_14_x64_avx2.exe";
+    const char* leelaChess0 = "lc0.exe";
 
-    std::string message;
-    engine->Receive(message);
+    Engine* engine = Engine::Create(stockfish14);
+    engine->Init();
 
-    // Revceiving when no data is sent will halt the program (so don't do it)
-    //engine->Receive(message);
-
-    std::cout << "Engine sent: " << message << "\n";
-
-    engine->Send("isready\n");
-    engine->Receive(message);
-
-    std::cout << "Engine sent: " << message << "\n";
-
-    engine->Send("uci\n");
-    engine->Receive(message);
-
-    std::cout << "Engine sent: " << message << "\n";
+    engine->PrintOptions();
 
     delete engine;
 
     std::cin.get();
 }
-
