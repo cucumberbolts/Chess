@@ -1,30 +1,48 @@
 #pragma once
 
 #include <charconv>
-#include <optional>
 #include <string_view>
 
 class StringParser {
 public:
+    enum Delimiter {
+        Newline, Whitespace, End
+    };
+public:
     StringParser(const std::string& data) : m_Data(data) {}
     StringParser(std::string&& data) : m_Data(std::move(data)) {}
 
-    inline bool Next(std::string_view& output) {
+    inline bool Next(std::string_view& output, Delimiter delimiter = Whitespace) {
         if (m_TokenEnd == m_Data.size())
             return false;
 
         m_TokenBegin = m_Data.find_first_not_of(" \t", m_TokenEnd);
+        if (m_TokenBegin == std::string::npos) {  // m_Data is empty or whitespace
+            output = "";
+            m_TokenEnd = m_Data.size();
+            return true;
+        }
 
-        size_t whitespaceBegin = m_Data.find_first_of(" \t\n", m_TokenBegin);
-        if (whitespaceBegin == std::string::npos)
-            whitespaceBegin = m_Data.size();
+        if (delimiter == End) {
+            m_TokenEnd = m_Data.size();
+            output = std::string_view(m_Data.data() + m_TokenBegin, m_TokenEnd - m_TokenBegin);
+        } else if (delimiter == Whitespace) {
+            size_t whitespaceBegin = m_Data.find_first_of(" \t", m_TokenBegin);
+            if (whitespaceBegin == std::string::npos)
+                whitespaceBegin = m_Data.size();
 
-        size_t whitespaceEnd = m_Data.find_first_not_of(" \t\n", whitespaceBegin);
-        if (whitespaceEnd == std::string::npos)
-            whitespaceEnd = m_Data.size();
+            size_t whitespaceEnd = m_Data.find_first_not_of(" \t", whitespaceBegin);
+            if (whitespaceEnd == std::string::npos)
+                whitespaceEnd = m_Data.size();
 
-        output = std::string_view(m_Data.data() + m_TokenBegin, whitespaceBegin - m_TokenBegin);
-        m_TokenEnd = whitespaceEnd;
+            output = std::string_view(m_Data.data() + m_TokenBegin, whitespaceBegin - m_TokenBegin);
+            m_TokenEnd = whitespaceEnd;
+        } else if (delimiter == Newline) {
+            m_TokenEnd = m_Data.find('\n', m_TokenBegin);
+            size_t newlineBegin = m_Data[m_TokenEnd - 1] == '\r' ? m_TokenEnd - 1 : m_TokenEnd;
+            output = std::string_view(m_Data.data() + m_TokenBegin, newlineBegin - m_TokenBegin);
+            m_TokenEnd++;
+        }
 
         return true;
     }
@@ -56,9 +74,16 @@ public:
         return true;
     }
 
-    inline bool Next(std::string& output, std::string_view stop = "") {
+    inline bool Next(std::string& output, Delimiter delimiter = Whitespace) {
         std::string_view result;
-        bool success = Next(result, stop);
+        bool success = Next(result, delimiter);
+        output = result;
+        return success;
+    }
+
+    inline bool Next(std::string& output, std::string_view delimiter) {
+        std::string_view result;
+        bool success = Next(result, delimiter);
         output = result;
         return success;
     }
@@ -68,7 +93,7 @@ public:
         bool success = stop.empty() ? Next(result) : Next(result, stop);
 
         auto ec = std::from_chars(result.data(), result.data() + result.size(), output);
-        success = (ec.ec == std::errc{});
+        success |= ec.ec == std::errc{};
 
         return success;
     }
@@ -82,9 +107,9 @@ public:
         else if (result == "false")
             output = false;
         else
-            success = false;
+            return false;
 
-        return success;
+        return true;
     }
 private:
     std::string m_Data;

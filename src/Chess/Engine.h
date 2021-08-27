@@ -17,11 +17,11 @@ public:
 
     bool Init();
 
-    void PrintOptions();
+    void PrintInfo();
 protected:
     std::string m_Name, m_Author;
     std::vector<Option*> m_Options;
 protected:
-    void HandleOptionCommand(StringParser& command);
-    void HandleIdCommand(std::string_view restOfCommand);
+    void HandleOptionCommand(StringParser& sp);
+    void HandleIdCommand(StringParser& sp);
 };

@@ -4,7 +4,6 @@
 #include "StringParser.h"
 
 #include <iostream>
-#include <sstream>
 
 Engine::~Engine() {
     for (auto option : m_Options)
@@ -18,10 +17,12 @@ bool Engine::Init() {
     Send("uci\n");
     Receive(message);
 
-    StringParser sp(message);
+    StringParser sp(std::move(message));
+
     std::string_view command;
-    while (sp.Next(command, "\r\n")) {
-        // Parse commands here
+    
+    while (sp.Next(command, StringParser::Newline)) {
+        // Parse command
         if (command.empty()) {
             continue;
         } else if (command == "uciok") {
@@ -32,7 +33,7 @@ bool Engine::Init() {
             commandParser.Next(commandType);
 
             if (commandType == "id")
-                HandleIdCommand("");
+                HandleIdCommand(commandParser);
             else if (commandType == "option")
                 HandleOptionCommand(commandParser);
             else
@@ -43,8 +44,6 @@ bool Engine::Init() {
 }
 
 void Engine::HandleOptionCommand(StringParser& sp) {
-    //std::cout << "Option command: " << restOfCommand << "\n";
-
     std::string name;
     sp.Next(name);
     sp.Next(name, "type");
@@ -68,26 +67,30 @@ void Engine::HandleOptionCommand(StringParser& sp) {
         m_Options.push_back(new Button(name));
     } else if (type == "string") {
         std::string value;
-        m_Options.push_back(new String(name, "value"));
+        sp.Next(value, StringParser::End);
+        m_Options.push_back(new String(name, value));
     } else {
         std::cout << "ERROR: Unknown type command!\n";
     }
 }
 
-void Engine::HandleIdCommand(std::string_view restOfCommand) {
-    std::cout << "ID command: " << restOfCommand << "\n";
-
-    std::string_view id(restOfCommand.data(), restOfCommand.find(' '));
+void Engine::HandleIdCommand(StringParser& sp) {
+    std::string_view id;
+    sp.Next(id);
 
     if (id == "name")
-        m_Name.assign(restOfCommand.data() + restOfCommand.find(' ') + 1, restOfCommand.size() - restOfCommand.find(' '));
+        sp.Next(m_Name, StringParser::End);
     else if (id == "author")
-        m_Author.assign(restOfCommand.data() + restOfCommand.find(' ') + 1, restOfCommand.size() - restOfCommand.find(' '));
+        sp.Next(m_Author, StringParser::End);
     else
         std::cout << "ERROR: Unknown id command!\n";
 }
 
-void Engine::PrintOptions() {
+void Engine::PrintInfo() {
+    std::cout << "Name: " << m_Name << "\n";
+    std::cout << "Author: " << m_Author << "\n";
+
+    std::cout << "\n---------------- OPTIONS ----------------\n";
     std::cout << "Number of options: " << m_Options.size() << "\n";
 
     for (Option* option : m_Options) {
