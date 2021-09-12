@@ -16,6 +16,13 @@ int main() {
 
     engine->PrintInfo();
 
+    std::cout << "Setting option...\n";
+
+    if (!engine->SetOption("USe NUE", true))
+        std::cout << "Cannot set option \"USe NUE\"\n";
+
+    std::cout << "Done setting option\n";
+
     delete engine;
 
     std::cout << s_Allocations << " allocations!\n";

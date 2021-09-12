@@ -7,17 +7,17 @@ Engine* Engine::Create(const std::string& path) {
 }
 
 WindowsEngine::WindowsEngine(const std::string& path) {
-    HANDLE engineOutputWrite, engineInputRead;  // Don't need to keep track of these
+    HANDLE hEngineOutputWrite, hEngineInputRead;  // Don't need to keep track of these
 
     SECURITY_ATTRIBUTES sa;
     sa.nLength = sizeof(SECURITY_ATTRIBUTES);
     sa.bInheritHandle = TRUE;
     sa.lpSecurityDescriptor = NULL;
 
-    CreatePipe(&m_EngineOutputRead, &engineOutputWrite, &sa, 0);
+    CreatePipe(&m_EngineOutputRead, &hEngineOutputWrite, &sa, 0);
     SetHandleInformation(m_EngineOutputRead, HANDLE_FLAG_INHERIT, 0);
 
-    CreatePipe(&engineInputRead, &m_EngineInputWrite, &sa, 0);
+    CreatePipe(&hEngineInputRead, &m_EngineInputWrite, &sa, 0);
     SetHandleInformation(m_EngineInputWrite, HANDLE_FLAG_INHERIT, 0);
 
     PROCESS_INFORMATION processInfo;
@@ -26,9 +26,9 @@ WindowsEngine::WindowsEngine(const std::string& path) {
     ZeroMemory(&processInfo, sizeof(PROCESS_INFORMATION));
     ZeroMemory(&startupInfo, sizeof(STARTUPINFO));
     startupInfo.cb = sizeof(STARTUPINFO);
-    startupInfo.hStdError = engineOutputWrite;
-    startupInfo.hStdOutput = engineOutputWrite;
-    startupInfo.hStdInput = engineInputRead;
+    startupInfo.hStdError = hEngineOutputWrite;
+    startupInfo.hStdOutput = hEngineOutputWrite;
+    startupInfo.hStdInput = hEngineInputRead;
     startupInfo.dwFlags |= STARTF_USESTDHANDLES;
 
     bool success = CreateProcess(path.c_str(), NULL, NULL, NULL, TRUE, 0, NULL, NULL, &startupInfo, &processInfo);
@@ -40,8 +40,8 @@ WindowsEngine::WindowsEngine(const std::string& path) {
     CloseHandle(processInfo.hProcess);
     CloseHandle(processInfo.hThread);
 
-    CloseHandle(engineOutputWrite);
-    CloseHandle(engineInputRead);
+    CloseHandle(hEngineOutputWrite);
+    CloseHandle(hEngineInputRead);
 }
 
 WindowsEngine::~WindowsEngine() {

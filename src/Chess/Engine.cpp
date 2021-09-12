@@ -3,7 +3,9 @@
 #include "Option.h"
 #include "StringParser.h"
 
+#include <algorithm>
 #include <iostream>
+#include <sstream>
 
 Engine::~Engine() {
     for (auto option : m_Options)
@@ -41,6 +43,80 @@ bool Engine::Init() {
         }
     }
     return true;
+}
+
+bool Engine::SetOption(const std::string& name) {
+    if (auto option = FindOption(name)) {
+        if (option.value()->Type == Option::Type::Button) {
+            std::stringstream ss;
+            ss << "setoption name " << name << "\r\n";
+
+            Send(ss.str());
+
+            return true;
+        }
+    }
+
+    return false;
+}
+
+bool Engine::SetOption(const std::string& name, bool value) {
+    if (auto option = FindOption(name)) {
+        if (option.value()->Type == Option::Type::Check) {
+            Check* check = (Check*)option.value();
+
+            check->Value = value;
+
+            std::stringstream ss;
+            ss << "setoption name " << name << " value " << std::boolalpha << check->Value << "\r\n";
+
+            Send(ss.str());
+
+            return true;
+        }
+    }
+
+    return false;
+}
+
+bool Engine::SetOption(const std::string& name, int32_t value) {
+    if (auto option = FindOption(name)) {
+        if (option.value()->Type == Option::Type::Spin) {
+            Spin* spin = (Spin*)option.value();
+
+            spin->Value = value;
+
+            std::stringstream ss;
+            ss << "setoption name " << name << " value " << spin->Value << "\r\n";
+
+            Send(ss.str());
+
+            return true;
+        }
+    }
+
+    return false;
+}
+
+bool Engine::SetOption(const std::string& name, const std::string& value) {
+    if (auto option = FindOption(name)) {
+        if (option.value()->Type == Option::Type::String) {
+            String* string = (String*)(option.value());
+
+            string->Value = value;
+
+            std::stringstream ss;
+            ss << "setoption " << name << " value " << string->Value << "\r\n";
+
+            Send(ss.str());
+
+            return true;
+        } else if (option.value()->Type == Option::Type::Combo) {
+            return false;
+        }
+    }
+
+    return false;
 }
 
 void Engine::HandleOptionCommand(StringParser& sp) {
@@ -109,4 +185,21 @@ void Engine::PrintInfo() {
 
         std::cout << "\n";
     }
+}
+
+std::optional<Option*> Engine::FindOption(const std::string& name) {
+    auto position = std::find_if(m_Options.begin(), m_Options.end(),
+        [&](Option* o) {
+            if (o->Name.size() != name.size())
+                return false;
+
+            for (size_t i = 0; i < name.size(); i++)
+                if (std::tolower(o->Name[i]) != std::tolower(name[i]))
+                    return false;
+
+            return true;
+        }
+    );
+
+    return (position == m_Options.end()) ? std::nullopt : std::optional<Option*>{ *position };
 }
