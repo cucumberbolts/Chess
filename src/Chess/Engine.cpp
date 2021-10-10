@@ -13,35 +13,22 @@ Engine::~Engine() {
 }
 
 bool Engine::Init() {
-    std::string message;
-    Receive(message); // Receive startup info (we don't need it)
-
     Send("uci\n");
-    Receive(message);
 
-    StringParser sp(std::move(message));
+    //loop till "uciok"
+    std::string data;
+    uint64_t time = GetTime();
+    while (m_State != State::Ready) {
+        if (GetTime() - time > 500) {  // Check every 500 milliseconds to avoid calling PeekNamedPipe() a lot
+            Receive(data);
+            HandleCommand(data);
 
-    std::string_view command;
-    
-    while (sp.Next(command, StringParser::Newline)) {
-        // Parse command
-        if (command.empty()) {
-            continue;
-        } else if (command == "uciok") {
-            break;
-        } else {
-            StringParser commandParser{ std::string(command) };
-            std::string_view commandType;
-            commandParser.Next(commandType);
-
-            if (commandType == "id")
-                HandleIdCommand(commandParser);
-            else if (commandType == "option")
-                HandleOptionCommand(commandParser);
-            else
-                std::cout << "ERROR: Unknown command \"" << commandType << "\"!\n";
+            time = GetTime();
         }
     }
+
+    std::cout << "Engine initialized!\n";
+
     return true;
 }
 
@@ -117,6 +104,51 @@ bool Engine::SetOption(const std::string& name, const std::string& value) {
     }
 
     return false;
+}
+
+void Engine::Run() {
+    if (m_State != State::Ready) {
+        std::cout << "Engine is not ready!\n";
+        return;
+    }
+
+    std::string data;
+    uint64_t time = GetTime();
+    while (m_State == State::Running) {
+        if (GetTime() - time > 500) {  // Check every 500 milliseconds to avoid calling PeekNamedPipe() a lot
+            Receive(data);
+            HandleCommand(data);
+
+            time = GetTime();
+        }
+    }
+}
+
+void Engine::HandleCommand(const std::string& text) {
+    StringParser sp(text);
+
+    std::string_view command;
+
+    while (sp.Next(command, StringParser::Newline)) {
+        // Parse command
+        if (command.empty())
+            continue;
+
+        StringParser commandParser{ std::string(command) };
+        std::string_view commandType;
+        commandParser.Next(commandType);
+
+        if (commandType == "uciok") {
+            m_State = State::Ready;
+            return;
+        } else if (commandType == "id") {
+            HandleIdCommand(commandParser);
+        } else if (commandType == "option") {
+            HandleOptionCommand(commandParser);
+        } else {
+            std::cout << "ERROR: Unknown command \"" << commandType << "\"! Skipping command...\n";
+        }
+    }
 }
 
 void Engine::HandleOptionCommand(StringParser& sp) {
@@ -201,5 +233,5 @@ std::optional<Option*> Engine::FindOption(const std::string& name) {
         }
     );
 
-    return (position == m_Options.end()) ? std::nullopt : std::optional<Option*>{ *position };
+    return position == m_Options.end() ? std::nullopt : std::optional<Option*>{ *position };
 }

@@ -20,6 +20,7 @@ endif(MSVC)
 add_executable(ChessAnalysis ${SOURCES})
 
 set_target_properties(ChessAnalysis PROPERTIES CXX_STANDARD 17)
+set_target_properties(ChessAnalysis PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY "C:/Users/julian/Workspace/Chess-Analysis")
 
 target_include_directories(ChessAnalysis
     PRIVATE

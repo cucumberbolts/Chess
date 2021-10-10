@@ -12,7 +12,7 @@ public:
     StringParser(const std::string& data) : m_Data(data) {}
     StringParser(std::string&& data) : m_Data(std::move(data)) {}
 
-    inline bool Next(std::string_view& output, Delimiter delimiter = Whitespace) {
+    bool Next(std::string_view& output, Delimiter delimiter = Whitespace) {
         if (m_TokenEnd == m_Data.size())
             return false;
 
@@ -25,6 +25,7 @@ public:
 
         if (delimiter == End) {
             m_TokenEnd = m_Data.size();
+
             output = std::string_view(m_Data.data() + m_TokenBegin, m_TokenEnd - m_TokenBegin);
         } else if (delimiter == Whitespace) {
             size_t whitespaceBegin = m_Data.find_first_of(" \t", m_TokenBegin);
@@ -39,7 +40,12 @@ public:
             m_TokenEnd = whitespaceEnd;
         } else if (delimiter == Newline) {
             m_TokenEnd = m_Data.find('\n', m_TokenBegin);
+
+            if (m_TokenEnd == std::string::npos)
+                m_TokenEnd = m_Data.size();
+
             size_t newlineBegin = m_Data[m_TokenEnd - 1] == '\r' ? m_TokenEnd - 1 : m_TokenEnd;
+
             output = std::string_view(m_Data.data() + m_TokenBegin, newlineBegin - m_TokenBegin);
             m_TokenEnd++;
         }
@@ -47,7 +53,7 @@ public:
         return true;
     }
 
-    inline bool Next(std::string_view& output, std::string_view stop) {
+    bool Next(std::string_view& output, std::string_view stop) {
         if (m_TokenEnd == m_Data.size())
             return false;
 
@@ -74,21 +80,21 @@ public:
         return true;
     }
 
-    inline bool Next(std::string& output, Delimiter delimiter = Whitespace) {
+    bool Next(std::string& output, Delimiter delimiter = Whitespace) {
         std::string_view result;
         bool success = Next(result, delimiter);
         output = result;
         return success;
     }
 
-    inline bool Next(std::string& output, std::string_view delimiter) {
+    bool Next(std::string& output, std::string_view delimiter) {
         std::string_view result;
         bool success = Next(result, delimiter);
         output = result;
         return success;
     }
 
-    inline bool Next(int32_t& output, std::string_view stop = "") {
+    bool Next(int32_t& output, std::string_view stop = "") {
         std::string_view result;
         bool success = stop.empty() ? Next(result) : Next(result, stop);
 
@@ -98,7 +104,7 @@ public:
         return success;
     }
 
-    inline bool Next(bool& output, std::string_view stop = "") {
+    bool Next(bool& output, std::string_view stop = "") {
         std::string_view result;
         bool success = stop.empty() ? Next(result) : Next(result, stop);
 

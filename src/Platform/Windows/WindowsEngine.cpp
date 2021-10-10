@@ -2,8 +2,8 @@
 
 #include <iostream>
 
-Engine* Engine::Create(const std::string& path) {
-    return new WindowsEngine(path);
+Engine* Engine::Create(std::filesystem::path path) {
+    return new WindowsEngine(std::filesystem::absolute(path).string());
 }
 
 WindowsEngine::WindowsEngine(const std::string& path) {
@@ -31,7 +31,11 @@ WindowsEngine::WindowsEngine(const std::string& path) {
     startupInfo.hStdInput = hEngineInputRead;
     startupInfo.dwFlags |= STARTF_USESTDHANDLES;
 
-    bool success = CreateProcess(path.c_str(), NULL, NULL, NULL, TRUE, 0, NULL, NULL, &startupInfo, &processInfo);
+    BOOL bSuccess = CreateProcess(path.c_str(), NULL, NULL, NULL, TRUE, 0, NULL, NULL, &startupInfo, &processInfo);
+
+    if (!bSuccess) {
+        std::cout << "CreateProcess Failed: " << GetLastError() << std::endl;
+    }
 
     // Close handles to the child process and its primary thread.
     // Some applications might keep these handles to monitor the status
@@ -49,27 +53,35 @@ WindowsEngine::~WindowsEngine() {
     CloseHandle(m_EngineOutputRead);
 }
 
-void WindowsEngine::Send(const std::string& message) {
+bool WindowsEngine::Send(const std::string& message) {
     DWORD dwWritten;
 
-    WriteFile(m_EngineInputWrite, message.c_str(), (DWORD)message.size(), &dwWritten, NULL);
+    return WriteFile(m_EngineInputWrite, message.c_str(), (DWORD)message.size(), &dwWritten, NULL);
 }
 
-void WindowsEngine::Receive(std::string& message) {
+bool WindowsEngine::Receive(std::string& message) {
+    ULONGLONG time = GetTickCount64();
+
     DWORD dwRead;
-    BOOL bSuccess = FALSE;
+    DWORD dwBytesAvail;
+    BOOL bSuccess = PeekNamedPipe(m_EngineOutputRead, NULL, 0, &dwRead, &dwBytesAvail, NULL);
+    if (dwBytesAvail == 0) {
+        message.clear();
+        return true;
+    }
 
-    CHAR cData[2048];
+    message.resize(dwBytesAvail);
+    bSuccess = ReadFile(m_EngineOutputRead, message.data(), dwBytesAvail, &dwRead, NULL);
+    //message[dwRead] = '\0';
 
-    // You have to sleep() before using PeekNamedPipe()
-    // DWORD dwBytesAvail;
-    //bSuccess = PeekNamedPipe(m_EngineOutputRead, NULL, 0, &dwRead, &dwBytesAvail, NULL);
-    //if (dwBytesAvail == 0)
-    //    return;
+    if (!bSuccess) {
+        std::cout << "Failed to read file: " << GetLastError() << std::endl;
+        return false;
+    }
 
-    bSuccess = ReadFile(m_EngineOutputRead, cData, 2048, &dwRead, NULL);
-    if (!bSuccess)
-        DWORD error = GetLastError();
+    return true;
+}
 
-    message.assign(cData, dwRead);
+uint64_t WindowsEngine::GetTime() {
+    return GetTickCount64();
 }
