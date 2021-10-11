@@ -3,6 +3,7 @@
 #include <filesystem>
 #include <optional>
 #include <string>
+#include <thread>
 #include <vector>
 
 #include "Option.h"
@@ -21,8 +22,8 @@ public:
     virtual ~Engine();
 
     bool Init();
-
     void Run();
+    void Stop();
 
     const std::vector<Option*>& GetOptions() const { return m_Options; }
     bool SetButton(const std::string& name);
@@ -37,14 +38,19 @@ private:
     std::string m_Name, m_Author;
     std::vector<Option*> m_Options;
 
+    //std::atomic<State> m_State = State::Uninitialized;
     State m_State = State::Uninitialized;
 
     static constexpr uint32_t waitTime = 50;
+
+    std::thread m_Thread;
 private:
     virtual bool Send(const std::string& message) = 0;
     virtual bool Receive(std::string& message) = 0;
 
     virtual uint64_t GetTime() = 0;
+    
+    void RunLoop();
 
     void HandleCommand(const std::string& text);
     void HandleOptionCommand(StringParser& sp);

@@ -19,7 +19,7 @@ bool Engine::Init() {
 
     //loop till "uciok"
     std::string data;
-#if 1
+#if 0
     uint64_t time = GetTime();
     while (m_State != State::Ready) {
         if (GetTime() - time > waitTime) {  // Check every 50 milliseconds to avoid calling PeekNamedPipe() a lot
@@ -35,6 +35,11 @@ bool Engine::Init() {
         HandleCommand(data);
         Sleep(waitTime);
     }
+#elif 1
+    while (m_State != State::Ready) {
+        Receive(data);
+        HandleCommand(data);
+    }
 #endif
 
     std::cout << "Engine initialized!\n";
@@ -48,16 +53,19 @@ void Engine::Run() {
         return;
     }
 
-    std::string data;
-    uint64_t time = GetTime();
-    while (m_State == State::Running) {
-        if (GetTime() - time > waitTime) {  // Check every 500 milliseconds to avoid calling PeekNamedPipe() a lot
-            Receive(data);
-            HandleCommand(data);
+    m_State = State::Running;
 
-            time = GetTime();
-        }
-    }
+    Send("go\n");
+    
+    m_Thread = std::thread(&Engine::RunLoop, this);
+}
+
+void Engine::Stop() {
+    Send("stop\n");
+
+    m_State = State::Ready;
+
+    m_Thread.join();
 }
 
 bool Engine::SetButton(const std::string& name) {
@@ -166,6 +174,31 @@ bool Engine::SetCombo(const std::string& name, size_t valueIndex) {
     }
 
     return false;
+}
+
+void Engine::RunLoop() {
+#if 1
+    std::string data;
+    uint64_t time = GetTime();
+    while (m_State == State::Running) {
+        if (GetTime() - time > waitTime) {  // Check every 500 milliseconds to avoid calling PeekNamedPipe() a lot
+            Receive(data);
+
+            if (!data.empty())
+                std::cout << "Received: " << data << "\n";
+
+            time = GetTime();
+        }
+    }
+#else
+    std::string data;
+    while (m_State == State::Running) {
+        Receive(data);
+
+        if (!data.empty())
+            std::cout << "Received: " << data << "\n";
+    }
+#endif
 }
 
 void Engine::HandleCommand(const std::string& text) {
