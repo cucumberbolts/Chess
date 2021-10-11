@@ -16,7 +16,7 @@ private:
         Running
     };
 public:
-    static Engine* Create(std::filesystem::path path);
+    static std::unique_ptr<Engine> Create(const std::filesystem::path& path);
 
     virtual ~Engine();
 
@@ -25,10 +25,12 @@ public:
     void Run();
 
     const std::vector<Option*>& GetOptions() const { return m_Options; }
-    bool SetOption(const std::string& name);  // Buttons
-    bool SetOption(const std::string& name, bool value);  // Checks
-    bool SetOption(const std::string& name, int32_t value);  // Spins
-    bool SetOption(const std::string& name, const std::string& value);  // Strings and Combos
+    bool SetButton(const std::string& name);
+    bool SetCheck(const std::string& name, bool value);
+    bool SetSpin(const std::string& name, int32_t value);
+    bool SetString(const std::string& name, const std::string& value);
+    bool SetCombo(const std::string& name, const std::string& value);
+    bool SetCombo(const std::string& name, size_t valueIndex);
 
     void PrintInfo();
 private:
@@ -36,6 +38,8 @@ private:
     std::vector<Option*> m_Options;
 
     State m_State = State::Uninitialized;
+
+    static constexpr uint32_t waitTime = 50;
 private:
     virtual bool Send(const std::string& message) = 0;
     virtual bool Receive(std::string& message) = 0;
@@ -46,5 +50,5 @@ private:
     void HandleOptionCommand(StringParser& sp);
     void HandleIdCommand(StringParser& sp);
 
-    std::optional<Option*> FindOption(const std::string& name);
+    std::optional<Option*> FindOption(const std::string& name, Option::OptionType type);
 };

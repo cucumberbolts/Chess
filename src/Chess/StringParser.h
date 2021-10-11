@@ -115,7 +115,7 @@ public:
         else
             return false;
 
-        return true;
+        return success;
     }
 private:
     std::string m_Data;

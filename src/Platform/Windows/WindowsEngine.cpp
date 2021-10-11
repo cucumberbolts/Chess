@@ -2,8 +2,8 @@
 
 #include <iostream>
 
-Engine* Engine::Create(std::filesystem::path path) {
-    return new WindowsEngine(std::filesystem::absolute(path).string());
+std::unique_ptr<Engine> Engine::Create(const std::filesystem::path& path) {
+    return std::make_unique<WindowsEngine>(std::filesystem::absolute(path).string());
 }
 
 WindowsEngine::WindowsEngine(const std::string& path) {
@@ -60,8 +60,6 @@ bool WindowsEngine::Send(const std::string& message) {
 }
 
 bool WindowsEngine::Receive(std::string& message) {
-    ULONGLONG time = GetTickCount64();
-
     DWORD dwRead;
     DWORD dwBytesAvail;
     BOOL bSuccess = PeekNamedPipe(m_EngineOutputRead, NULL, 0, &dwRead, &dwBytesAvail, NULL);
