@@ -22,7 +22,7 @@ public:
     virtual ~Engine();
 
     bool Init();
-    void Run();
+    void Run();  // Sends the "go" command
     void Stop();
 
     const std::vector<Option*>& GetOptions() const { return m_Options; }
@@ -37,6 +37,16 @@ public:
 private:
     std::string m_Name, m_Author;
     std::vector<Option*> m_Options;
+
+    struct {
+        int32_t Depth = 0;
+        std::string Moves;
+        int32_t Score = 0;  // Could be centipawns or mate
+        bool Mate = false;  // If the score is mate or centipawns
+    } m_BestContinuation;
+
+    static constexpr size_t s = sizeof(m_BestContinuation);
+    static constexpr size_t e = sizeof(std::string);
 
     //std::atomic<State> m_State = State::Uninitialized;
     State m_State = State::Uninitialized;
@@ -55,6 +65,7 @@ private:
     void HandleCommand(const std::string& text);
     void HandleOptionCommand(StringParser& sp);
     void HandleIdCommand(StringParser& sp);
+    void HandleInfoCommand(StringParser& sp);
 
     std::optional<Option*> FindOption(const std::string& name, Option::OptionType type);
 };

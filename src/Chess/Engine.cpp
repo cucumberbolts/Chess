@@ -187,6 +187,8 @@ void Engine::RunLoop() {
             if (!data.empty())
                 std::cout << "Received: " << data << "\n";
 
+            HandleCommand(data);
+
             time = GetTime();
         }
     }
@@ -217,14 +219,15 @@ void Engine::HandleCommand(const std::string& text) {
 
         if (commandType == "uciok") {
             m_State = State::Ready;
-            return;
         } else if (commandType == "id") {
             HandleIdCommand(commandParser);
         } else if (commandType == "option") {
             HandleOptionCommand(commandParser);
-        } else {
-            std::cout << "ERROR: Unknown command \"" << commandType << "\"! Skipping command...\n";
+        } else if (commandType == "info") {
+            HandleInfoCommand(commandParser);
         }
+
+        // Ignore undefined commands
     }
 }
 
@@ -280,8 +283,56 @@ void Engine::HandleIdCommand(StringParser& sp) {
         sp.Next(m_Name, StringParser::End);
     else if (id == "author")
         sp.Next(m_Author, StringParser::End);
-    else
-        std::cout << "ERROR: Unknown id command!\n";
+
+    // Ignore undefined commands
+}
+
+void Engine::HandleInfoCommand(StringParser& sp) {
+    std::string_view infoType;
+    sp.Next(infoType);
+
+    do {
+        if (infoType == "string") {
+            std::string_view string;
+            sp.Next(string, StringParser::End);
+
+            std::cout << "Engine sent string: " << string << "\n";
+
+            return;
+        } else if (infoType == "depth") {
+            sp.Next(m_BestContinuation.Depth);
+
+            std::cout << "Best continuation depth: " << m_BestContinuation.Depth << "\n";
+        } else if (infoType == "pv") {
+            sp.Next(m_BestContinuation.Moves, StringParser::End);
+
+            std::cout << "Best continuation: " << m_BestContinuation.Moves << "\n";
+
+            return;
+        } else if (infoType == "cp") {
+            sp.Next(m_BestContinuation.Score);
+            m_BestContinuation.Mate = false;
+
+            std::cout << "Best continuation score: " << m_BestContinuation.Score << " centipawns\n";
+        } else if (infoType == "mate") {
+            sp.Next(m_BestContinuation.Score);
+            m_BestContinuation.Mate = true;
+
+            std::cout << "Mate in " << m_BestContinuation.Score << " moves!\n";
+        } else if (infoType == "refutation") {
+            std::string_view move;
+            sp.Next(move);
+
+            std::string_view refutation;
+            sp.Next(refutation, StringParser::End);
+
+            std::cout << "Move: " << move << " refutation: " << refutation << "\n";
+
+            return;
+        }
+    } while (sp.Next(infoType));
+
+    // Ignore undefined commands
 }
 
 void Engine::PrintInfo() {

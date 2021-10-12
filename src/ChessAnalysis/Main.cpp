@@ -22,8 +22,10 @@ int main() {
     engine->PrintInfo();
     std::cout << "Done printing info...\n";
 
-    engine->Run();
+    std::cout << "Press enter to start engine:\n";
+    std::cin.get();
 
+    engine->Run();
     std::cin.get();
 
     std::cout << "Stopping engine...\n";
