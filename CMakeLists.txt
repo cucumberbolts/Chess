@@ -10,7 +10,7 @@ set(SOURCES
     "src/Platform/Windows/WindowsEngine.cpp"
     "src/Chess/Option.h"
     "src/Chess/StringParser.h"
-)
+ "src/Chess/Move.h" "src/Chess/Board.h" "src/Chess/Board.cpp" "src/Chess/Move.cpp")
 
 if (MSVC)
     set(CMAKE_CXX_STANDARD 17)
@@ -20,7 +20,7 @@ endif(MSVC)
 add_executable(ChessAnalysis ${SOURCES})
 
 set_target_properties(ChessAnalysis PROPERTIES CXX_STANDARD 17)
-set_target_properties(ChessAnalysis PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY "C:/Users/julian/Workspace/Chess-Analysis")
+set_target_properties(ChessAnalysis PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}")
 
 target_include_directories(ChessAnalysis
     PRIVATE

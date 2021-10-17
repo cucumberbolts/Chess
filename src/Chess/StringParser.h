@@ -5,14 +5,14 @@
 
 class StringParser {
 public:
-    enum Delimiter {
+    enum class Delimiter {
         Newline, Whitespace, End
     };
 public:
     StringParser(const std::string& data) : m_Data(data) {}
     StringParser(std::string&& data) : m_Data(std::move(data)) {}
 
-    bool Next(std::string_view& output, Delimiter delimiter = Whitespace) {
+    bool Next(std::string_view& output, Delimiter delimiter = Delimiter::Whitespace) {
         if (m_TokenEnd == m_Data.size())
             return false;
 
@@ -23,11 +23,11 @@ public:
             return true;
         }
 
-        if (delimiter == End) {
+        if (delimiter == Delimiter::End) {
             m_TokenEnd = m_Data.size();
 
             output = std::string_view(m_Data.data() + m_TokenBegin, m_TokenEnd - m_TokenBegin);
-        } else if (delimiter == Whitespace) {
+        } else if (delimiter == Delimiter::Whitespace) {
             size_t whitespaceBegin = m_Data.find_first_of(" \t", m_TokenBegin);
             if (whitespaceBegin == std::string::npos)
                 whitespaceBegin = m_Data.size();
@@ -38,7 +38,7 @@ public:
 
             output = std::string_view(m_Data.data() + m_TokenBegin, whitespaceBegin - m_TokenBegin);
             m_TokenEnd = whitespaceEnd;
-        } else if (delimiter == Newline) {
+        } else if (delimiter == Delimiter::Newline) {
             m_TokenEnd = m_Data.find('\n', m_TokenBegin);
 
             if (m_TokenEnd == std::string::npos)
@@ -80,7 +80,7 @@ public:
         return true;
     }
 
-    bool Next(std::string& output, Delimiter delimiter = Whitespace) {
+    bool Next(std::string& output, Delimiter delimiter = Delimiter::Whitespace) {
         std::string_view result;
         bool success = Next(result, delimiter);
         output = result;

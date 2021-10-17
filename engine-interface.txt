@@ -488,7 +488,8 @@ ucinewgame
 setoption name UCI_AnalyseMode value true
 
 // tell the engine to search infinite from the start position after 1.e4 e5
-position startpos moves e2e4 e7e5
+position
+startpos moves e2e4 e7e5
 go infinite
 
 // the engine starts sending infos about the search to the GUI

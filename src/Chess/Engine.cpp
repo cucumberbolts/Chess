@@ -208,7 +208,7 @@ void Engine::HandleCommand(const std::string& text) {
 
     std::string_view command;
 
-    while (sp.Next(command, StringParser::Newline)) {
+    while (sp.Next(command, StringParser::Delimiter::Newline)) {
         // Parse command
         if (command.empty())
             continue;
@@ -268,7 +268,7 @@ void Engine::HandleOptionCommand(StringParser& sp) {
         m_Options.push_back(new Button(name));
     } else if (type == "string") {
         std::string value;
-        sp.Next(value, StringParser::End);
+        sp.Next(value, StringParser::Delimiter::End);
         m_Options.push_back(new String(name, value));
     }
 
@@ -280,9 +280,9 @@ void Engine::HandleIdCommand(StringParser& sp) {
     sp.Next(id);
 
     if (id == "name")
-        sp.Next(m_Name, StringParser::End);
+        sp.Next(m_Name, StringParser::Delimiter::End);
     else if (id == "author")
-        sp.Next(m_Author, StringParser::End);
+        sp.Next(m_Author, StringParser::Delimiter::End);
 
     // Ignore undefined commands
 }
@@ -294,7 +294,7 @@ void Engine::HandleInfoCommand(StringParser& sp) {
     do {
         if (infoType == "string") {
             std::string_view string;
-            sp.Next(string, StringParser::End);
+            sp.Next(string, StringParser::Delimiter::End);
 
             std::cout << "Engine sent string: " << string << "\n";
 
@@ -304,7 +304,7 @@ void Engine::HandleInfoCommand(StringParser& sp) {
 
             std::cout << "Best continuation depth: " << m_BestContinuation.Depth << "\n";
         } else if (infoType == "pv") {
-            sp.Next(m_BestContinuation.Moves, StringParser::End);
+            sp.Next(m_BestContinuation.Moves, StringParser::Delimiter::End);
 
             std::cout << "Best continuation: " << m_BestContinuation.Moves << "\n";
 
@@ -324,7 +324,7 @@ void Engine::HandleInfoCommand(StringParser& sp) {
             sp.Next(move);
 
             std::string_view refutation;
-            sp.Next(refutation, StringParser::End);
+            sp.Next(refutation, StringParser::Delimiter::End);
 
             std::cout << "Move: " << move << " refutation: " << refutation << "\n";
 
@@ -332,7 +332,7 @@ void Engine::HandleInfoCommand(StringParser& sp) {
         }
     } while (sp.Next(infoType));
 
-    // Ignore undefined commands
+    // ignore undefined commands
 }
 
 void Engine::PrintInfo() {
