@@ -6,6 +6,7 @@
 #include <thread>
 #include <vector>
 
+#include "Board.h"
 #include "Option.h"
 #include "StringParser.h"
 
@@ -34,19 +35,19 @@ public:
     bool SetCombo(const std::string& name, size_t valueIndex);
 
     void PrintInfo();
-private:
+public:
     std::string m_Name, m_Author;
     std::vector<Option*> m_Options;
 
     struct {
-        int32_t Depth = 0;
-        std::string Moves;
-        int32_t Score = 0;  // Could be centipawns or mate
-        bool Mate = false;  // If the score is mate or centipawns
+        std::vector<AlgebraicMove> Continuation;
+        LongAlgebraicMove PonderMove;
+        int32_t Depth;
+        int32_t Score;  // Could be centipawns or mate
+        bool Mate;  // If the score is mate or centipawns
     } m_BestContinuation;
 
-    static constexpr size_t s = sizeof(m_BestContinuation);
-    static constexpr size_t e = sizeof(std::string);
+    Board m_Board;
 
     //std::atomic<State> m_State = State::Uninitialized;
     State m_State = State::Uninitialized;

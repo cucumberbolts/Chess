@@ -7,9 +7,9 @@
 #include <iostream>
 #include <sstream>
 
-#include <Windows.h>
-
 Engine::~Engine() {
+    Stop();
+
     for (auto option : m_Options)
         delete option;
 }
@@ -17,7 +17,7 @@ Engine::~Engine() {
 bool Engine::Init() {
     Send("uci\n");
 
-    //loop till "uciok"
+    //loop till "uciok" is received
     std::string data;
 #if 0
     uint64_t time = GetTime();
@@ -33,7 +33,8 @@ bool Engine::Init() {
     while (m_State != State::Ready) {
         Receive(data);
         HandleCommand(data);
-        Sleep(waitTime);
+        std::this_thread::sleep_for(std::chrono::milliseconds(waitTime));
+        //Sleep(waitTime);
     }
 #elif 1
     while (m_State != State::Ready) {
@@ -61,11 +62,11 @@ void Engine::Run() {
 }
 
 void Engine::Stop() {
-    Send("stop\n");
-
-    m_State = State::Ready;
-
-    m_Thread.join();
+    if (m_State == State::Running) {
+        Send("stop\n");
+        m_State = State::Ready;
+        m_Thread.join();
+    }
 }
 
 bool Engine::SetButton(const std::string& name) {
@@ -226,6 +227,9 @@ void Engine::HandleCommand(const std::string& text) {
         } else if (commandType == "info") {
             HandleInfoCommand(commandParser);
         }
+        //else if (commandType == "bestmove") {
+        //    HandleBestMoveCommand(commandParser);
+        //}
 
         // Ignore undefined commands
     }
@@ -304,9 +308,12 @@ void Engine::HandleInfoCommand(StringParser& sp) {
 
             std::cout << "Best continuation depth: " << m_BestContinuation.Depth << "\n";
         } else if (infoType == "pv") {
-            sp.Next(m_BestContinuation.Moves, StringParser::Delimiter::End);
+            m_BestContinuation.Continuation.clear();
+            m_Board.Reset();
 
-            std::cout << "Best continuation: " << m_BestContinuation.Moves << "\n";
+            std::string_view move;
+            while (sp.Next(move))
+                m_BestContinuation.Continuation.push_back(m_Board.Move(LongAlgebraicMove(move)));
 
             return;
         } else if (infoType == "cp") {
@@ -332,7 +339,7 @@ void Engine::HandleInfoCommand(StringParser& sp) {
         }
     } while (sp.Next(infoType));
 
-    // ignore undefined commands
+    // Ignore undefined commands
 }
 
 void Engine::PrintInfo() {

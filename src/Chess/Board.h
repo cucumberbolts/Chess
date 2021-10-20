@@ -7,35 +7,34 @@
 
 #include "Move.h"
 
+// TODO: implement castling in Board class
+
 class Board {
 private:
     using BitBoard = std::bitset<64>;
-
-    constexpr static char s_PieceToChar[] = "PNBRQK  pnbrqk";
 public:
-    Board() = default;
+    Board();
     Board(const std::string& fen) { FromFEN(fen); }
+
+    void Reset(); // Set to starting position ("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")
 
     void FromFEN(const std::string& fen);
     std::string ToFEN();
-
-    void Move(AlgebraicMove m);
-    void Move(LongAlgebraicMove m);
+    
+    AlgebraicMove Move(LongAlgebraicMove m);
 
     friend std::ostream& operator<<(std::ostream& os, const Board& board);
-public:
-    inline BitBoard AllPieces() const { return m_ColourBitBoards[White] | m_ColourBitBoards[Black]; }
+private:
+    BitBoard AllPieces() const { return m_ColourBitBoards[White] | m_ColourBitBoards[Black]; }
 
     void PlacePiece(Piece p, Square s);
 
-    Piece CharToPiece(char c);
-public:
+    static Piece CharToPiece(char c);
+private:
     std::array<BitBoard, ColourCount> m_ColourBitBoards;
     std::array<BitBoard, PieceTypeCount> m_PieceBitBoards;
 
     std::array<Piece, 64> m_Board;
-
-    bool m_WhitesMove = true;  // False if it is black's move
 };
 
 inline void Board::PlacePiece(Piece p, Square s) {
@@ -59,6 +58,8 @@ inline Piece Board::CharToPiece(char c) {
         case 'r': return BlackRook;
         case 'q': return BlackQueen;
         case 'k': return BlackKing;
+
+        default: return None;  // Error
     }
 }
 
@@ -68,7 +69,7 @@ inline std::ostream& operator<<(std::ostream& os, const Board& board) {
             if (board.m_Board[rank * 8 + file] == None)
                 os << '.';
             else
-                os << Board::s_PieceToChar[board.m_Board[rank * 8 + file]];
+                os << PieceToChar(board.m_Board[rank * 8 + file]);
         }
 
         os << '\n';
