@@ -7,8 +7,6 @@
 
 #include "Move.h"
 
-// TODO: implement castling in Board class
-
 class Board {
 private:
     using BitBoard = std::bitset<64>;
@@ -28,6 +26,7 @@ private:
     BitBoard AllPieces() const { return m_ColourBitBoards[White] | m_ColourBitBoards[Black]; }
 
     void PlacePiece(Piece p, Square s);
+    void RemovePiece(Square s);
 
     static Piece CharToPiece(char c);
 private:
@@ -35,13 +34,23 @@ private:
     std::array<BitBoard, PieceTypeCount> m_PieceBitBoards;
 
     std::array<Piece, 64> m_Board;
+
+    std::array<bool, 4> m_CastlingRights;
 };
 
 inline void Board::PlacePiece(Piece p, Square s) {
-    m_PieceBitBoards[ToPieceType(p)][s] = true;
-    m_ColourBitBoards[ToColour(p)][s] = true;
+    m_PieceBitBoards[GetPieceType(p)][s] = true;
+    m_ColourBitBoards[GetColour(p)][s] = true;
     m_Board[s] = p;
 }
+
+inline void Board::RemovePiece(Square s) {
+    Piece p = m_Board[s];
+    m_PieceBitBoards[GetPieceType(p)][s] = false;
+    m_ColourBitBoards[GetColour(p)][s] = false;
+    m_Board[s] = Piece::None;
+}
+
 
 inline Piece Board::CharToPiece(char c) {
     switch (c) {

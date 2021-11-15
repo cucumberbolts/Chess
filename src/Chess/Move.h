@@ -39,8 +39,18 @@ enum Piece : uint8_t {
     //PieceCount = 13,
 };
 
-constexpr PieceType ToPieceType(Piece p) { return (PieceType)(p & 0b0111); }
-constexpr Colour ToColour(Piece p) { return (Colour)((p & 0b1000) >> 3); }
+// ORed with Colour enum to get the index to the m_CastlingRights array in the Board class
+enum CastleSide : uint8_t {
+    KingSide = 0,
+    Queenside = 1 << 1,
+};
+
+// Returns the PieceType of the given Piece
+constexpr inline PieceType GetPieceType(Piece p) { return (PieceType)(p & 0b0111); }
+// Returns the Colour of the given Piece
+constexpr inline Colour GetColour(Piece p) { return (Colour)((p & 0b1000) >> 3); }
+// Returns the Piece of the given PieceType and Colour
+constexpr inline Piece TypeAndColour(PieceType t, Colour c) { return (Piece)(t | (c << 3)); }
 
 inline char PieceToChar(Piece p) {
     constexpr static char s_PieceToChar[] = "PNBRQK  pnbrqk";
@@ -71,13 +81,15 @@ struct AlgebraicMove {
 };
 
 inline std::ostream& operator<<(std::ostream& os, AlgebraicMove m) {
-    if (ToPieceType(m.Piece) != Pawn)
-        os << PieceToChar(m.Piece);
+    if (GetPieceType(m.Piece) != Pawn)
+        os << (char)std::tolower(PieceToChar(m.Piece));
 
     if (m.Capture)
         os << 'x';
 
-    os << (char)('a' + m.Square % 8) << 8 - (m.Square / 8);
+    os << (char)('a' + m.Square % 8);  // File
+
+    os << 8 - m.Square / 8;  // Rank
 
     return os;
 }

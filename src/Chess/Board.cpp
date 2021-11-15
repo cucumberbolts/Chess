@@ -3,6 +3,7 @@
 #include "StringParser.h"
 
 #include <algorithm>
+#include <iostream>
 
 static constexpr Piece s_BlackPieces[8] = {
     BlackRook, BlackKnight, BlackBishop, BlackQueen, BlackKing, BlackBishop, BlackKnight, BlackRook
@@ -41,6 +42,8 @@ void Board::Reset() {
     
     std::fill(std::next(m_Board.begin(), 48), std::next(m_Board.begin(), 56), WhitePawn);
     std::copy_n(s_WhitePieces, 8, m_Board.data() + 56);
+
+    m_CastlingRights = { true, true, true, true };
 }
 
 void Board::FromFEN(const std::string& fen) {
@@ -58,7 +61,6 @@ void Board::FromFEN(const std::string& fen) {
     for (const char c : board) {
         if (std::isalpha(c)) {
             PlacePiece(CharToPiece(c), square);
-
             square++;
         } else if (std::isdigit(c)) {
             square += c - '0';
@@ -73,22 +75,62 @@ std::string Board::ToFEN() { return ""; }
 
 AlgebraicMove Board::Move(LongAlgebraicMove m) {
     Piece p = m_Board[m.SourceSquare];
+    Colour c = GetColour(p);
+    PieceType t = GetPieceType(p);
 
     // ASSERT(p != None)
 
-    bool capture = m_Board[m.DestinationSquare] != None;
+    bool capture = m_Board[m.DestinationSquare] != Piece::None;
 
-    m_Board[m.SourceSquare] = None;
-    m_Board[m.DestinationSquare] = p;
+    if (t == PieceType::King) {
+        int direction = m.DestinationSquare - m.SourceSquare;  // Kingside or queenside
 
-    Colour c = ToColour(p);
-    PieceType t = ToPieceType(p);
+        bool isOnSameRow = (m.DestinationSquare & 0xF8) == (m.SourceSquare & 0xF8);  // Checks if king is moving laterally
 
-    m_ColourBitBoards[ToColour(p)][m.SourceSquare] = false;
-    m_ColourBitBoards[ToColour(p)][m.DestinationSquare] = true;
+        if (abs(direction) == 2 && isOnSameRow) {
+            Square rookSquare, newRookSquare;
+            CastleSide castleSide;
 
-    m_PieceBitBoards[ToPieceType(p)][m.SourceSquare] = false;
-    m_PieceBitBoards[ToPieceType(p)][m.DestinationSquare] = true;
+            if (direction < 0) {  // Queenside
+                castleSide = CastleSide::Queenside;
+                rookSquare = m.SourceSquare - 4;
+                newRookSquare = m.DestinationSquare + 1;
+            } else {
+                castleSide = CastleSide::KingSide;
+                rookSquare = m.SourceSquare + 3;
+                newRookSquare = m.DestinationSquare - 1;
+            }
+    
+            // Check for castling rights
+            if (m_CastlingRights[c | castleSide] == false)
+                std::cout << "Castling is illegal!\n";
+    
+            // Check if castling is legal
+            if (GetPieceType(m_Board[rookSquare]) != PieceType::Rook)
+                std::cout << "Castling is illegal!\n";
+
+            // TODO: do more checking
+    
+            // Only move the rook because the king will be moved below
+            RemovePiece(rookSquare);
+            PlacePiece(TypeAndColour(PieceType::Rook, c), newRookSquare);
+        }
+
+        m_CastlingRights[c | CastleSide::KingSide] = false;
+        m_CastlingRights[c | CastleSide::Queenside] = false;
+    } else if (t == PieceType::Rook) {
+        if (m.SourceSquare == 0 && c == Colour::Black)
+            m_CastlingRights[0] = false;
+        else if (m.SourceSquare == 7 && c == Colour::Black)
+            m_CastlingRights[1] = false;
+        else if (m.SourceSquare == 56 && c == Colour::White)
+            m_CastlingRights[2] = false;
+        else if (m.SourceSquare == 63 && c == Colour::White)
+            m_CastlingRights[3] = false;
+    }
+
+    RemovePiece(m.SourceSquare);
+    PlacePiece(p, m.DestinationSquare);
 
     return { p, m.DestinationSquare, capture };
 }
