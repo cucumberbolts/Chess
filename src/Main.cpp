@@ -1,4 +1,4 @@
-#include <Chess/Engine.h>
+#include <ChessEngine/Engine.h>
 
 #include <iostream>
 
@@ -11,7 +11,7 @@ void* operator new(size_t size) {
 }
 
 int main() {
-#if 0
+#if 1
     std::cout << "Current working directory: " << std::filesystem::current_path() << std::endl;
 
     std::string_view stockfish14 = "Engines/stockfish_14_x64_avx2.exe";

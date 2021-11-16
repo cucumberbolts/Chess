@@ -1,6 +1,6 @@
 #include "Board.h"
 
-#include "StringParser.h"
+#include "Utility/StringParser.h"
 
 #include <algorithm>
 #include <iostream>

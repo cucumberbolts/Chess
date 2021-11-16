@@ -6,9 +6,11 @@
 #include <thread>
 #include <vector>
 
-#include "Board.h"
+#include "Chess/Board.h"
+
 #include "Option.h"
-#include "StringParser.h"
+
+#include "Utility/StringParser.h"
 
 class Engine {
 private:

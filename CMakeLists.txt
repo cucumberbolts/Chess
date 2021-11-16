@@ -1,28 +1,36 @@
 cmake_minimum_required(VERSION 3.2)
 
-project(ChessAnalysis)
+project(Chess)
 
 set(SOURCES
-    "src/ChessAnalysis/Main.cpp"
-    "src/Chess/Engine.h"
-    "src/Chess/Engine.cpp"
+    "src/Main.cpp"
+
+    "src/ChessEngine/Engine.h"
+    "src/ChessEngine/Engine.cpp"
+    "src/ChessEngine/Option.h"
+
+    "src/Utility/StringParser.h"
+
+    "src/Chess/Move.h"
+    "src/Chess/Move.cpp"
+    "src/Chess/Board.h"
+    "src/Chess/Board.cpp"
+
     "src/Platform/Windows/WindowsEngine.h"
     "src/Platform/Windows/WindowsEngine.cpp"
-    "src/Chess/Option.h"
-    "src/Chess/StringParser.h"
- "src/Chess/Move.h" "src/Chess/Board.h" "src/Chess/Board.cpp" "src/Chess/Move.cpp")
+)
 
 if (MSVC)
     set(CMAKE_CXX_STANDARD 17)
     set(CMAKE_CXX_STANDARD_REQUIRED ON)
 endif(MSVC)
 
-add_executable(ChessAnalysis ${SOURCES})
+add_executable(${PROJECT_NAME} ${SOURCES})
 
-set_target_properties(ChessAnalysis PROPERTIES CXX_STANDARD 17)
-set_target_properties(ChessAnalysis PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}")
+set_target_properties(${PROJECT_NAME} PROPERTIES CXX_STANDARD 17)
+set_target_properties(${PROJECT_NAME} PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}")
 
-target_include_directories(ChessAnalysis
+target_include_directories(${PROJECT_NAME}
     PRIVATE
     "src/"
 )

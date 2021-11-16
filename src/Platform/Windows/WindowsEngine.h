@@ -1,6 +1,6 @@
 #pragma once
 
-#include <Chess/Engine.h>
+#include <ChessEngine/Engine.h>
 
 #include <Windows.h>
 
