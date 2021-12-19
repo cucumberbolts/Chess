@@ -47,8 +47,13 @@ enum CastleSide : uint8_t {
 
 // Returns the PieceType of the given Piece
 constexpr inline PieceType GetPieceType(Piece p) { return (PieceType)(p & 0b0111); }
+
 // Returns the Colour of the given Piece
 constexpr inline Colour GetColour(Piece p) { return (Colour)((p & 0b1000) >> 3); }
+
+// Returns the opposite colour
+constexpr inline Colour OppositeColour(Colour c) { return (Colour)(1 - c); }
+
 // Returns the Piece of the given PieceType and Colour
 constexpr inline Piece TypeAndColour(PieceType t, Colour c) { return (Piece)(t | (c << 3)); }
 
@@ -60,11 +65,17 @@ inline char PieceToChar(Piece p) {
 
 using Square = uint8_t;
 
+inline constexpr Square ToSquare(char file, char rank) {
+    uint8_t x = file - 'a';  // ASSERT(x < 8)
+    uint8_t y = 8 - (rank - '0'); // ASSERT(x < 8)
+    return y * 8 + x;
+}
+
 struct LongAlgebraicMove {
     Square SourceSquare;
     Square DestinationSquare;
 
-    // Piece Promotion;
+    // TODO: Piece promotion;
 
     LongAlgebraicMove() = default;
     LongAlgebraicMove(std::string_view longAlgebraic);

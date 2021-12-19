@@ -1,15 +1,15 @@
 #pragma once
 
 #include <array>
-#include <bitset>
 #include <ostream>
 #include <string>
 
 #include "Move.h"
+#include "BitBoard.h"
+
+// TODO: Error checking with ASSERT()s
 
 class Board {
-private:
-    using BitBoard = std::bitset<64>;
 public:
     Board();
     Board(const std::string& fen) { FromFEN(fen); }
@@ -18,13 +18,13 @@ public:
 
     void FromFEN(const std::string& fen);
     std::string ToFEN();
+
+    friend std::ostream& operator<<(std::ostream& os, const Board& board);
     
     AlgebraicMove Move(LongAlgebraicMove m);
 
-    friend std::ostream& operator<<(std::ostream& os, const Board& board);
+    bool IsMoveLegal(LongAlgebraicMove move);
 private:
-    BitBoard AllPieces() const { return m_ColourBitBoards[White] | m_ColourBitBoards[Black]; }
-
     void PlacePiece(Piece p, Square s);
     void RemovePiece(Square s);
 

@@ -13,7 +13,7 @@ static constexpr Piece s_WhitePieces[8] = {
     WhiteRook, WhiteKnight, WhiteBishop, WhiteQueen, WhiteKing, WhiteBishop, WhiteKnight, WhiteRook
 };
 
-static constexpr std::array<std::bitset<64>, PieceType::PieceTypeCount> s_PieceBitBoards = {
+static constexpr std::array<BitBoard, PieceType::PieceTypeCount> s_PieceBitBoards = {
     0b0000000011111111000000000000000000000000000000001111111100000000,  // Pawns
     0b0100001000000000000000000000000000000000000000000000000001000010,  // Knights
     0b0010010000000000000000000000000000000000000000000000000000100100,  // Bishops
@@ -22,7 +22,7 @@ static constexpr std::array<std::bitset<64>, PieceType::PieceTypeCount> s_PieceB
     0b0001000000000000000000000000000000000000000000000000000000010000   // Kings
 };
 
-static constexpr std::array<std::bitset<64>, Colour::ColourCount> s_ColourBitBoards = {
+static constexpr std::array<BitBoard, Colour::ColourCount> s_ColourBitBoards = {
     0b1111111111111111000000000000000000000000000000000000000000000000,  // White pieces
     0b0000000000000000000000000000000000000000000000001111111111111111   // Black pieces
 };
@@ -71,6 +71,7 @@ void Board::FromFEN(const std::string& fen) {
     }
 }
 
+// TODO: Implement this at some point
 std::string Board::ToFEN() { return ""; }
 
 AlgebraicMove Board::Move(LongAlgebraicMove m) {
@@ -109,7 +110,7 @@ AlgebraicMove Board::Move(LongAlgebraicMove m) {
             if (GetPieceType(m_Board[rookSquare]) != PieceType::Rook)
                 std::cout << "Castling is illegal!\n";
 
-            // TODO: do more checking
+            // TODO: check if move is legal (include checks and stuff)
     
             // Only move the rook because the king will be moved below
             RemovePiece(rookSquare);
@@ -133,4 +134,16 @@ AlgebraicMove Board::Move(LongAlgebraicMove m) {
     PlacePiece(p, m.DestinationSquare);
 
     return { p, m.DestinationSquare, capture };
+}
+
+bool Board::IsMoveLegal(LongAlgebraicMove move) {
+    Colour playerColour = GetColour(m_Board[move.SourceSquare]);
+
+    // Cannot capture your own piece
+    bool validDestination = (~m_ColourBitBoards[playerColour])[move.DestinationSquare];
+
+    if (!validDestination)
+        return false;
+
+    return true;
 }

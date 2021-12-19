@@ -11,7 +11,7 @@ void* operator new(size_t size) {
 }
 
 int main() {
-#if 1
+#if 0
     std::cout << "Current working directory: " << std::filesystem::current_path() << std::endl;
 
     std::string_view stockfish14 = "Engines/stockfish_14_x64_avx2.exe";
@@ -46,10 +46,8 @@ int main() {
 
     std::cin.get();
 #else
-    Board board;
-    board.Move(LongAlgebraicMove("e8d8"));
-    board.Move(LongAlgebraicMove("d8e8"));
-    board.Move(LongAlgebraicMove("e8c8"));
-    std::cout << board << "\n";
+    constexpr Square testSquare = ToSquare('c', '4');
+
+    std::cout << "Knight attack: \n" << BitBoard::KnightAttack(testSquare) << "\n\n";
 #endif
 }

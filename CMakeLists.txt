@@ -18,6 +18,7 @@ set(SOURCES
 
     "src/Platform/Windows/WindowsEngine.h"
     "src/Platform/Windows/WindowsEngine.cpp"
+    "src/Chess/BitBoard.h"
 )
 
 if (MSVC)

@@ -6,13 +6,8 @@ LongAlgebraicMove::LongAlgebraicMove(std::string_view longAlgebraic) : SourceSqu
     if (longAlgebraic.size() < 4 || longAlgebraic.size() > 5) {
         std::cout << "invalid long algebraic notation!\n";
     } else {
-        uint32_t x = longAlgebraic[0] - 'a';  // ASSERT(x < 8)
-        uint32_t y = 8 - (longAlgebraic[1] - '0'); // ASSERT(x < 8)
-        SourceSquare = y * 8 + x;
-
-        x = longAlgebraic[2] - 'a';  // ASSERT(x < 8)
-        y = 8 - (longAlgebraic[3] - '0'); // ASSERT(x < 8)
-        DestinationSquare = y * 8 + x;
+        SourceSquare = ToSquare(longAlgebraic[0], longAlgebraic[1]);
+        DestinationSquare = ToSquare(longAlgebraic[2], longAlgebraic[3]);
 
         // Deal with promotion
     }
