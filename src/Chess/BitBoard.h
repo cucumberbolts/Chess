@@ -40,22 +40,43 @@ public:
 
     friend std::ostream& operator<<(std::ostream& os, BitBoard b);
 
-    static constexpr BitBoard KnightAttack(Square square) {
-        // . . . . . . . .
-        // . . A . B . . .
-        // . C . . . D . .
-        // . . . N . . . .
-        // . E . . . F . .
-        // . . G . H . . .
-        // . . . . . . . .
-        // . . . . . . . .
+    static constexpr BitBoard BishopAttack(Square square) {
+        // I have no idea how it works it just does.
         BitBoard attackedSquares;
-        attackedSquares |= (0b101ull << (square - 17)) & (0xFFull << ((square - 16) & 0xF8ull));  // Calculates A and B
-        attackedSquares |= (0b101ull << (square + 15)) & (0xFFull << ((square + 16) & 0xF8ull));  // Calcualtes G and H
-        attackedSquares |= (0b10001ull << (square - 10)) & (0xFFull << ((square - 8) & 0xF8ull));  // Calculates C and D
-        attackedSquares |= (0b10001ull << (square + 06)) & (0xFFull << ((square + 8) & 0xF8ull));  // Calcualtes E and F
+
+        const uint32_t row = (square & 0b11111000) >> 3;
+        const uint32_t column = square & 0b00000111;
+
+        // if 'square' is in top right half (excluding the centre line)
+        if ((1ull << square) & 0x0080C0E0F0F8FCFEull)
+            attackedSquares |= 0x8040201008040201ull >> ((column - row) * 8);
+        else
+            attackedSquares |= 0x8040201008040201ull << ((row - column) * 8);
+
+        // if 'square' is in bottom right half (excluding the centre line)
+        //if ((1ull << square) & 0xFEFCF8F0E0C08000ull)
+        //    attackedSquares |= 0x0102040810204080ull << (((row + 1) - (8 - column)) * 8);
+        //else
+        //    attackedSquares |= 0x0102040810204080ull >> (((8 - column) - (row + 1)) * 8);
+
+        // if 'square' is in bottom right half (excluding the centre line)
+        if ((1ull << square) & 0xFEFCF8F0E0C08000ull)
+            attackedSquares |= 0x0102040810204080ull << ((row + 1 - 8 + column) * 8);
+        else
+            attackedSquares |= 0x0102040810204080ull >> ((8 - column - row - 1) * 8);
 
         return attackedSquares;
+    }
+
+    static constexpr BitBoard RookAttack(Square square) {
+        BitBoard attackedSquares = 0b11111111ull << (square & 0b11111000);  // Calculates the attacked row
+        attackedSquares ^= 0x0101010101010101ull << (square & 0b00000111);  // Calculates the attacked column
+
+        return attackedSquares;
+    }
+
+    static constexpr BitBoard QueenAttack(Square square) {
+        return BishopAttack(square) | RookAttack(square);
     }
 private:
     uint64_t m_Board = 0;

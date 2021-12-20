@@ -46,8 +46,10 @@ int main() {
 
     std::cin.get();
 #else
-    constexpr Square testSquare = ToSquare('c', '4');
-
-    std::cout << "Knight attack: \n" << BitBoard::KnightAttack(testSquare) << "\n\n";
+    constexpr Square testSquare = ToSquare('e', '5');
+    
+    std::cout << "Bishop attack: \n" << BitBoard::BishopAttack(testSquare) << "\n\n";
+    std::cout << "Rook attack: \n" << BitBoard::RookAttack(testSquare) << "\n\n";
+    std::cout << "Queen attack: \n" << BitBoard::QueenAttack(testSquare) << "\n\n";
 #endif
 }

@@ -15,10 +15,10 @@ set(SOURCES
     "src/Chess/Move.cpp"
     "src/Chess/Board.h"
     "src/Chess/Board.cpp"
+    "src/Chess/BitBoard.h"
 
     "src/Platform/Windows/WindowsEngine.h"
     "src/Platform/Windows/WindowsEngine.cpp"
-    "src/Chess/BitBoard.h"
 )
 
 if (MSVC)

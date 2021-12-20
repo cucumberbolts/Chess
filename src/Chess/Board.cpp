@@ -2,14 +2,16 @@
 
 #include "Utility/StringParser.h"
 
-#include <algorithm>
 #include <iostream>
 
-static constexpr Piece s_BlackPieces[8] = {
-    BlackRook, BlackKnight, BlackBishop, BlackQueen, BlackKing, BlackBishop, BlackKnight, BlackRook
-};
-
-static constexpr Piece s_WhitePieces[8] = {
+static constexpr std::array<Piece, 64> s_StartBoard = {
+    BlackRook, BlackKnight, BlackBishop, BlackQueen, BlackKing, BlackBishop, BlackKnight, BlackRook,
+    None,      None,        None,        None,       None,      None,        None,        None,
+    None,      None,        None,        None,       None,      None,        None,        None,
+    None,      None,        None,        None,       None,      None,        None,        None,
+    None,      None,        None,        None,       None,      None,        None,        None,
+    None,      None,        None,        None,       None,      None,        None,        None,
+    None,      None,        None,        None,       None,      None,        None,        None,
     WhiteRook, WhiteKnight, WhiteBishop, WhiteQueen, WhiteKing, WhiteBishop, WhiteKnight, WhiteRook
 };
 
@@ -32,24 +34,18 @@ Board::Board() {
 }
 
 void Board::Reset() {
+    m_Board = s_StartBoard;
     m_PieceBitBoards = s_PieceBitBoards;
     m_ColourBitBoards = s_ColourBitBoards;
-
-    std::copy_n(s_BlackPieces, 8, m_Board.data());
-    std::fill(std::next(m_Board.begin(), 8), std::next(m_Board.begin(), 16), BlackPawn);
-
-    std::fill(std::next(m_Board.begin(), 16), std::next(m_Board.begin(), 48), None);
-    
-    std::fill(std::next(m_Board.begin(), 48), std::next(m_Board.begin(), 56), WhitePawn);
-    std::copy_n(s_WhitePieces, 8, m_Board.data() + 56);
 
     m_CastlingRights = { true, true, true, true };
 }
 
 void Board::FromFEN(const std::string& fen) {
     m_Board.fill(None);
-    std::fill(m_PieceBitBoards.begin(), m_PieceBitBoards.end(), 0);
-    std::fill(m_ColourBitBoards.begin(), m_ColourBitBoards.end(), 0);
+    m_PieceBitBoards.fill(0);
+    m_ColourBitBoards.fill(0);
+    m_CastlingRights.fill(false);
 
     Square square = 0;
 
