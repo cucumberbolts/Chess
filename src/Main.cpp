@@ -45,11 +45,44 @@ int main() {
     std::cout << s_Allocations << " allocations!\n";
 
     std::cin.get();
+#elif 1
+    Board board;
+
+    for (int i = 48; i < 64; i++) {
+        std::cout << board.GetPseudoLegalMoves((Square)i) << "\n\n";
+    }
+
+    std::cout << std::boolalpha;
+    std::cout << "is e2e4 possible? " << board.IsMovePseudoLegal(LongAlgebraicMove("e2e4")) << "\n";
+    std::cout << "is e7e5 possible? " << board.IsMovePseudoLegal(LongAlgebraicMove("e7e5")) << "\n";
+    std::cout << "is e2e5 possible? " << board.IsMovePseudoLegal(LongAlgebraicMove("e2e5")) << "\n";
+    std::cout << "is b1e6 possible? " << board.IsMovePseudoLegal(LongAlgebraicMove("b1e6")) << "\n";
+    std::cout << "is b1c3 possible? " << board.IsMovePseudoLegal(LongAlgebraicMove("b1c3")) << "\n";
+
+    std::cout << "\nMoving e2e4!\n\n";
+    board.Move(LongAlgebraicMove("e2e4"));
+    std::cout << board << "\n\n";
+
+    std::cout << "is e2e4 possible? " << board.IsMovePseudoLegal(LongAlgebraicMove("e2e4")) << "\n";
+    std::cout << "is e7e5 possible? " << board.IsMovePseudoLegal(LongAlgebraicMove("e7e5")) << "\n";
+
 #else
-    constexpr Square testSquare = ToSquare('e', '5');
-    
-    std::cout << "Bishop attack: \n" << BitBoard::BishopAttack(testSquare) << "\n\n";
-    std::cout << "Rook attack: \n" << BitBoard::RookAttack(testSquare) << "\n\n";
-    std::cout << "Queen attack: \n" << BitBoard::QueenAttack(testSquare) << "\n\n";
+    constexpr Square testSquare = ToSquare('b', '2');
+    BitBoard testBoard;
+    testBoard[ToSquare('g', '5')] = true;
+    testBoard[ToSquare('a', '7')] = true;
+    testBoard[ToSquare('d', '5')] = true;
+    testBoard[ToSquare('c', '3')] = true;
+    testBoard[ToSquare('g', '4')] = true;
+
+    std::cout << testBoard << "\n\n\n";
+
+    std::cout << "Pawn attack (white): \n" << BitBoard::PawnAttack(testSquare, testBoard, Colour::White) << "\n\n";
+    std::cout << "Pawn attack (black): \n" << BitBoard::PawnAttack(testSquare, testBoard, Colour::Black) << "\n\n";
+    std::cout << "Knight attack: \n" << BitBoard::KnightAttack(testSquare) << "\n\n";
+    std::cout << "Bishop attack: \n" << BitBoard::BishopAttack(testSquare, testBoard) << "\n\n";
+    std::cout << "Rook attack: \n" << BitBoard::RookAttack(testSquare, testBoard) << "\n\n";
+    std::cout << "Queen attack: \n" << BitBoard::QueenAttack(testSquare, testBoard) << "\n\n";
+    std::cout << "King attack: \n" << BitBoard::KingAttack(testSquare) << "\n\n";
 #endif
 }

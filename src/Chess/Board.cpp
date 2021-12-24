@@ -6,12 +6,12 @@
 
 static constexpr std::array<Piece, 64> s_StartBoard = {
     BlackRook, BlackKnight, BlackBishop, BlackQueen, BlackKing, BlackBishop, BlackKnight, BlackRook,
+    BlackPawn, BlackPawn,   BlackPawn,   BlackPawn,  BlackPawn, BlackPawn,   BlackPawn,   BlackPawn,
     None,      None,        None,        None,       None,      None,        None,        None,
     None,      None,        None,        None,       None,      None,        None,        None,
     None,      None,        None,        None,       None,      None,        None,        None,
     None,      None,        None,        None,       None,      None,        None,        None,
-    None,      None,        None,        None,       None,      None,        None,        None,
-    None,      None,        None,        None,       None,      None,        None,        None,
+    WhitePawn, WhitePawn,   WhitePawn,   WhitePawn,  WhitePawn, WhitePawn,   WhitePawn,   WhitePawn,
     WhiteRook, WhiteKnight, WhiteBishop, WhiteQueen, WhiteKing, WhiteBishop, WhiteKnight, WhiteRook
 };
 
@@ -129,17 +129,34 @@ AlgebraicMove Board::Move(LongAlgebraicMove m) {
     RemovePiece(m.SourceSquare);
     PlacePiece(p, m.DestinationSquare);
 
+    m_PlayerTurn = OppositeColour(m_PlayerTurn);
+
     return { p, m.DestinationSquare, capture };
 }
 
-bool Board::IsMoveLegal(LongAlgebraicMove move) {
+bool Board::IsMovePseudoLegal(LongAlgebraicMove move) {
     Colour playerColour = GetColour(m_Board[move.SourceSquare]);
 
-    // Cannot capture your own piece
-    bool validDestination = (~m_ColourBitBoards[playerColour])[move.DestinationSquare];
-
-    if (!validDestination)
+    if (playerColour != m_PlayerTurn)
         return false;
 
-    return true;
+    return GetPseudoLegalMoves(move.SourceSquare) & BitBoard(1ull << move.DestinationSquare);
+}
+
+BitBoard Board::GetPseudoLegalMoves(Square piece) {
+    PieceType pt = GetPieceType(m_Board[piece]);
+    Colour c = GetColour(m_Board[piece]);
+
+    BitBoard blockers = m_ColourBitBoards[White] | m_ColourBitBoards[Black];
+
+    switch (pt) {
+        case PieceType::Pawn: return BitBoard::PawnAttack(piece, blockers, c);
+        case PieceType::Knight: return BitBoard::KnightAttack(piece) & ~m_ColourBitBoards[c];
+        case PieceType::Bishop: return BitBoard::BishopAttack(piece, blockers) & ~m_ColourBitBoards[c];
+        case PieceType::Rook: return BitBoard::RookAttack(piece, blockers) & ~m_ColourBitBoards[c];
+        case PieceType::Queen: return BitBoard::QueenAttack(piece, blockers) & ~m_ColourBitBoards[c];
+        case PieceType::King: return BitBoard::KingAttack(piece) & ~m_ColourBitBoards[c];
+
+        default: std::cout << "Invalid piece type!\n"; return 0;
+    }
 }

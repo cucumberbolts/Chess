@@ -11,11 +11,12 @@ set(SOURCES
 
     "src/Utility/StringParser.h"
 
-    "src/Chess/Move.h"
-    "src/Chess/Move.cpp"
+    "src/Chess/BitBoard.h"
+    "src/Chess/BitBoard.cpp"
     "src/Chess/Board.h"
     "src/Chess/Board.cpp"
-    "src/Chess/BitBoard.h"
+    "src/Chess/Move.h"
+    "src/Chess/Move.cpp"
 
     "src/Platform/Windows/WindowsEngine.h"
     "src/Platform/Windows/WindowsEngine.cpp"

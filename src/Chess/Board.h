@@ -22,8 +22,9 @@ public:
     friend std::ostream& operator<<(std::ostream& os, const Board& board);
     
     AlgebraicMove Move(LongAlgebraicMove m);
-
-    bool IsMoveLegal(LongAlgebraicMove move);
+    
+    bool IsMovePseudoLegal(LongAlgebraicMove move);
+    BitBoard GetPseudoLegalMoves(Square piece);
 private:
     void PlacePiece(Piece p, Square s);
     void RemovePiece(Square s);
@@ -36,6 +37,8 @@ private:
     std::array<Piece, 64> m_Board;
 
     std::array<bool, 4> m_CastlingRights;
+
+    Colour m_PlayerTurn = Colour::White;
 };
 
 inline void Board::PlacePiece(Piece p, Square s) {
@@ -72,6 +75,7 @@ inline Piece Board::CharToPiece(char c) {
     }
 }
 
+//TODO: format board with orientation and coordinates
 inline std::ostream& operator<<(std::ostream& os, const Board& board) {
     for (size_t rank = 0; rank < 8; rank++) {
         for (size_t file = 0; file < 8; file++) {
