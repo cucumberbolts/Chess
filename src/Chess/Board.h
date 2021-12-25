@@ -4,8 +4,9 @@
 #include <ostream>
 #include <string>
 
-#include "Move.h"
 #include "BitBoard.h"
+#include "BoardFormat.h"
+#include "Move.h"
 
 // TODO: Error checking with ASSERT()s
 
@@ -36,7 +37,7 @@ private:
 
     std::array<Piece, 64> m_Board;
 
-    std::array<bool, 4> m_CastlingRights;
+    std::array<bool, 4> m_CastlingRights = { true, true, true, true };
 
     Colour m_PlayerTurn = Colour::White;
 };
@@ -75,18 +76,26 @@ inline Piece Board::CharToPiece(char c) {
     }
 }
 
-//TODO: format board with orientation and coordinates
 inline std::ostream& operator<<(std::ostream& os, const Board& board) {
-    for (size_t rank = 0; rank < 8; rank++) {
-        for (size_t file = 0; file < 8; file++) {
-            if (board.m_Board[rank * 8 + file] == None)
+    static std::array<std::string_view, Colour::ColourCount> rankNumbers = { "87654321", "12345678" };
+
+    for (Square rank = 0; rank < 8; rank++) {
+        if (BoardFormat::s_BoardFormat.Coordinates)
+            os << rankNumbers[BoardFormat::s_BoardFormat.Orientation][rank] << ' ';
+
+        for (Square file = 0; file < 8; file++) {
+            Square square = (BoardFormat::s_BoardFormat.Orientation == Colour::White) ? (rank * 8 + file) : (63 - (rank * 8 + file));
+            if (board.m_Board[square] == None)
                 os << '.';
             else
-                os << PieceToChar(board.m_Board[rank * 8 + file]);
+                os << PieceToChar(board.m_Board[square]);
         }
 
         os << '\n';
     }
+
+    if (BoardFormat::s_BoardFormat.Coordinates)
+        os << (BoardFormat::s_BoardFormat.Orientation == Colour::White ? "  abcdefgh\n" : "  hgfedcba\n");
 
     return os;
 }

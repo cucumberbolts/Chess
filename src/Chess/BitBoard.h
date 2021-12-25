@@ -1,7 +1,9 @@
 #pragma once
 
+#include <array>
 #include <ostream>
 
+#include "BoardFormat.h"
 #include "Move.h"
 
 // Represents a chess board where square 0 is the top left and square 63 is the bottom right.
@@ -55,13 +57,23 @@ private:
     uint64_t m_Board = 0;
 };
 
-inline std::ostream& operator<<(std::ostream& os, BitBoard b) {
-    for (size_t rank = 0; rank < 8; rank++) {
-        for (size_t file = 0; file < 8; file++)
-            os << b[rank * 8 + file];
+inline std::ostream& operator<<(std::ostream& os, BitBoard board) {
+    static std::array<std::string_view, Colour::ColourCount> rankNumbers = { "87654321", "12345678" };
+
+    for (Square rank = 0; rank < 8; rank++) {
+        if (BoardFormat::s_BoardFormat.Coordinates)
+            os << rankNumbers[BoardFormat::s_BoardFormat.Orientation][rank] << ' ';
+
+        for (Square file = 0; file < 8; file++) {
+            Square square = (BoardFormat::s_BoardFormat.Orientation == Colour::White) ? (rank * 8 + file) : (63 - (rank * 8 + file));
+            os << (int)board[square];
+        }
 
         os << '\n';
     }
+
+    if (BoardFormat::s_BoardFormat.Coordinates)
+        os << (BoardFormat::s_BoardFormat.Orientation == Colour::White ? "  abcdefgh\n" : "  hgfedcba\n");
 
     return os;
 }

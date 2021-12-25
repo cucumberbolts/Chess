@@ -48,10 +48,6 @@ int main() {
 #elif 1
     Board board;
 
-    for (int i = 48; i < 64; i++) {
-        std::cout << board.GetPseudoLegalMoves((Square)i) << "\n\n";
-    }
-
     std::cout << std::boolalpha;
     std::cout << "is e2e4 possible? " << board.IsMovePseudoLegal(LongAlgebraicMove("e2e4")) << "\n";
     std::cout << "is e7e5 possible? " << board.IsMovePseudoLegal(LongAlgebraicMove("e7e5")) << "\n";
@@ -66,6 +62,11 @@ int main() {
     std::cout << "is e2e4 possible? " << board.IsMovePseudoLegal(LongAlgebraicMove("e2e4")) << "\n";
     std::cout << "is e7e5 possible? " << board.IsMovePseudoLegal(LongAlgebraicMove("e7e5")) << "\n";
 
+    std::cout << BoardFormat::OrientationBlack << board << "\n\n";
+    board.Move(LongAlgebraicMove("e7e5"));
+    std::cout << BoardFormat::OrientationWhite << BoardFormat::NoBoardCoordinates << board << "\n\n";
+
+    std::cout << board.GetPseudoLegalMoves(ToSquare('f', '1')) << "\n";
 #else
     constexpr Square testSquare = ToSquare('b', '2');
     BitBoard testBoard;

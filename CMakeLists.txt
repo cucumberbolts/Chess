@@ -15,6 +15,7 @@ set(SOURCES
     "src/Chess/BitBoard.cpp"
     "src/Chess/Board.h"
     "src/Chess/Board.cpp"
+    "src/Chess/BoardFormat.h"
     "src/Chess/Move.h"
     "src/Chess/Move.cpp"
 
