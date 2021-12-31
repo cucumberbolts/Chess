@@ -38,7 +38,9 @@ void Board::Reset() {
     m_PieceBitBoards = s_PieceBitBoards;
     m_ColourBitBoards = s_ColourBitBoards;
 
+    m_PlayerTurn = Colour::White;
     m_CastlingRights = { true, true, true, true };
+    m_EnPassantSquare = 0;
 }
 
 void Board::FromFEN(const std::string& fen) {
@@ -65,6 +67,25 @@ void Board::FromFEN(const std::string& fen) {
                 square = square - square % 8 + 8;  // Next line on chessboard
         }
     }
+
+    std::string_view playerTurn;
+    fenParser.Next(playerTurn);
+    m_PlayerTurn = playerTurn == "w" ? Colour::White : Colour::Black;
+
+    std::string_view castlingRights;
+    fenParser.Next(castlingRights);
+    for (char c : castlingRights) {
+        if (c == '-') break;
+        if (c == 'K') m_CastlingRights[Colour::White | CastleSide::KingSide] = true;
+        if (c == 'Q') m_CastlingRights[Colour::White | CastleSide::QueenSide] = true;
+        if (c == 'k') m_CastlingRights[Colour::Black | CastleSide::KingSide] = true;
+        if (c == 'q') m_CastlingRights[Colour::Black | CastleSide::QueenSide] = true;
+    }
+
+    std::string_view enPassantSquare;
+    fenParser.Next(enPassantSquare);
+    if (enPassantSquare != "-")
+        ToSquare(enPassantSquare[0], enPassantSquare[1]);
 }
 
 // TODO: Implement this at some point
@@ -79,6 +100,8 @@ AlgebraicMove Board::Move(LongAlgebraicMove m) {
 
     bool capture = m_Board[m.DestinationSquare] != Piece::None;
 
+    // TODO: Put castling in BitBoard::KingAttack() and prune it if needed
+
     if (t == PieceType::King) {
         int direction = m.DestinationSquare - m.SourceSquare;  // Kingside or queenside
 
@@ -89,7 +112,7 @@ AlgebraicMove Board::Move(LongAlgebraicMove m) {
             CastleSide castleSide;
 
             if (direction < 0) {  // Queenside
-                castleSide = CastleSide::Queenside;
+                castleSide = CastleSide::QueenSide;
                 rookSquare = m.SourceSquare - 4;
                 newRookSquare = m.DestinationSquare + 1;
             } else {
@@ -114,16 +137,16 @@ AlgebraicMove Board::Move(LongAlgebraicMove m) {
         }
 
         m_CastlingRights[c | CastleSide::KingSide] = false;
-        m_CastlingRights[c | CastleSide::Queenside] = false;
+        m_CastlingRights[c | CastleSide::QueenSide] = false;
     } else if (t == PieceType::Rook) {
-        if (m.SourceSquare == 0 && c == Colour::Black)
-            m_CastlingRights[0] = false;
-        else if (m.SourceSquare == 7 && c == Colour::Black)
-            m_CastlingRights[1] = false;
-        else if (m.SourceSquare == 56 && c == Colour::White)
-            m_CastlingRights[2] = false;
-        else if (m.SourceSquare == 63 && c == Colour::White)
-            m_CastlingRights[3] = false;
+        if (m.SourceSquare == 0)
+            m_CastlingRights[Colour::Black | CastleSide::KingSide] = false;
+        else if (m.SourceSquare == 7)
+            m_CastlingRights[Colour::Black | CastleSide::QueenSide] = false;
+        else if (m.SourceSquare == 56)
+            m_CastlingRights[Colour::White | CastleSide::KingSide] = false;
+        else if (m.SourceSquare == 63)
+            m_CastlingRights[Colour::White | CastleSide::QueenSide] = false;
     }
 
     RemovePiece(m.SourceSquare);

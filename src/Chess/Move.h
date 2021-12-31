@@ -42,7 +42,7 @@ enum Piece : uint8_t {
 // ORed with Colour enum to get the index to the m_CastlingRights array in the Board class
 enum CastleSide : uint8_t {
     KingSide = 0,
-    Queenside = 1 << 1,
+    QueenSide = 1 << 1,
 };
 
 // Returns the PieceType of the given Piece
@@ -68,6 +68,16 @@ using Square = uint8_t;
 inline constexpr Square ToSquare(char file, char rank) {
     uint8_t x = file - 'a';  // ASSERT(x < 8)
     uint8_t y = 8 - (rank - '0'); // ASSERT(x < 8)
+    return y * 8 + x;
+}
+
+inline constexpr Square ToSquare(std::string_view square) {
+    // ASSERT
+    if (square.size() > 2)
+        return 0;
+
+    uint8_t x = square[0] - 'a';  // ASSERT(x < 8)
+    uint8_t y = 8 - (square[1] - '0'); // ASSERT(x < 8)
     return y * 8 + x;
 }
 

@@ -21,9 +21,9 @@ public:
     std::string ToFEN();
 
     friend std::ostream& operator<<(std::ostream& os, const Board& board);
-    
+
     AlgebraicMove Move(LongAlgebraicMove m);
-    
+
     bool IsMovePseudoLegal(LongAlgebraicMove move);
     BitBoard GetPseudoLegalMoves(Square piece);
 private:
@@ -37,9 +37,11 @@ private:
 
     std::array<Piece, 64> m_Board;
 
+    Colour m_PlayerTurn = Colour::White;
+
     std::array<bool, 4> m_CastlingRights = { true, true, true, true };
 
-    Colour m_PlayerTurn = Colour::White;
+    Square m_EnPassantSquare = 0;
 };
 
 inline void Board::PlacePiece(Piece p, Square s) {

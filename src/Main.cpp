@@ -45,7 +45,7 @@ int main() {
     std::cout << s_Allocations << " allocations!\n";
 
     std::cin.get();
-#elif 1
+#elif 0
     Board board;
 
     std::cout << std::boolalpha;
@@ -67,6 +67,10 @@ int main() {
     std::cout << BoardFormat::OrientationWhite << BoardFormat::NoBoardCoordinates << board << "\n\n";
 
     std::cout << board.GetPseudoLegalMoves(ToSquare('f', '1')) << "\n";
+#elif 1
+    Board board("r1bqk2r/pppp1ppp/2n2n2/2b1p3/2B1P3/2P2N2/PP1P1PPP/RNBQK2R w - - 1 7");
+    std::cout << board << "\n";
+    board.Move(LongAlgebraicMove("e1g1"));
 #else
     constexpr Square testSquare = ToSquare('b', '2');
     BitBoard testBoard;
