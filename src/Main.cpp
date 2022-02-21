@@ -68,9 +68,36 @@ int main() {
 
     std::cout << board.GetPseudoLegalMoves(ToSquare('f', '1')) << "\n";
 #elif 1
-    Board board("r1bqk2r/pppp1ppp/2n2n2/2b1p3/2B1P3/2P2N2/PP1P1PPP/RNBQK2R w - - 1 7");
+    Board board("7k/8/8/8/K4q2/3N4/8/8 w - - 0 1");
     std::cout << board << "\n";
-    board.Move(LongAlgebraicMove("e1g1"));
+    std::cout << board.GetPseudoLegalMoves(ToSquare('d', '3')) << "\n";
+    std::cout << board.GetLegalMoves(ToSquare('d', '3')) << "\n";
+    
+    Board board1("7k/8/1n6/8/K7/8/1Q6/8 w - - 0 1");
+    std::cout << board1 << "\n";
+    std::cout << board1.GetPseudoLegalMoves(ToSquare('b', '2')) << "\n";
+    std::cout << board1.GetLegalMoves(ToSquare('b', '2')) << "\n";
+    
+    Board board2("4k3/8/8/8/4n3/2K4r/8/3Q4 w - - 0 1");
+    std::cout << board2 << "\n";
+    std::cout << board2.GetPseudoLegalMoves(ToSquare('d', '1')) << "\n";
+    std::cout << board2.GetLegalMoves(ToSquare('d', '1')) << "\n";
+    std::cout << board2.GetLegalMoves(ToSquare('c', '3')) << "\n";
+    
+    Board board3("4k3/8/8/8/8/2b3b1/4N3/4K3 w - - 0 1");
+    std::cout << board3 << "\n";
+    std::cout << board3.GetPseudoLegalMoves(ToSquare('e', '2')) << "\n";
+    std::cout << board3.GetLegalMoves(ToSquare('e', '2')) << "\n";
+
+    Board board4("4k3/8/8/8/8/8/3p2R1/4K3 w - - 0 1");
+    std::cout << board4 << "\n";
+    std::cout << board4.GetLegalMoves(ToSquare('g', '2')) << "\n";
+    std::cout << board4.GetLegalMoves(ToSquare('e', '1')) << "\n";
+
+    Board board5("4k3/8/4r3/8/8/8/3p2R1/4K3 w - - 0 1");
+    std::cout << board5 << "\n";
+    std::cout << board5.GetLegalMoves(ToSquare('g', '2')) << "\n";
+    std::cout << board5.GetLegalMoves(ToSquare('e', '1')) << "\n";
 #else
     constexpr Square testSquare = ToSquare('b', '2');
     BitBoard testBoard;

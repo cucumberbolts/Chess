@@ -30,7 +30,7 @@ public:
     constexpr BitBoard(uint64_t b) : m_Board(b) {}
     explicit BitBoard(Square s) : m_Board(1ull << s) {}
 
-    constexpr operator bool() const { return m_Board; }
+    constexpr operator uint64_t() const { return m_Board; }
 
     constexpr bool operator[](size_t index) const { return (m_Board & (1ull << index)) >> index; }
     BitSquareReference operator[](size_t index) { return BitSquareReference(this, index); }
@@ -38,21 +38,28 @@ public:
     constexpr BitBoard operator~() const { return ~m_Board; }
     constexpr BitBoard operator&(BitBoard other) const { return m_Board & other.m_Board; }
     constexpr BitBoard operator|(BitBoard other) const { return m_Board | other.m_Board; }
+    constexpr BitBoard operator^(BitBoard other) const { return m_Board ^ other.m_Board; }
 
+    constexpr BitBoard& operator&=(const BitBoard& other) { m_Board &= other.m_Board; return *this; }
     constexpr BitBoard& operator|=(const BitBoard& other) { m_Board |= other.m_Board; return *this; }
-    constexpr BitBoard& operator^=(const BitBoard& other) { m_Board |= other.m_Board; return *this; }
+    constexpr BitBoard& operator^=(const BitBoard& other) { m_Board ^= other.m_Board; return *this; }
 
     friend std::ostream& operator<<(std::ostream& os, BitBoard b);
 
     // Generates pseudo-legal moves
-    // We could use magic bitboards, but I don't think that extra performace is needed here
-    // The attacked squares include the blockers, so they can be removed later
-    static BitBoard PawnAttack(Square square, BitBoard blockers, Colour colour);
+    // The attacked squares include the blockers, as they can be removed later
+    static BitBoard PawnMoves(Square square, BitBoard blockers, Colour colour);
+    static BitBoard PawnAttack(Square square, BitBoard blockers, Colour colour);  // Excludes the square in front of it
     static BitBoard KnightAttack(Square square);
     static BitBoard BishopAttack(Square square, BitBoard blockers);
     static BitBoard RookAttack(Square square, BitBoard blockers);
     static BitBoard QueenAttack(Square square, BitBoard blockers);
     static BitBoard KingAttack(Square square);
+
+    // To generate check masks and pin masks
+    static BitBoard Line(Square square1, Square square2);
+
+    static Square GetSquare(BitBoard b);
 private:
     uint64_t m_Board = 0;
 };

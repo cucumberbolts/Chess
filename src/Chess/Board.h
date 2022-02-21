@@ -26,11 +26,16 @@ public:
 
     bool IsMovePseudoLegal(LongAlgebraicMove move);
     BitBoard GetPseudoLegalMoves(Square piece);
+
+    bool IsMoveLegal(LongAlgebraicMove move);
+    BitBoard GetLegalMoves(Square piece);
 private:
     void PlacePiece(Piece p, Square s);
     void RemovePiece(Square s);
 
     static Piece CharToPiece(char c);
+
+    BitBoard ControlledSquares(Colour colour);
 private:
     std::array<BitBoard, ColourCount> m_ColourBitBoards;
     std::array<BitBoard, PieceTypeCount> m_PieceBitBoards;

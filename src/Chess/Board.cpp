@@ -4,6 +4,8 @@
 
 #include <iostream>
 
+#include <intrin.h>
+
 static constexpr std::array<Piece, 64> s_StartBoard = {
     BlackRook, BlackKnight, BlackBishop, BlackQueen, BlackKing, BlackBishop, BlackKnight, BlackRook,
     BlackPawn, BlackPawn,   BlackPawn,   BlackPawn,  BlackPawn, BlackPawn,   BlackPawn,   BlackPawn,
@@ -101,6 +103,7 @@ AlgebraicMove Board::Move(LongAlgebraicMove m) {
     bool capture = m_Board[m.DestinationSquare] != Piece::None;
 
     // TODO: Put castling in BitBoard::KingAttack() and prune it if needed
+    // Clean this castling code up somehow (it's kinda ugly)
 
     if (t == PieceType::King) {
         int direction = m.DestinationSquare - m.SourceSquare;  // Kingside or queenside
@@ -120,17 +123,17 @@ AlgebraicMove Board::Move(LongAlgebraicMove m) {
                 rookSquare = m.SourceSquare + 3;
                 newRookSquare = m.DestinationSquare - 1;
             }
-    
+
             // Check for castling rights
             if (m_CastlingRights[c | castleSide] == false)
                 std::cout << "Castling is illegal!\n";
-    
+
             // Check if castling is legal
             if (GetPieceType(m_Board[rookSquare]) != PieceType::Rook)
                 std::cout << "Castling is illegal!\n";
 
             // TODO: check if move is legal (include checks and stuff)
-    
+
             // Only move the rook because the king will be moved below
             RemovePiece(rookSquare);
             PlacePiece(TypeAndColour(PieceType::Rook, c), newRookSquare);
@@ -173,7 +176,7 @@ BitBoard Board::GetPseudoLegalMoves(Square piece) {
     BitBoard blockers = m_ColourBitBoards[White] | m_ColourBitBoards[Black];
 
     switch (pt) {
-        case PieceType::Pawn: return BitBoard::PawnAttack(piece, blockers, c);
+        case PieceType::Pawn: return BitBoard::PawnMoves(piece, blockers, c);
         case PieceType::Knight: return BitBoard::KnightAttack(piece) & ~m_ColourBitBoards[c];
         case PieceType::Bishop: return BitBoard::BishopAttack(piece, blockers) & ~m_ColourBitBoards[c];
         case PieceType::Rook: return BitBoard::RookAttack(piece, blockers) & ~m_ColourBitBoards[c];
@@ -182,4 +185,92 @@ BitBoard Board::GetPseudoLegalMoves(Square piece) {
 
         default: std::cout << "Invalid piece type!\n"; return 0;
     }
+}
+
+bool Board::IsMoveLegal(LongAlgebraicMove move) {
+    Colour playerColour = GetColour(m_Board[move.SourceSquare]);
+
+    if (playerColour != m_PlayerTurn)
+        return false;
+
+    return GetPseudoLegalMoves(move.SourceSquare) & BitBoard(1ull << move.DestinationSquare);
+}
+
+BitBoard Board::GetLegalMoves(Square piece) {
+    Colour playerColour = GetColour(m_Board[piece]);
+    Colour enemyColour = OppositeColour(playerColour);
+
+    BitBoard allPieces = m_ColourBitBoards[0] | m_ColourBitBoards[1];
+    BitBoard enemyPieces = m_ColourBitBoards[OppositeColour(playerColour)];
+
+    //std::cout << "Controlled squares:\n" << ControlledSquares(enemyColour) << "\n";
+    
+    if (GetPieceType(m_Board[piece]) == PieceType::King)
+        return GetPseudoLegalMoves(piece) & ~ControlledSquares(enemyColour);
+
+    Square kingSquare = BitBoard::GetSquare(m_ColourBitBoards[playerColour] & m_PieceBitBoards[PieceType::King]);
+
+    BitBoard checkMask = 0;
+    BitBoard checkers = 0;
+
+    // Deals with checks from bishops, queens
+    BitBoard bishopView = BitBoard::BishopAttack(kingSquare, allPieces) & enemyPieces;
+    BitBoard bishopCheck = bishopView & (m_PieceBitBoards[PieceType::Bishop] | m_PieceBitBoards[PieceType::Queen]);
+    checkers |= bishopCheck;
+    checkMask |= BitBoard::Line(kingSquare, BitBoard::GetSquare(bishopCheck));
+
+    // Deals with checks from rooks, queens
+    BitBoard rookView = BitBoard::RookAttack(kingSquare, allPieces) & enemyPieces;
+    BitBoard rookCheck = rookView & (m_PieceBitBoards[PieceType::Rook] | m_PieceBitBoards[PieceType::Queen]);
+    checkers |= rookCheck;
+    checkMask |= BitBoard::Line(kingSquare, BitBoard::GetSquare(rookCheck));
+
+    // Deals with checks from knights
+    BitBoard knightCheck = BitBoard::KnightAttack(kingSquare) & enemyPieces & m_PieceBitBoards[PieceType::Knight];
+    checkers |= knightCheck;
+    checkMask |= knightCheck;
+
+    // Deals with checks from pawns
+    BitBoard pawnCheck = BitBoard::PawnAttack(kingSquare, allPieces, playerColour) & enemyPieces & m_PieceBitBoards[PieceType::Pawn];
+    checkers |= pawnCheck;
+    checkMask |= pawnCheck;
+
+    // If there are no checks, we don't prune any moves
+    if (checkMask == 0)
+        checkMask = 0xFFFFFFFFFFFFFFFF;
+    
+    // Get the number of checkers (using Kernighan's population count)
+    int numCheckers = 0;
+    for (; checkers != 0; numCheckers++)
+        checkers &= checkers - 1;
+
+    // If it is double check, we can only move the king
+    if (numCheckers > 1)
+        checkMask = 0;
+
+    return GetPseudoLegalMoves(piece) & checkMask;
+}
+
+
+BitBoard Board::ControlledSquares(Colour c) {
+    BitBoard king = m_ColourBitBoards[OppositeColour(c)] & m_PieceBitBoards[PieceType::King];
+    BitBoard blockers = (m_ColourBitBoards[Colour::White] | m_ColourBitBoards[Colour::Black]) ^ king;
+
+    BitBoard controlledSquares = 0;
+    for (Square s = 0; s < 64; s++) {
+        if (m_Board[s] != Piece::None && GetColour(m_Board[s]) == c) {
+            switch (GetPieceType(m_Board[s])) {
+                case PieceType::Pawn:   controlledSquares |= BitBoard::PawnAttack(s, blockers, c); break;
+                case PieceType::Knight: controlledSquares |= BitBoard::KnightAttack(s) & ~m_ColourBitBoards[c]; break;
+                case PieceType::Bishop: controlledSquares |= BitBoard::BishopAttack(s, blockers) & ~m_ColourBitBoards[c]; break;
+                case PieceType::Rook:   controlledSquares |= BitBoard::RookAttack(s, blockers) & ~m_ColourBitBoards[c]; break;
+                case PieceType::Queen:  controlledSquares |= BitBoard::QueenAttack(s, blockers) & ~m_ColourBitBoards[c]; break;
+                case PieceType::King:   controlledSquares |= BitBoard::KingAttack(s) & ~m_ColourBitBoards[c]; break;
+
+                default: std::cout << "Invalid piece type!\n"; return 0;
+            }
+        }
+    }
+
+    return controlledSquares;
 }

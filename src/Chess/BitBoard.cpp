@@ -1,5 +1,40 @@
 #include "BitBoard.h"
 
+#include <intrin.h>
+
+#pragma intrinsic(_BitScanForward)
+
+BitBoard BitBoard::PawnMoves(Square square, BitBoard blockers, Colour colour) {
+    // TODO: en passant
+    BitBoard availibleSquares;
+
+    if (colour == Colour::White) {
+        if (((square - 8) & 0b11111000) == ((square - 9) & 0b11111000) && (square - 9) >= 0)
+            availibleSquares[square - 9] = true & blockers[square - 9];
+        if (((square - 8) & 0b11111000) == ((square - 7) & 0b11111000) && (square - 7) >= 0)
+            availibleSquares[square - 7] = true & blockers[square - 7];
+        // Calculates one square in front of the pawn
+        if (square - 8 >= 0)
+            availibleSquares[square - 8] = true ^ blockers[square - 8];
+        // Calculates two squares in frot of the pawn for only the first push
+        if ((1ull << square) & 0x00FF000000000000 && !blockers[square - 8])
+            availibleSquares[square - 16] = true ^ blockers[square - 16];
+    } else {
+        if (((square + 8) & 0b11111000) == ((square + 9) & 0b11111000) && (square + 9) < 64)
+            availibleSquares[square + 9] = true & blockers[square + 9];
+        if (((square + 8) & 0b11111000) == ((square + 7) & 0b11111000) && (square + 7) < 64)
+            availibleSquares[square + 7] = true & blockers[square + 7];
+        // Calculates the square in front of the pawn
+        if (square + 8 < 64)
+            availibleSquares[square + 8] = true ^ blockers[square - 8];
+        // Calculates two squares in frot of the pawn for only the first push
+        if ((1ull << square) & 0x000000000000FF00 && !blockers[square + 8])
+            availibleSquares[square + 16] = true ^ blockers[square + 16];
+    }
+
+    return availibleSquares;
+}
+
 BitBoard BitBoard::PawnAttack(Square square, BitBoard blockers, Colour colour) {
     // TODO: en passant
     BitBoard attackedSquares;
@@ -9,23 +44,11 @@ BitBoard BitBoard::PawnAttack(Square square, BitBoard blockers, Colour colour) {
             attackedSquares[square - 9] = true & blockers[square - 9];
         if (((square - 8) & 0b11111000) == ((square - 7) & 0b11111000) && (square - 7) >= 0)
             attackedSquares[square - 7] = true & blockers[square - 7];
-        // Calculates one square in front of the pawn
-        if (square - 8 >= 0)
-            attackedSquares[square - 8] = true ^ blockers[square - 8];
-        // Calculates two squares in frot of the pawn for only the first push
-        if ((1ull << square) & 0x00FF000000000000 && !blockers[square - 8])
-            attackedSquares[square - 16] = true ^ blockers[square - 16];
     } else {
         if (((square + 8) & 0b11111000) == ((square + 9) & 0b11111000) && (square + 9) < 64)
             attackedSquares[square + 9] = true & blockers[square + 9];
         if (((square + 8) & 0b11111000) == ((square + 7) & 0b11111000) && (square + 7) < 64)
             attackedSquares[square + 7] = true & blockers[square + 7];
-        // Calculates the square in front of the pawn
-        if (square + 8 < 64)
-            attackedSquares[square + 8] = true ^ blockers[square - 8];
-        // Calculates two squares in frot of the pawn for only the first push
-        if ((1ull << square) & 0x000000000000FF00 && !blockers[square + 8])
-            attackedSquares[square + 16] = true ^ blockers[square + 16];
     }
 
     return attackedSquares;
@@ -154,12 +177,40 @@ BitBoard BitBoard::KingAttack(Square square) {
     BitBoard attackedSquares;
 
     for (size_t i = 0; i < numSquares; i++) {
-        const int32_t knightSquare = (square + s_KingSquares[i] & 0b11111000);
+        const int32_t kingSquare = (square + s_KingSquares[i] & 0b11111000);
         const int32_t squareRow = (square + s_Rows[i] & 0b11111000);
 
-        if (knightSquare == squareRow && square + s_KingSquares[i] < 64 && square + s_KingSquares[i] > 0)
+        if (kingSquare == squareRow && square + s_KingSquares[i] < 64 && square + s_KingSquares[i] > 0)
             attackedSquares[square + s_KingSquares[i]] = true;
     }
 
     return attackedSquares;
+}
+
+BitBoard BitBoard::Line(Square square1, Square square2) {
+    Square min = std::min(square1, square2);
+    Square max = std::max(square1, square2);
+
+    BitBoard result = 0;
+
+    if ((square1 & 0b11111000) == (square2 & 0b11111000)) {  // If the two squares are on the same rank
+        for (Square i = min; i <= max; i++)
+            result[i] = true;
+    } else if ((square1 & 0b00000111) == (square2 & 0b00000111)) {  // If the two squares are on the same file
+        for (Square i = min; i <= max; i += 8)
+            result[i] = true;
+    } else if ((square1 - square2) % 7 == 0) {  // Northwest to southeast
+        for (Square i = min; i <= max; i += 7)
+            result[i] = true;
+    } else if ((square1 - square2) % 9 == 0) {  // Northeast to southwest
+        for (Square i = min; i <= max; i += 9)
+            result[i] = true;
+    }
+
+    return result;
+}
+
+Square BitBoard::GetSquare(BitBoard b) {
+    unsigned long index;
+    return _BitScanForward64(&index, b.m_Board) ? (Square)index : 0;
 }
