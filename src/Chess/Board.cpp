@@ -31,9 +31,9 @@ static constexpr std::array<BitBoard, Colour::ColourCount> s_ColourBitBoards = {
     0b0000000000000000000000000000000000000000000000001111111111111111   // Black pieces
 };
 
-Board::Board() {
-    Reset();
-}
+static constexpr std::array<BitBoard, 4> s_CastlingPaths = {
+    0x7000000000000000, 0x70, 0x1C00000000000000, 0x1C
+};
 
 void Board::Reset() {
     m_Board = s_StartBoard;
@@ -41,7 +41,7 @@ void Board::Reset() {
     m_ColourBitBoards = s_ColourBitBoards;
 
     m_PlayerTurn = Colour::White;
-    m_CastlingRights = { true, true, true, true };
+    m_CastlingPath = s_CastlingPaths;
     m_EnPassantSquare = 0;
 }
 
@@ -49,7 +49,7 @@ void Board::FromFEN(const std::string& fen) {
     m_Board.fill(None);
     m_PieceBitBoards.fill(0);
     m_ColourBitBoards.fill(0);
-    m_CastlingRights.fill(false);
+    m_CastlingPath.fill(0xFFFFFFFFFFFFFFFF);
 
     Square square = 0;
 
@@ -78,10 +78,10 @@ void Board::FromFEN(const std::string& fen) {
     fenParser.Next(castlingRights);
     for (char c : castlingRights) {
         if (c == '-') break;
-        if (c == 'K') m_CastlingRights[Colour::White | CastleSide::KingSide] = true;
-        if (c == 'Q') m_CastlingRights[Colour::White | CastleSide::QueenSide] = true;
-        if (c == 'k') m_CastlingRights[Colour::Black | CastleSide::KingSide] = true;
-        if (c == 'q') m_CastlingRights[Colour::Black | CastleSide::QueenSide] = true;
+        if (c == 'K') m_CastlingPath[Colour::White | CastleSide::KingSide] =  s_CastlingPaths[Colour::White | CastleSide::KingSide];
+        if (c == 'Q') m_CastlingPath[Colour::White | CastleSide::QueenSide] = s_CastlingPaths[Colour::White | CastleSide::QueenSide];
+        if (c == 'k') m_CastlingPath[Colour::Black | CastleSide::KingSide] = s_CastlingPaths[Colour::Black | CastleSide::KingSide];
+        if (c == 'q') m_CastlingPath[Colour::Black | CastleSide::QueenSide] = s_CastlingPaths[Colour::Black | CastleSide::QueenSide];
     }
 
     std::string_view enPassantSquare;
@@ -100,83 +100,75 @@ AlgebraicMove Board::Move(LongAlgebraicMove m) {
 
     // ASSERT(p != None)
 
-    bool capture = m_Board[m.DestinationSquare] != Piece::None;
+    std::cout << "Moving: " << m << "\n";
 
-    // TODO: Put castling in BitBoard::KingAttack() and prune it if needed
-    // Clean this castling code up somehow (it's kinda ugly)
+    if (!IsMoveLegal(m))
+        // Illegal move
+        std::cout << "illegal move: " << m << "!\n"
+            << GetPseudoLegalMoves(m.SourceSquare) << "\n"
+            << GetLegalMoves(m.SourceSquare) << "\n"
+            << BitBoard(m.DestinationSquare) << "\n";
+
+    GetLegalMoves(m.SourceSquare);
 
     if (t == PieceType::King) {
         int direction = m.DestinationSquare - m.SourceSquare;  // Kingside or queenside
 
-        bool isOnSameRow = (m.DestinationSquare & 0xF8) == (m.SourceSquare & 0xF8);  // Checks if king is moving laterally
-
-        if (abs(direction) == 2 && isOnSameRow) {
+        if (abs(direction) == 2) {
             Square rookSquare, newRookSquare;
-            CastleSide castleSide;
 
             if (direction < 0) {  // Queenside
-                castleSide = CastleSide::QueenSide;
                 rookSquare = m.SourceSquare - 4;
                 newRookSquare = m.DestinationSquare + 1;
             } else {
-                castleSide = CastleSide::KingSide;
                 rookSquare = m.SourceSquare + 3;
                 newRookSquare = m.DestinationSquare - 1;
             }
-
-            // Check for castling rights
-            if (m_CastlingRights[c | castleSide] == false)
-                std::cout << "Castling is illegal!\n";
-
-            // Check if castling is legal
-            if (GetPieceType(m_Board[rookSquare]) != PieceType::Rook)
-                std::cout << "Castling is illegal!\n";
-
-            // TODO: check if move is legal (include checks and stuff)
 
             // Only move the rook because the king will be moved below
             RemovePiece(rookSquare);
             PlacePiece(TypeAndColour(PieceType::Rook, c), newRookSquare);
         }
 
-        m_CastlingRights[c | CastleSide::KingSide] = false;
-        m_CastlingRights[c | CastleSide::QueenSide] = false;
+        m_CastlingPath[c | CastleSide::KingSide] = 0xFFFFFFFFFFFFFFFF;
+        m_CastlingPath[c | CastleSide::QueenSide] = 0xFFFFFFFFFFFFFFFF;
     } else if (t == PieceType::Rook) {
         if (m.SourceSquare == 0)
-            m_CastlingRights[Colour::Black | CastleSide::KingSide] = false;
+            m_CastlingPath[Colour::Black | CastleSide::KingSide] = 0xFFFFFFFFFFFFFFFF;
         else if (m.SourceSquare == 7)
-            m_CastlingRights[Colour::Black | CastleSide::QueenSide] = false;
+            m_CastlingPath[Colour::Black | CastleSide::QueenSide] = 0xFFFFFFFFFFFFFFFF;
         else if (m.SourceSquare == 56)
-            m_CastlingRights[Colour::White | CastleSide::KingSide] = false;
+            m_CastlingPath[Colour::White | CastleSide::KingSide] = 0xFFFFFFFFFFFFFFFF;
         else if (m.SourceSquare == 63)
-            m_CastlingRights[Colour::White | CastleSide::QueenSide] = false;
+            m_CastlingPath[Colour::White | CastleSide::QueenSide] = 0xFFFFFFFFFFFFFFFF;
     }
 
     RemovePiece(m.SourceSquare);
+    // We have to erase the piece from the bit boards before we capture it
+    RemovePiece(m.DestinationSquare);
     PlacePiece(p, m.DestinationSquare);
 
     m_PlayerTurn = OppositeColour(m_PlayerTurn);
 
+    bool capture = m_Board[m.DestinationSquare] != Piece::None;
+
     return { p, m.DestinationSquare, capture };
-}
-
-bool Board::IsMovePseudoLegal(LongAlgebraicMove move) {
-    Colour playerColour = GetColour(m_Board[move.SourceSquare]);
-
-    if (playerColour != m_PlayerTurn)
-        return false;
-
-    return GetPseudoLegalMoves(move.SourceSquare) & BitBoard(1ull << move.DestinationSquare);
 }
 
 BitBoard Board::GetPseudoLegalMoves(Square piece) {
     PieceType pt = GetPieceType(m_Board[piece]);
     Colour c = GetColour(m_Board[piece]);
 
+    if (c != m_PlayerTurn)
+        return 0;
+
     BitBoard blockers = m_ColourBitBoards[White] | m_ColourBitBoards[Black];
 
+    //std::cout << "Hmm:\n" << m_ColourBitBoards[c] << "\n";
+
     switch (pt) {
-        case PieceType::Pawn: return BitBoard::PawnMoves(piece, blockers, c);
+        // SOmehting is up with the ~m_ColourBitBoards[c];
+        case PieceType::Pawn: return BitBoard::PawnMoves(piece, blockers, c) & ~m_ColourBitBoards[c];
         case PieceType::Knight: return BitBoard::KnightAttack(piece) & ~m_ColourBitBoards[c];
         case PieceType::Bishop: return BitBoard::BishopAttack(piece, blockers) & ~m_ColourBitBoards[c];
         case PieceType::Rook: return BitBoard::RookAttack(piece, blockers) & ~m_ColourBitBoards[c];
@@ -188,27 +180,30 @@ BitBoard Board::GetPseudoLegalMoves(Square piece) {
 }
 
 bool Board::IsMoveLegal(LongAlgebraicMove move) {
-    Colour playerColour = GetColour(m_Board[move.SourceSquare]);
-
-    if (playerColour != m_PlayerTurn)
-        return false;
-
-    return GetPseudoLegalMoves(move.SourceSquare) & BitBoard(1ull << move.DestinationSquare);
+    return GetLegalMoves(move.SourceSquare) & BitBoard(1ull << move.DestinationSquare);
 }
 
 BitBoard Board::GetLegalMoves(Square piece) {
+    // TODO: Calculate pins
     Colour playerColour = GetColour(m_Board[piece]);
     Colour enemyColour = OppositeColour(playerColour);
 
-    BitBoard allPieces = m_ColourBitBoards[0] | m_ColourBitBoards[1];
+    BitBoard allPieces = m_ColourBitBoards[Colour::White] | m_ColourBitBoards[Colour::Black];
+    BitBoard king = m_ColourBitBoards[playerColour] & m_PieceBitBoards[PieceType::King];
     BitBoard enemyPieces = m_ColourBitBoards[OppositeColour(playerColour)];
-
-    //std::cout << "Controlled squares:\n" << ControlledSquares(enemyColour) << "\n";
     
-    if (GetPieceType(m_Board[piece]) == PieceType::King)
-        return GetPseudoLegalMoves(piece) & ~ControlledSquares(enemyColour);
+    if (GetPieceType(m_Board[piece]) == PieceType::King) {
+        BitBoard legalMoves = GetPseudoLegalMoves(piece);
+        BitBoard controlledSquares = ControlledSquares(enemyColour);
+        // Deals with castling. Perhaps move to GetPseudoLegalMoves()?
+        if (!((allPieces ^ king) & m_CastlingPath[playerColour | CastleSide::KingSide]) && !(controlledSquares & m_CastlingPath[playerColour | CastleSide::KingSide]))
+            legalMoves |= 0x40ull << (playerColour == White ? 56 : 0);
+        if (!((allPieces ^ king) & m_CastlingPath[playerColour | CastleSide::QueenSide]) && !(controlledSquares & m_CastlingPath[playerColour | CastleSide::QueenSide]))
+            legalMoves |= 0x04ull << (playerColour == White ? 56 : 0);
+        return legalMoves & ~controlledSquares;
+    }
 
-    Square kingSquare = BitBoard::GetSquare(m_ColourBitBoards[playerColour] & m_PieceBitBoards[PieceType::King]);
+    Square kingSquare = BitBoard::GetSquare(king);
 
     BitBoard checkMask = 0;
     BitBoard checkers = 0;
@@ -217,13 +212,15 @@ BitBoard Board::GetLegalMoves(Square piece) {
     BitBoard bishopView = BitBoard::BishopAttack(kingSquare, allPieces) & enemyPieces;
     BitBoard bishopCheck = bishopView & (m_PieceBitBoards[PieceType::Bishop] | m_PieceBitBoards[PieceType::Queen]);
     checkers |= bishopCheck;
-    checkMask |= BitBoard::Line(kingSquare, BitBoard::GetSquare(bishopCheck));
+    if (bishopCheck)
+        checkMask |= BitBoard::Line(kingSquare, BitBoard::GetSquare(bishopCheck));
 
     // Deals with checks from rooks, queens
     BitBoard rookView = BitBoard::RookAttack(kingSquare, allPieces) & enemyPieces;
     BitBoard rookCheck = rookView & (m_PieceBitBoards[PieceType::Rook] | m_PieceBitBoards[PieceType::Queen]);
     checkers |= rookCheck;
-    checkMask |= BitBoard::Line(kingSquare, BitBoard::GetSquare(rookCheck));
+    if (rookCheck)
+        checkMask |= BitBoard::Line(kingSquare, BitBoard::GetSquare(rookCheck));
 
     // Deals with checks from knights
     BitBoard knightCheck = BitBoard::KnightAttack(kingSquare) & enemyPieces & m_PieceBitBoards[PieceType::Knight];

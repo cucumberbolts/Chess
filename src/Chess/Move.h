@@ -41,8 +41,8 @@ enum Piece : uint8_t {
 
 // ORed with Colour enum to get the index to the m_CastlingRights array in the Board class
 enum CastleSide : uint8_t {
-    KingSide = 0,
-    QueenSide = 1 << 1,
+    KingSide = 0b00,
+    QueenSide = 0b10,
 };
 
 // Returns the PieceType of the given Piece
@@ -85,17 +85,25 @@ struct LongAlgebraicMove {
     Square SourceSquare;
     Square DestinationSquare;
 
-    // TODO: Piece promotion;
-
     LongAlgebraicMove() = default;
     LongAlgebraicMove(std::string_view longAlgebraic);
 };
+
+inline std::ostream& operator<<(std::ostream& os, LongAlgebraicMove m) {
+    os << (char)('a' + m.SourceSquare % 8);  // File
+    os << 8 - m.SourceSquare / 8;  // Rank
+
+    os << (char)('a' + m.DestinationSquare % 8);  // File
+    os << 8 - m.DestinationSquare / 8;  // Rank
+
+    return os;
+}
 
 struct AlgebraicMove {
     Piece Piece;
     Square Square;
 
-    // bool Specifier;
+    // char Specifier;
     bool Capture;
 
     // Piece Promotion;
@@ -109,7 +117,6 @@ inline std::ostream& operator<<(std::ostream& os, AlgebraicMove m) {
         os << 'x';
 
     os << (char)('a' + m.Square % 8);  // File
-
     os << 8 - m.Square / 8;  // Rank
 
     return os;

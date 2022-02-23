@@ -12,7 +12,7 @@
 
 class Board {
 public:
-    Board();
+    Board() { Reset(); }
     Board(const std::string& fen) { FromFEN(fen); }
 
     void Reset(); // Set to starting position ("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")
@@ -24,7 +24,6 @@ public:
 
     AlgebraicMove Move(LongAlgebraicMove m);
 
-    bool IsMovePseudoLegal(LongAlgebraicMove move);
     BitBoard GetPseudoLegalMoves(Square piece);
 
     bool IsMoveLegal(LongAlgebraicMove move);
@@ -43,8 +42,19 @@ private:
     std::array<Piece, 64> m_Board;
 
     Colour m_PlayerTurn = Colour::White;
-
-    std::array<bool, 4> m_CastlingRights = { true, true, true, true };
+    
+    // It is the path from the king to the rook when castling (including the king square)
+    // AND the path with blockers and attackedSquares to see if castling is legal
+    // If you are not allowed to castle, then the path will be 0xFFFFFFFFFFFFFFFF
+    //
+    // OR the Colour enum with the CastleSide enum to get the index
+    // [0] = Colour::White | CastleSide::KingSide
+    // [1] = Colour::Black | CastleSide::QueenSide
+    // [2] = Colour::White | CastleSide::KingSide
+    // [3] = Colour::Black | CastleSide::QueenSide
+    std::array<BitBoard, 4> m_CastlingPath = {
+        0x7000000000000000, 0x70, 0x1C00000000000000, 0x1C
+    };
 
     Square m_EnPassantSquare = 0;
 };
@@ -57,9 +67,11 @@ inline void Board::PlacePiece(Piece p, Square s) {
 
 inline void Board::RemovePiece(Square s) {
     Piece p = m_Board[s];
-    m_PieceBitBoards[GetPieceType(p)][s] = false;
-    m_ColourBitBoards[GetColour(p)][s] = false;
-    m_Board[s] = Piece::None;
+    if (p != None) {
+        m_PieceBitBoards[GetPieceType(p)][s] = false;
+        m_ColourBitBoards[GetColour(p)][s] = false;
+        m_Board[s] = Piece::None;
+    }
 }
 
 

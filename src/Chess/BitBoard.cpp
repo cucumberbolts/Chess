@@ -26,7 +26,7 @@ BitBoard BitBoard::PawnMoves(Square square, BitBoard blockers, Colour colour) {
             availibleSquares[square + 7] = true & blockers[square + 7];
         // Calculates the square in front of the pawn
         if (square + 8 < 64)
-            availibleSquares[square + 8] = true ^ blockers[square - 8];
+            availibleSquares[square + 8] = true ^ blockers[square + 8];
         // Calculates two squares in frot of the pawn for only the first push
         if ((1ull << square) & 0x000000000000FF00 && !blockers[square + 8])
             availibleSquares[square + 16] = true ^ blockers[square + 16];
@@ -41,14 +41,14 @@ BitBoard BitBoard::PawnAttack(Square square, BitBoard blockers, Colour colour) {
 
     if (colour == Colour::White) {
         if (((square - 8) & 0b11111000) == ((square - 9) & 0b11111000) && (square - 9) >= 0)
-            attackedSquares[square - 9] = true & blockers[square - 9];
+            attackedSquares[square - 9] = true;
         if (((square - 8) & 0b11111000) == ((square - 7) & 0b11111000) && (square - 7) >= 0)
-            attackedSquares[square - 7] = true & blockers[square - 7];
+            attackedSquares[square - 7] = true;
     } else {
         if (((square + 8) & 0b11111000) == ((square + 9) & 0b11111000) && (square + 9) < 64)
-            attackedSquares[square + 9] = true & blockers[square + 9];
+            attackedSquares[square + 9] = true;
         if (((square + 8) & 0b11111000) == ((square + 7) & 0b11111000) && (square + 7) < 64)
-            attackedSquares[square + 7] = true & blockers[square + 7];
+            attackedSquares[square + 7] = true;
     }
 
     return attackedSquares;
@@ -68,11 +68,11 @@ BitBoard BitBoard::KnightAttack(Square square) {
     BitBoard attackedSquares;
 
     for (size_t i = 0; i < numSquares; i++) {
-        const int32_t knightSquare = (square + s_KnightSquares[i] & 0b11111000);
-        const int32_t squareRow = (square + s_Rows[i] & 0b11111000);
+        const int32_t knightSquare = square + s_KnightSquares[i];
+        const int32_t squareRow = (square + s_Rows[i]) & 0b11111000;
 
-        if (knightSquare == squareRow && square + s_KnightSquares[i] < 64 && square + s_KnightSquares[i] > 0)
-            attackedSquares[square + s_KnightSquares[i]] = true;
+        if ((knightSquare & 0b11111000) == squareRow && knightSquare < 64 && knightSquare > -1)
+            attackedSquares[knightSquare] = true;
     }
 
     return attackedSquares;
@@ -177,10 +177,10 @@ BitBoard BitBoard::KingAttack(Square square) {
     BitBoard attackedSquares;
 
     for (size_t i = 0; i < numSquares; i++) {
-        const int32_t kingSquare = (square + s_KingSquares[i] & 0b11111000);
+        const int32_t kingSquare = square + s_KingSquares[i];
         const int32_t squareRow = (square + s_Rows[i] & 0b11111000);
 
-        if (kingSquare == squareRow && square + s_KingSquares[i] < 64 && square + s_KingSquares[i] > 0)
+        if ((kingSquare & 0b11111000) == squareRow && kingSquare < 64 && kingSquare > -1)
             attackedSquares[square + s_KingSquares[i]] = true;
     }
 

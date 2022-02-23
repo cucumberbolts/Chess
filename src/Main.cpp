@@ -2,6 +2,8 @@
 
 #include <iostream>
 
+#include <sstream>
+
 #include "Chess/Board.h"
 
 static uint32_t s_Allocations = 0;
@@ -11,7 +13,7 @@ void* operator new(size_t size) {
 }
 
 int main() {
-#if 0
+#if 1
     std::cout << "Current working directory: " << std::filesystem::current_path() << std::endl;
 
     std::string_view stockfish14 = "Engines/stockfish_14_x64_avx2.exe";
@@ -45,28 +47,42 @@ int main() {
     std::cout << s_Allocations << " allocations!\n";
 
     std::cin.get();
-#elif 0
+#elif 1
+    /*
+    Board board("r1bqk1nr/pppp1ppp/2n5/2b1p3/2B1P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 4 4");
+    board.Reset();
+
+    std::cout << board << "\n";
+
+    board.Move(LongAlgebraicMove("e2e4"));
+    board.Move(LongAlgebraicMove("e7e5"));
+    board.Move(LongAlgebraicMove("g1f3"));
+    board.Move(LongAlgebraicMove("b8c6"));
+    board.Move(LongAlgebraicMove("f1c4"));
+    board.Move(LongAlgebraicMove("f8c5"));
+
+    board.Move(LongAlgebraicMove("e1g1"));
+
+    std::cout << board << "\n";
+
+    board.FromFEN("rnbqk2r/pppp1ppp/8/8/8/8/PPPP1PPP/RNBQR1K1 b Qkq - 0 1");
+    std::cout << board.GetLegalMoves(ToSquare('e', '8')) << "\n";
+    
+    board.FromFEN("rnbqk2r/pppp1ppp/8/8/8/8/PPPP1PPP/RNBQ2K1 b Qkq - 0 1");
+    std::cout << board.GetLegalMoves(ToSquare('e', '8')) << "\n";
+    */
     Board board;
 
-    std::cout << std::boolalpha;
-    std::cout << "is e2e4 possible? " << board.IsMovePseudoLegal(LongAlgebraicMove("e2e4")) << "\n";
-    std::cout << "is e7e5 possible? " << board.IsMovePseudoLegal(LongAlgebraicMove("e7e5")) << "\n";
-    std::cout << "is e2e5 possible? " << board.IsMovePseudoLegal(LongAlgebraicMove("e2e5")) << "\n";
-    std::cout << "is b1e6 possible? " << board.IsMovePseudoLegal(LongAlgebraicMove("b1e6")) << "\n";
-    std::cout << "is b1c3 possible? " << board.IsMovePseudoLegal(LongAlgebraicMove("b1c3")) << "\n";
+    std::istringstream iss("d2d4 d7d5 c2c4 e7e6 b1c3 c7c5 c4d5 e6d5 g1f3 c5d4 f3d4 b8c6 c1f4 g8f6 e2e3 f8c5 f1e2 c5d4 e3d4 e8g8");
+    std::string move;
+    iss >> move;
+    while (iss) {
+        std::cout << "move: " << move << "\n";
+        board.Move(LongAlgebraicMove(move));
+        iss >> move;
+    }
 
-    std::cout << "\nMoving e2e4!\n\n";
-    board.Move(LongAlgebraicMove("e2e4"));
-    std::cout << board << "\n\n";
-
-    std::cout << "is e2e4 possible? " << board.IsMovePseudoLegal(LongAlgebraicMove("e2e4")) << "\n";
-    std::cout << "is e7e5 possible? " << board.IsMovePseudoLegal(LongAlgebraicMove("e7e5")) << "\n";
-
-    std::cout << BoardFormat::OrientationBlack << board << "\n\n";
-    board.Move(LongAlgebraicMove("e7e5"));
-    std::cout << BoardFormat::OrientationWhite << BoardFormat::NoBoardCoordinates << board << "\n\n";
-
-    std::cout << board.GetPseudoLegalMoves(ToSquare('f', '1')) << "\n";
+    std::cout << board << "\n";
 #elif 1
     Board board("7k/8/8/8/K4q2/3N4/8/8 w - - 0 1");
     std::cout << board << "\n";
@@ -98,23 +114,5 @@ int main() {
     std::cout << board5 << "\n";
     std::cout << board5.GetLegalMoves(ToSquare('g', '2')) << "\n";
     std::cout << board5.GetLegalMoves(ToSquare('e', '1')) << "\n";
-#else
-    constexpr Square testSquare = ToSquare('b', '2');
-    BitBoard testBoard;
-    testBoard[ToSquare('g', '5')] = true;
-    testBoard[ToSquare('a', '7')] = true;
-    testBoard[ToSquare('d', '5')] = true;
-    testBoard[ToSquare('c', '3')] = true;
-    testBoard[ToSquare('g', '4')] = true;
-
-    std::cout << testBoard << "\n\n\n";
-
-    std::cout << "Pawn attack (white): \n" << BitBoard::PawnAttack(testSquare, testBoard, Colour::White) << "\n\n";
-    std::cout << "Pawn attack (black): \n" << BitBoard::PawnAttack(testSquare, testBoard, Colour::Black) << "\n\n";
-    std::cout << "Knight attack: \n" << BitBoard::KnightAttack(testSquare) << "\n\n";
-    std::cout << "Bishop attack: \n" << BitBoard::BishopAttack(testSquare, testBoard) << "\n\n";
-    std::cout << "Rook attack: \n" << BitBoard::RookAttack(testSquare, testBoard) << "\n\n";
-    std::cout << "Queen attack: \n" << BitBoard::QueenAttack(testSquare, testBoard) << "\n\n";
-    std::cout << "King attack: \n" << BitBoard::KingAttack(testSquare) << "\n\n";
 #endif
 }
