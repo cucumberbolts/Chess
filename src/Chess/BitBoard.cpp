@@ -4,11 +4,12 @@
 
 #pragma intrinsic(_BitScanForward)
 
-BitBoard BitBoard::PawnMoves(Square square, BitBoard blockers, Colour colour) {
+BitBoard BitBoard::PawnMoves(Square square, BitBoard blockers, Colour colour, Square enPassantSquare) {
     // TODO: en passant
     BitBoard availibleSquares;
 
     if (colour == Colour::White) {
+        // Diagonal captures
         if (((square - 8) & 0b11111000) == ((square - 9) & 0b11111000) && (square - 9) >= 0)
             availibleSquares[square - 9] = true & blockers[square - 9];
         if (((square - 8) & 0b11111000) == ((square - 7) & 0b11111000) && (square - 7) >= 0)
@@ -19,7 +20,11 @@ BitBoard BitBoard::PawnMoves(Square square, BitBoard blockers, Colour colour) {
         // Calculates two squares in frot of the pawn for only the first push
         if ((1ull << square) & 0x00FF000000000000 && !blockers[square - 8])
             availibleSquares[square - 16] = true ^ blockers[square - 16];
+        // En passant!
+        if (square - 9 == enPassantSquare || square - 7 == enPassantSquare)
+            availibleSquares[enPassantSquare] = true;
     } else {
+        // Diagonal captures
         if (((square + 8) & 0b11111000) == ((square + 9) & 0b11111000) && (square + 9) < 64)
             availibleSquares[square + 9] = true & blockers[square + 9];
         if (((square + 8) & 0b11111000) == ((square + 7) & 0b11111000) && (square + 7) < 64)
@@ -30,6 +35,9 @@ BitBoard BitBoard::PawnMoves(Square square, BitBoard blockers, Colour colour) {
         // Calculates two squares in frot of the pawn for only the first push
         if ((1ull << square) & 0x000000000000FF00 && !blockers[square + 8])
             availibleSquares[square + 16] = true ^ blockers[square + 16];
+        // En passant!
+        if (square + 9 == enPassantSquare || square + 7 == enPassantSquare)
+            availibleSquares[enPassantSquare] = true;
     }
 
     return availibleSquares;

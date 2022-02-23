@@ -48,7 +48,7 @@ public:
 
     // Generates pseudo-legal moves
     // The attacked squares include the blockers, as they can be removed later
-    static BitBoard PawnMoves(Square square, BitBoard blockers, Colour colour);
+    static BitBoard PawnMoves(Square square, BitBoard blockers, Colour colour, Square enPassantSquare);
     static BitBoard PawnAttack(Square square, BitBoard blockers, Colour colour);  // Excludes the square in front of it
     static BitBoard KnightAttack(Square square);
     static BitBoard BishopAttack(Square square, BitBoard blockers);

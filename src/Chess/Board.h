@@ -24,8 +24,6 @@ public:
 
     AlgebraicMove Move(LongAlgebraicMove m);
 
-    BitBoard GetPseudoLegalMoves(Square piece);
-
     bool IsMoveLegal(LongAlgebraicMove move);
     BitBoard GetLegalMoves(Square piece);
 private:
@@ -33,6 +31,8 @@ private:
     void RemovePiece(Square s);
 
     static Piece CharToPiece(char c);
+
+    BitBoard GetPseudoLegalMoves(Square piece);
 
     BitBoard ControlledSquares(Colour colour);
 private:

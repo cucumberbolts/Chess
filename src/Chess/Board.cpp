@@ -87,7 +87,7 @@ void Board::FromFEN(const std::string& fen) {
     std::string_view enPassantSquare;
     fenParser.Next(enPassantSquare);
     if (enPassantSquare != "-")
-        ToSquare(enPassantSquare[0], enPassantSquare[1]);
+        m_EnPassantSquare = ToSquare(enPassantSquare[0], enPassantSquare[1]);
 }
 
 // TODO: Implement this at some point
@@ -125,6 +125,8 @@ AlgebraicMove Board::Move(LongAlgebraicMove m) {
                 newRookSquare = m.DestinationSquare - 1;
             }
 
+            // TODO: Check if there is a rook on rookSquare
+
             // Only move the rook because the king will be moved below
             RemovePiece(rookSquare);
             PlacePiece(TypeAndColour(PieceType::Rook, c), newRookSquare);
@@ -141,6 +143,17 @@ AlgebraicMove Board::Move(LongAlgebraicMove m) {
             m_CastlingPath[Colour::White | CastleSide::KingSide] = 0xFFFFFFFFFFFFFFFF;
         else if (m.SourceSquare == 63)
             m_CastlingPath[Colour::White | CastleSide::QueenSide] = 0xFFFFFFFFFFFFFFFF;
+    } else if (t == PieceType::Pawn) {
+        if (m.SourceSquare - m.DestinationSquare == 16)  // If white pushed pawn two squares
+            m_EnPassantSquare = m.DestinationSquare + 8;
+        else if (m.DestinationSquare - m.SourceSquare == 16)  // If white pushed pawn two squares
+            m_EnPassantSquare = m.DestinationSquare - 8;
+        else if (m.DestinationSquare == m_EnPassantSquare) {  // If taking en passant
+            if (c == Colour::White)
+                RemovePiece(m.DestinationSquare + 8);
+            else
+                RemovePiece(m.DestinationSquare - 8);
+        }
     }
 
     RemovePiece(m.SourceSquare);
@@ -164,11 +177,9 @@ BitBoard Board::GetPseudoLegalMoves(Square piece) {
 
     BitBoard blockers = m_ColourBitBoards[White] | m_ColourBitBoards[Black];
 
-    //std::cout << "Hmm:\n" << m_ColourBitBoards[c] << "\n";
-
     switch (pt) {
         // SOmehting is up with the ~m_ColourBitBoards[c];
-        case PieceType::Pawn: return BitBoard::PawnMoves(piece, blockers, c) & ~m_ColourBitBoards[c];
+        case PieceType::Pawn: return BitBoard::PawnMoves(piece, blockers, c, m_EnPassantSquare) & ~m_ColourBitBoards[c];
         case PieceType::Knight: return BitBoard::KnightAttack(piece) & ~m_ColourBitBoards[c];
         case PieceType::Bishop: return BitBoard::BishopAttack(piece, blockers) & ~m_ColourBitBoards[c];
         case PieceType::Rook: return BitBoard::RookAttack(piece, blockers) & ~m_ColourBitBoards[c];
