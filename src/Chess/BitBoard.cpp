@@ -5,14 +5,13 @@
 #pragma intrinsic(_BitScanForward)
 
 BitBoard BitBoard::PawnMoves(Square square, BitBoard blockers, Colour colour, Square enPassantSquare) {
-    // TODO: en passant
     BitBoard availibleSquares;
 
-    if (colour == Colour::White) {
+    if (colour == White) {
         // Diagonal captures
-        if (((square - 8) & 0b11111000) == ((square - 9) & 0b11111000) && (square - 9) >= 0)
+        if (RankOf(square - 8) == RankOf(square - 9) && (square - 9) >= 0)
             availibleSquares[square - 9] = true & blockers[square - 9];
-        if (((square - 8) & 0b11111000) == ((square - 7) & 0b11111000) && (square - 7) >= 0)
+        if (RankOf(square - 8) == RankOf(square - 7) && (square - 7) >= 0)
             availibleSquares[square - 7] = true & blockers[square - 7];
         // Calculates one square in front of the pawn
         if (square - 8 >= 0)
@@ -25,9 +24,9 @@ BitBoard BitBoard::PawnMoves(Square square, BitBoard blockers, Colour colour, Sq
             availibleSquares[enPassantSquare] = true;
     } else {
         // Diagonal captures
-        if (((square + 8) & 0b11111000) == ((square + 9) & 0b11111000) && (square + 9) < 64)
+        if (RankOf(square + 8) == RankOf(square + 9) && (square + 9) < 64)
             availibleSquares[square + 9] = true & blockers[square + 9];
-        if (((square + 8) & 0b11111000) == ((square + 7) & 0b11111000) && (square + 7) < 64)
+        if (RankOf(square + 8) == RankOf(square + 7) && (square + 7) < 64)
             availibleSquares[square + 7] = true & blockers[square + 7];
         // Calculates the square in front of the pawn
         if (square + 8 < 64)
@@ -43,19 +42,18 @@ BitBoard BitBoard::PawnMoves(Square square, BitBoard blockers, Colour colour, Sq
     return availibleSquares;
 }
 
-BitBoard BitBoard::PawnAttack(Square square, BitBoard blockers, Colour colour) {
-    // TODO: en passant
+BitBoard BitBoard::PawnAttack(Square square, Colour colour) {
     BitBoard attackedSquares;
 
-    if (colour == Colour::White) {
-        if (((square - 8) & 0b11111000) == ((square - 9) & 0b11111000) && (square - 9) >= 0)
+    if (colour == White) {
+        if (RankOf(square - 8) == RankOf(square - 9) && (square - 9) >= 0)
             attackedSquares[square - 9] = true;
-        if (((square - 8) & 0b11111000) == ((square - 7) & 0b11111000) && (square - 7) >= 0)
+        if (RankOf(square - 8) == RankOf(square - 7) && (square - 7) >= 0)
             attackedSquares[square - 7] = true;
     } else {
-        if (((square + 8) & 0b11111000) == ((square + 9) & 0b11111000) && (square + 9) < 64)
+        if (RankOf(square + 8) == RankOf(square + 9) && (square + 9) < 64)
             attackedSquares[square + 9] = true;
-        if (((square + 8) & 0b11111000) == ((square + 7) & 0b11111000) && (square + 7) < 64)
+        if (RankOf(square + 8) == RankOf(square + 7) && (square + 7) < 64)
             attackedSquares[square + 7] = true;
     }
 
@@ -77,9 +75,8 @@ BitBoard BitBoard::KnightAttack(Square square) {
 
     for (size_t i = 0; i < numSquares; i++) {
         const int32_t knightSquare = square + s_KnightSquares[i];
-        const int32_t squareRow = (square + s_Rows[i]) & 0b11111000;
-
-        if ((knightSquare & 0b11111000) == squareRow && knightSquare < 64 && knightSquare > -1)
+    
+        if (RankOf(knightSquare) == RankOf(square + s_Rows[i]) && knightSquare < 64 && knightSquare > -1)
             attackedSquares[knightSquare] = true;
     }
 
@@ -91,10 +88,10 @@ BitBoard BitBoard::BishopAttack(Square square, BitBoard blockers) {
 
     BitBoard attackedSquares;
 
-    const Square distanceTop = (square - (square & 0b00000111)) / 8;
-    const Square distanceBottom = ((square & 0b00000111) + 56 - square) / 8;
-    const Square distanceLeft = square - (square & 0b11111000);
-    const Square distanceRight = (square & 0b11111000) + 7 - square;
+    const Square distanceTop = (square - FileOf(square)) / 8;
+    const Square distanceBottom = (FileOf(square) + 56 - square) / 8;
+    const Square distanceLeft = square - RankOf(square);
+    const Square distanceRight = RankOf(square) + 7 - square;
 
     for (int s = square; s > square - (std::min(distanceTop, distanceLeft) * 9) - 1; s -= 9) {
         attackedSquares[s] = true;
@@ -134,28 +131,28 @@ BitBoard BitBoard::RookAttack(Square square, BitBoard blockers) {
 
     BitBoard attackedSquares;
 
-    for (int s = square; s != (square & 0b11111000) - 1; s--) {
+    for (int s = square; s != RankOf(square) - 1; s--) {
         attackedSquares[s] = true;
     
         if (blockers[s] == true)
             break;
     }
 
-    for (int s = square; s < (square & 0b11111000) + 8; s++) {
+    for (int s = square; s < RankOf(square) + 8; s++) {
         attackedSquares[s] = true;
 
         if (blockers[s] == true)
             break;
     }
 
-    for (int s = square; s != (square & 0b00000111) - 8; s -= 8) {
+    for (int s = square; s != FileOf(square) - 8; s -= 8) {
         attackedSquares[s] = true;
     
         if (blockers[s] == true)
             break;
     }
 
-    for (int s = square; s < (square & 0b00000111) + 64; s += 8) {
+    for (int s = square; s < FileOf(square) + 64; s += 8) {
         attackedSquares[s] = true;
 
         if (blockers[s] == true)
@@ -186,9 +183,8 @@ BitBoard BitBoard::KingAttack(Square square) {
 
     for (size_t i = 0; i < numSquares; i++) {
         const int32_t kingSquare = square + s_KingSquares[i];
-        const int32_t squareRow = (square + s_Rows[i] & 0b11111000);
 
-        if ((kingSquare & 0b11111000) == squareRow && kingSquare < 64 && kingSquare > -1)
+        if (RankOf(kingSquare) == RankOf(square + s_Rows[i]) && kingSquare < 64 && kingSquare > -1)
             attackedSquares[square + s_KingSquares[i]] = true;
     }
 
@@ -201,10 +197,10 @@ BitBoard BitBoard::Line(Square square1, Square square2) {
 
     BitBoard result = 0;
 
-    if ((square1 & 0b11111000) == (square2 & 0b11111000)) {  // If the two squares are on the same rank
+    if (RankOf(square1) == RankOf(square2)) {  // If the two squares are on the same rank
         for (Square i = min; i <= max; i++)
             result[i] = true;
-    } else if ((square1 & 0b00000111) == (square2 & 0b00000111)) {  // If the two squares are on the same file
+    } else if (FileOf(square1) == FileOf(square2)) {  // If the two squares are on the same file
         for (Square i = min; i <= max; i += 8)
             result[i] = true;
     } else if ((square1 - square2) % 7 == 0) {  // Northwest to southeast

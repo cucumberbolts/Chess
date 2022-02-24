@@ -6,7 +6,7 @@
 
 namespace BoardFormat {
     struct BoardFormat {
-        Colour Orientation = Colour::White;
+        Colour Orientation = White;
         bool Coordinates = true;
     };
 

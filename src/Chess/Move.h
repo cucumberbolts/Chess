@@ -81,6 +81,11 @@ inline constexpr Square ToSquare(std::string_view square) {
     return y * 8 + x;
 }
 
+// Returns the left-most square on the same rank as s
+inline constexpr Square RankOf(Square s) { return s & 0b11111000; }
+// Returns the right-most square on the same rank as s
+inline constexpr Square FileOf(Square s) { return s & 0b00000111; }
+
 struct LongAlgebraicMove {
     Square SourceSquare;
     Square DestinationSquare;

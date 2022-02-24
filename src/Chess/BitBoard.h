@@ -49,7 +49,7 @@ public:
     // Generates pseudo-legal moves
     // The attacked squares include the blockers, as they can be removed later
     static BitBoard PawnMoves(Square square, BitBoard blockers, Colour colour, Square enPassantSquare);
-    static BitBoard PawnAttack(Square square, BitBoard blockers, Colour colour);  // Excludes the square in front of it
+    static BitBoard PawnAttack(Square square, Colour colour);  // Excludes the square in front of it
     static BitBoard KnightAttack(Square square);
     static BitBoard BishopAttack(Square square, BitBoard blockers);
     static BitBoard RookAttack(Square square, BitBoard blockers);
@@ -65,14 +65,14 @@ private:
 };
 
 inline std::ostream& operator<<(std::ostream& os, BitBoard board) {
-    static std::array<std::string_view, Colour::ColourCount> rankNumbers = { "87654321", "12345678" };
+    static std::array<std::string_view, ColourCount> rankNumbers = { "87654321", "12345678" };
 
     for (Square rank = 0; rank < 8; rank++) {
         if (BoardFormat::s_BoardFormat.Coordinates)
             os << rankNumbers[BoardFormat::s_BoardFormat.Orientation][rank] << ' ';
 
         for (Square file = 0; file < 8; file++) {
-            Square square = (BoardFormat::s_BoardFormat.Orientation == Colour::White) ? (rank * 8 + file) : (63 - (rank * 8 + file));
+            Square square = (BoardFormat::s_BoardFormat.Orientation == White) ? (rank * 8 + file) : (63 - (rank * 8 + file));
             os << (int)board[square];
         }
 
@@ -80,7 +80,7 @@ inline std::ostream& operator<<(std::ostream& os, BitBoard board) {
     }
 
     if (BoardFormat::s_BoardFormat.Coordinates)
-        os << (BoardFormat::s_BoardFormat.Orientation == Colour::White ? "  abcdefgh\n" : "  hgfedcba\n");
+        os << (BoardFormat::s_BoardFormat.Orientation == White ? "  abcdefgh\n" : "  hgfedcba\n");
 
     return os;
 }

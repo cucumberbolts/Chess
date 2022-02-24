@@ -1,4 +1,4 @@
 # Chess-Analysis
-Chess analysis board.
+Chess.
 
-Download stockfish and put it in the same directory as the executable.
+Download an engine and put it in the same directory as the executable.
