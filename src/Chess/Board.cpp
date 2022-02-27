@@ -97,6 +97,11 @@ AlgebraicMove Board::Move(LongAlgebraicMove m) {
     Colour colour = GetColour(piece);
     PieceType pieceType = GetPieceType(piece);
 
+    if (colour != m_PlayerTurn) {
+        std::cout << "Not " << (colour == White ? " white" : " black") << "'s turn!\n";
+        return {};
+    }
+
     // ASSERT(p != Piece::None)
 
     std::cout << "Moving: " << m << "\n";
@@ -146,12 +151,20 @@ AlgebraicMove Board::Move(LongAlgebraicMove m) {
         else if (m.DestinationSquare - m.SourceSquare == 16)  // If white pushed pawn two squares
             m_EnPassantSquare = m.DestinationSquare - 8;
         else if (m.DestinationSquare == m_EnPassantSquare) {  // If taking en passant
+            // Remove the en passant-ed pawn
             if (colour == White)
                 RemovePiece(m.DestinationSquare + 8);
             else
                 RemovePiece(m.DestinationSquare - 8);
+        } else if (m.DestinationSquare & 0xFF000000000000FF) {  // If pawn is promoting
+            if (m.Promotion == Pawn || m.Promotion == King)
+                std::cout << "Must promote to another piece!\n";
+
+            piece = TypeAndColour(m.Promotion, colour);
         }
     }
+
+    bool capture = m_Board[m.DestinationSquare] != Piece::None;
 
     RemovePiece(m.SourceSquare);
     // We have to erase the piece from the bit boards before we capture it
@@ -160,17 +173,16 @@ AlgebraicMove Board::Move(LongAlgebraicMove m) {
 
     m_PlayerTurn = OppositeColour(m_PlayerTurn);
 
-    bool capture = m_Board[m.DestinationSquare] != Piece::None;
+    char specifier = 0;
+    if (capture && pieceType == Pawn)
+        specifier = 'a' + FileOf(m.SourceSquare);
 
-    return { piece, m.DestinationSquare, capture };
+    return { piece, m.DestinationSquare, specifier, capture };
 }
 
 BitBoard Board::GetPseudoLegalMoves(Square piece) {
     PieceType pt = GetPieceType(m_Board[piece]);
     Colour c = GetColour(m_Board[piece]);
-
-    if (c != m_PlayerTurn)
-        return 0;
 
     BitBoard blockers = m_ColourBitBoards[White] | m_ColourBitBoards[Black];
 

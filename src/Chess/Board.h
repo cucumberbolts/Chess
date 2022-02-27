@@ -24,6 +24,8 @@ public:
 
     AlgebraicMove Move(LongAlgebraicMove m);
 
+    BitBoard GetPseudoLegalMoves(Square piece);
+
     bool IsMoveLegal(LongAlgebraicMove move);
     BitBoard GetLegalMoves(Square piece);
 private:
@@ -32,8 +34,6 @@ private:
 
     static Piece CharToPiece(char c);
 
-    BitBoard GetPseudoLegalMoves(Square piece);
-
     BitBoard ControlledSquares(Colour colour);
 private:
     std::array<BitBoard, ColourCount> m_ColourBitBoards;
@@ -41,8 +41,6 @@ private:
 
     std::array<Piece, 64> m_Board;
 
-    Colour m_PlayerTurn = White;
-    
     // It is the path from the king to the rook when castling (including the king square)
     // AND the path with blockers and attackedSquares to see if castling is legal
     // If you are not allowed to castle, then the path will be 0xFFFFFFFFFFFFFFFF
@@ -56,8 +54,13 @@ private:
         0x7000000000000000, 0x70, 0x1C00000000000000, 0x1C
     };
 
+    // The target square for en passant on a bitboard
     Square m_EnPassantSquare = 0;
+
+    Colour m_PlayerTurn = White;
 };
+
+constexpr size_t s = sizeof(Board);
 
 inline void Board::PlacePiece(Piece p, Square s) {
     m_PieceBitBoards[GetPieceType(p)][s] = true;

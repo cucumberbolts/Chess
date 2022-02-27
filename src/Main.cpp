@@ -13,7 +13,7 @@ void* operator new(size_t size) {
 }
 
 int main() {
-#if 1
+#if 0
     std::cout << "Current working directory: " << std::filesystem::current_path() << std::endl;
 
     std::string_view stockfish14 = "Engines/stockfish_14_x64_avx2.exe";
@@ -48,22 +48,12 @@ int main() {
 
     std::cin.get();
 #elif 1
-    Board board("rnbqkbnr/ppp1ppp1/7p/3pP3/8/8/PPPP1PPP/RNBQKBNR w KQkq d6 0 3");
+    Board board("3k4/1P6/8/8/8/8/6K1/8 w - - 0 1");
 
-    std::cout << board.GetLegalMoves(ToSquare('e', '5'));
-    board.Move(LongAlgebraicMove("e5d6"));
+    std::cout << board.GetLegalMoves(ToSquare('b', '7'));
+    std::cout << board.GetLegalMoves(ToSquare('d', '8'));
+    board.Move(LongAlgebraicMove("b7b8n"));
     std::cout << board << "\n";
-
-    board.Reset();
-
-    std::cout << "------------------------------\n\n";
-
-    board.Move(LongAlgebraicMove("e2e4"));
-    board.Move(LongAlgebraicMove("h7h6"));
-    board.Move(LongAlgebraicMove("e4e5"));
-    board.Move(LongAlgebraicMove("f7f5"));
-    board.Move(LongAlgebraicMove("e5f6"));
-
-    std::cout << board << "\n";
+    std::cout << board.GetLegalMoves(ToSquare('d', '8'));
 #endif
 }

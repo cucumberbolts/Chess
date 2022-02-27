@@ -10,32 +10,32 @@ BitBoard BitBoard::PawnMoves(Square square, BitBoard blockers, Colour colour, Sq
     if (colour == White) {
         // Diagonal captures
         if (RankOf(square - 8) == RankOf(square - 9) && (square - 9) >= 0)
-            availibleSquares[square - 9] = true & blockers[square - 9];
+            availibleSquares[square - 9] = blockers[square - 9];
         if (RankOf(square - 8) == RankOf(square - 7) && (square - 7) >= 0)
-            availibleSquares[square - 7] = true & blockers[square - 7];
+            availibleSquares[square - 7] = blockers[square - 7];
         // Calculates one square in front of the pawn
         if (square - 8 >= 0)
             availibleSquares[square - 8] = true ^ blockers[square - 8];
         // Calculates two squares in frot of the pawn for only the first push
         if ((1ull << square) & 0x00FF000000000000 && !blockers[square - 8])
             availibleSquares[square - 16] = true ^ blockers[square - 16];
-        // En passant!
-        if (square - 9 == enPassantSquare || square - 7 == enPassantSquare)
+        // En passant (enPassantSquare is zero when it isn't possible)!
+        if (square + 9 == enPassantSquare || square - 7 == enPassantSquare && enPassantSquare)
             availibleSquares[enPassantSquare] = true;
     } else {
         // Diagonal captures
         if (RankOf(square + 8) == RankOf(square + 9) && (square + 9) < 64)
-            availibleSquares[square + 9] = true & blockers[square + 9];
+            availibleSquares[square + 9] = blockers[square + 9];
         if (RankOf(square + 8) == RankOf(square + 7) && (square + 7) < 64)
-            availibleSquares[square + 7] = true & blockers[square + 7];
+            availibleSquares[square + 7] = blockers[square + 7];
         // Calculates the square in front of the pawn
         if (square + 8 < 64)
             availibleSquares[square + 8] = true ^ blockers[square + 8];
         // Calculates two squares in frot of the pawn for only the first push
         if ((1ull << square) & 0x000000000000FF00 && !blockers[square + 8])
             availibleSquares[square + 16] = true ^ blockers[square + 16];
-        // En passant!
-        if (square + 9 == enPassantSquare || square + 7 == enPassantSquare)
+        // En passant (enPassantSquare is zero when it isn't possible)!
+        if (square + 9 == enPassantSquare || square + 7 == enPassantSquare && enPassantSquare)
             availibleSquares[enPassantSquare] = true;
     }
 
@@ -74,10 +74,10 @@ BitBoard BitBoard::KnightAttack(Square square) {
     BitBoard attackedSquares;
 
     for (size_t i = 0; i < numSquares; i++) {
-        const int32_t knightSquare = square + s_KnightSquares[i];
-    
-        if (RankOf(knightSquare) == RankOf(square + s_Rows[i]) && knightSquare < 64 && knightSquare > -1)
-            attackedSquares[knightSquare] = true;
+        const Square kingSquare = square + s_KnightSquares[i];
+
+        if (RankOf(kingSquare) == RankOf(square + s_Rows[i]) && kingSquare < 64)
+            attackedSquares[kingSquare] = true;
     }
 
     return attackedSquares;
@@ -182,10 +182,10 @@ BitBoard BitBoard::KingAttack(Square square) {
     BitBoard attackedSquares;
 
     for (size_t i = 0; i < numSquares; i++) {
-        const int32_t kingSquare = square + s_KingSquares[i];
+        const Square kingSquare = square + s_KingSquares[i];
 
-        if (RankOf(kingSquare) == RankOf(square + s_Rows[i]) && kingSquare < 64 && kingSquare > -1)
-            attackedSquares[square + s_KingSquares[i]] = true;
+        if (RankOf(kingSquare) == RankOf(square + s_Rows[i]) && kingSquare < 64)
+            attackedSquares[kingSquare] = true;
     }
 
     return attackedSquares;

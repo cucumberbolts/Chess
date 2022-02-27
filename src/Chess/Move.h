@@ -63,6 +63,18 @@ inline char PieceToChar(Piece p) {
     return s_PieceToChar[p];
 }
 
+inline PieceType CharToPieceType(char piece) {
+    switch ((char)std::tolower(piece)) {
+        case 'p': return Pawn;
+        case 'n': return Knight;
+        case 'b': return Bishop;
+        case 'r': return Rook;
+        case 'q': return Queen;
+        case 'k': return King;
+        //default: std::cout << "Invalid 'piece'\n";
+    }
+}
+
 using Square = uint8_t;
 
 inline constexpr Square ToSquare(char file, char rank) {
@@ -89,17 +101,18 @@ inline constexpr Square FileOf(Square s) { return s & 0b00000111; }
 struct LongAlgebraicMove {
     Square SourceSquare;
     Square DestinationSquare;
+    PieceType Promotion;
 
     LongAlgebraicMove() = default;
     LongAlgebraicMove(std::string_view longAlgebraic);
 };
 
 inline std::ostream& operator<<(std::ostream& os, LongAlgebraicMove m) {
-    os << (char)('a' + m.SourceSquare % 8);  // File
-    os << 8 - m.SourceSquare / 8;  // Rank
+    os << (char)('a' + FileOf(m.SourceSquare));  // File
+    os << (char)('8' - RankOf(m.SourceSquare) / 8);  // Rank
 
-    os << (char)('a' + m.DestinationSquare % 8);  // File
-    os << 8 - m.DestinationSquare / 8;  // Rank
+    os << (char)('a' + FileOf(m.DestinationSquare));  // File
+    os << (char)('8' - RankOf(m.DestinationSquare) / 8);  // Rank
 
     return os;
 }
@@ -108,7 +121,7 @@ struct AlgebraicMove {
     Piece Piece;
     Square Square;
 
-    // char Specifier;
+    char Specifier;  // the specific rank or file the piece is from (in case there are 2) ex. n*b*d7
     bool Capture;
 
     // Piece Promotion;
@@ -118,11 +131,14 @@ inline std::ostream& operator<<(std::ostream& os, AlgebraicMove m) {
     if (GetPieceType(m.Piece) != Pawn)
         os << (char)std::tolower(PieceToChar(m.Piece));
 
+    if (m.Specifier)
+        os << m.Specifier;
+
     if (m.Capture)
         os << 'x';
 
-    os << (char)('a' + m.Square % 8);  // File
-    os << 8 - m.Square / 8;  // Rank
+    os << (char)('a' + FileOf(m.Square));  // File
+    os << (char)('8' - RankOf(m.Square) / 8);  // Rank
 
     return os;
 }
