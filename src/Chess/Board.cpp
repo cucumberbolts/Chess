@@ -200,7 +200,7 @@ bool Board::IsMoveLegal(LongAlgebraicMove move) {
 }
 
 BitBoard Board::GetLegalMoves(Square piece) {
-    // TODO: Calculate pins
+    // TODO: En passant pins
     Colour playerColour = GetColour(m_Board[piece]);
     Colour enemyColour = OppositeColour(playerColour);
 
@@ -225,18 +225,34 @@ BitBoard Board::GetLegalMoves(Square piece) {
     BitBoard checkers = 0;
 
     // Deals with checks from bishops, queens
-    BitBoard bishopView = BitBoard::BishopAttack(kingSquare, allPieces) & enemyPieces;
-    BitBoard bishopCheck = bishopView & (m_PieceBitBoards[Bishop] | m_PieceBitBoards[Queen]);
+    BitBoard bishopView = BitBoard::BishopAttack(kingSquare, allPieces);
+    BitBoard bishopCheck = bishopView & enemyPieces & (m_PieceBitBoards[Bishop] | m_PieceBitBoards[Queen]);
     checkers |= bishopCheck;
     if (bishopCheck)
         checkMask |= BitBoard::Line(kingSquare, BitBoard::GetSquare(bishopCheck));
 
+    // Deals with pins from bishops, queens
+    BitBoard bishopXRay = BitBoard::BishopAttack(kingSquare, allPieces & ~bishopView) & enemyPieces & (m_PieceBitBoards[Bishop] | m_PieceBitBoards[Queen]);
+    BitBoard bishopPin = 0;
+    while (bishopXRay) {
+        bishopPin |= BitBoard::Line(BitBoard::GetSquare(bishopXRay), kingSquare);
+        bishopXRay &= bishopXRay - 1;
+    }
+
     // Deals with checks from rooks, queens
-    BitBoard rookView = BitBoard::RookAttack(kingSquare, allPieces) & enemyPieces;
-    BitBoard rookCheck = rookView & (m_PieceBitBoards[Rook] | m_PieceBitBoards[Queen]);
+    BitBoard rookView = BitBoard::RookAttack(kingSquare, allPieces);
+    BitBoard rookCheck = rookView & enemyPieces & (m_PieceBitBoards[Rook] | m_PieceBitBoards[Queen]);
     checkers |= rookCheck;
     if (rookCheck)
         checkMask |= BitBoard::Line(kingSquare, BitBoard::GetSquare(rookCheck));
+
+    // Deals with pins from rooks and queens
+    BitBoard rookXRay = BitBoard::RookAttack(kingSquare, allPieces & ~rookView) & enemyPieces & (m_PieceBitBoards[Rook] | m_PieceBitBoards[Queen]);
+    BitBoard rookPin = 0;
+    while (rookXRay) {
+        rookPin |= BitBoard::Line(BitBoard::GetSquare(rookXRay), kingSquare);
+        rookXRay &= rookXRay - 1;
+    }
 
     // Deals with checks from knights
     BitBoard knightCheck = BitBoard::KnightAttack(kingSquare) & enemyPieces & m_PieceBitBoards[Knight];
@@ -261,7 +277,15 @@ BitBoard Board::GetLegalMoves(Square piece) {
     if (numCheckers > 1)
         checkMask = 0;
 
-    return GetPseudoLegalMoves(piece) & checkMask;
+    BitBoard pseudoLegal = GetPseudoLegalMoves(piece);
+
+    BitBoard pieceSquare = BitBoard(piece);
+    if (pieceSquare & rookPin)  // If piece is horizontally pinned
+        pseudoLegal &= rookPin & BitBoard::RookAttack(piece, allPieces);
+    else if (pieceSquare & bishopPin)  // If piece is diagonally pinned
+        pseudoLegal &= bishopPin & BitBoard::BishopAttack(piece, allPieces);
+
+    return pseudoLegal;
 }
 
 

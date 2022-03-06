@@ -6,7 +6,7 @@
 #include "BoardFormat.h"
 #include "Move.h"
 
-// Represents a chess board where square 0 is the top left and square 63 is the bottom right.
+// Represents a chess board where square 0 is the bottom left and square 63 is the top right.
 // Basically a uint64_t with a bunch of functions
 struct BitBoard {
 public:
@@ -14,6 +14,8 @@ public:
     class BitSquareReference {
     public:
         BitSquareReference(BitBoard* board, size_t index) : m_Reference(board), m_Index(index) {}
+
+        BitSquareReference& operator=(BitSquareReference&& other) = delete;
 
         BitSquareReference& operator=(bool value) {
             m_Reference->m_Board ^= (-((int64_t)value) ^ m_Reference->m_Board) & (1ull << m_Index);

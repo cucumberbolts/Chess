@@ -10,9 +10,9 @@ BitBoard BitBoard::PawnMoves(Square square, BitBoard blockers, Colour colour, Sq
     if (colour == White) {
         // Diagonal captures
         if (RankOf(square + 8) == RankOf(square + 9) && (square + 9) < 64)
-            availibleSquares[square + 9] = blockers[square + 9];
+            availibleSquares[square + 9] = (bool)blockers[square + 9];
         if (RankOf(square + 8) == RankOf(square + 7) && (square + 7) < 64)
-            availibleSquares[square + 7] = blockers[square + 7];
+            availibleSquares[square + 7] = (bool)blockers[square + 7];
         // Calculates the square in front of the pawn
         if (square + 8 < 64)
             availibleSquares[square + 8] = true ^ blockers[square + 8];
@@ -24,10 +24,10 @@ BitBoard BitBoard::PawnMoves(Square square, BitBoard blockers, Colour colour, Sq
             availibleSquares[enPassantSquare] = true;
     } else {
         // Diagonal captures
-        if (RankOf(square - 8) == RankOf(square - 9) && (square - 9) >= 0)
-            availibleSquares[square - 9] = blockers[square - 9];
-        if (RankOf(square - 8) == RankOf(square - 7) && (square - 7) >= 0)
-            availibleSquares[square - 7] = blockers[square - 7];
+        if (RankOf(square - 8) == RankOf(square - 9) && (square - 9) < 64)
+            availibleSquares[square - 9] = (bool)blockers[square - 9];
+        if (RankOf(square - 8) == RankOf(square - 7) && (square - 7) < 64)
+            availibleSquares[square - 7] = (bool)blockers[square - 7];
         // Calculates one square in front of the pawn
         if (square - 8 >= 0)
             availibleSquares[square - 8] = true ^ blockers[square - 8];
