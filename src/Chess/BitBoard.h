@@ -65,9 +65,9 @@ private:
 };
 
 inline std::ostream& operator<<(std::ostream& os, BitBoard board) {
-    static std::array<std::string_view, ColourCount> rankNumbers = { "87654321", "12345678" };
+    static std::array<std::string_view, ColourCount> rankNumbers = { "12345678", "87654321" };
 
-    for (Square rank = 0; rank < 8; rank++) {
+    for (Square rank = 7; rank < 8; rank--) {
         if (BoardFormat::s_BoardFormat.Coordinates)
             os << rankNumbers[BoardFormat::s_BoardFormat.Orientation][rank] << ' ';
 

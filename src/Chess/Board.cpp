@@ -7,14 +7,14 @@
 #include <intrin.h>
 
 static constexpr std::array<Piece, 64> s_StartBoard = {
-    BlackRook, BlackKnight, BlackBishop, BlackQueen, BlackKing, BlackBishop, BlackKnight, BlackRook,
-    BlackPawn, BlackPawn,   BlackPawn,   BlackPawn,  BlackPawn, BlackPawn,   BlackPawn,   BlackPawn,
-    None,      None,        None,        None,       None,      None,        None,        None,
-    None,      None,        None,        None,       None,      None,        None,        None,
-    None,      None,        None,        None,       None,      None,        None,        None,
-    None,      None,        None,        None,       None,      None,        None,        None,
+    WhiteRook, WhiteKnight, WhiteBishop, WhiteQueen, WhiteKing, WhiteBishop, WhiteKnight, WhiteRook,
     WhitePawn, WhitePawn,   WhitePawn,   WhitePawn,  WhitePawn, WhitePawn,   WhitePawn,   WhitePawn,
-    WhiteRook, WhiteKnight, WhiteBishop, WhiteQueen, WhiteKing, WhiteBishop, WhiteKnight, WhiteRook
+    None,      None,        None,        None,       None,      None,        None,        None,
+    None,      None,        None,        None,       None,      None,        None,        None,
+    None,      None,        None,        None,       None,      None,        None,        None,
+    None,      None,        None,        None,       None,      None,        None,        None,
+    BlackPawn, BlackPawn,   BlackPawn,   BlackPawn,  BlackPawn, BlackPawn,   BlackPawn,   BlackPawn,
+    BlackRook, BlackKnight, BlackBishop, BlackQueen, BlackKing, BlackBishop, BlackKnight, BlackRook
 };
 
 static constexpr std::array<BitBoard, PieceTypeCount> s_PieceBitBoards = {
@@ -27,12 +27,12 @@ static constexpr std::array<BitBoard, PieceTypeCount> s_PieceBitBoards = {
 };
 
 static constexpr std::array<BitBoard, ColourCount> s_ColourBitBoards = {
-    0b1111111111111111000000000000000000000000000000000000000000000000,  // White pieces
-    0b0000000000000000000000000000000000000000000000001111111111111111   // Black pieces
+    0b0000000000000000000000000000000000000000000000001111111111111111,  // WhitePieces
+    0b1111111111111111000000000000000000000000000000000000000000000000   // Black pieces
 };
 
 static constexpr std::array<BitBoard, 4> s_CastlingPaths = {
-    0x7000000000000000, 0x70, 0x1C00000000000000, 0x1C
+        0x70, 0x70ull << 56, 0xE, 0xEull << 56
 };
 
 void Board::Reset() {
@@ -56,16 +56,15 @@ void Board::FromFEN(const std::string& fen) {
     std::string_view board;
     fenParser.Next(board);
 
-    Square square = 0;
+    Square square = 56;
     for (const char c : board) {
         if (std::isalpha(c)) {
             PlacePiece(CharToPiece(c), square);
             square++;
         } else if (std::isdigit(c)) {
-            square += c - '0';
+            square += c - '0';  // Skip empty squares
         } else if (c == '/') {
-            if (square % 8 != 0)
-                square = square - square % 8 + 8;  // Next line on chessboard
+            square -= 16;  // Next line on chessboard
         }
     }
 
@@ -109,9 +108,9 @@ AlgebraicMove Board::Move(LongAlgebraicMove m) {
     if (!IsMoveLegal(m))
         // Illegal move
         std::cout << "illegal move: " << m << "!\n"
-            << GetPseudoLegalMoves(m.SourceSquare) << "\n"
-            << GetLegalMoves(m.SourceSquare) << "\n"
-            << BitBoard(m.DestinationSquare) << "\n";
+            << "Pseudo legal:\n" << GetPseudoLegalMoves(m.SourceSquare) << "\n"
+            << "Legal:\n" << GetLegalMoves(m.SourceSquare) << "\n"
+            << "Destination:\n" << BitBoard(m.DestinationSquare) << "\n";
 
     if (pieceType == King) {
         int direction = m.DestinationSquare - m.SourceSquare;  // Kingside or queenside
@@ -127,8 +126,6 @@ AlgebraicMove Board::Move(LongAlgebraicMove m) {
                 newRookSquare = m.DestinationSquare - 1;
             }
 
-            // TODO: Check if there is a rook on rookSquare
-
             // Only move the rook because the king will be moved below
             RemovePiece(rookSquare);
             PlacePiece(TypeAndColour(Rook, colour), newRookSquare);
@@ -136,15 +133,6 @@ AlgebraicMove Board::Move(LongAlgebraicMove m) {
 
         m_CastlingPath[colour | KingSide] = 0xFFFFFFFFFFFFFFFF;
         m_CastlingPath[colour | QueenSide] = 0xFFFFFFFFFFFFFFFF;
-    } else if (pieceType == Rook) {
-        if (m.SourceSquare == 0)
-            m_CastlingPath[Black | KingSide] = 0xFFFFFFFFFFFFFFFF;
-        else if (m.SourceSquare == 7)
-            m_CastlingPath[Black | QueenSide] = 0xFFFFFFFFFFFFFFFF;
-        else if (m.SourceSquare == 56)
-            m_CastlingPath[White | KingSide] = 0xFFFFFFFFFFFFFFFF;
-        else if (m.SourceSquare == 63)
-            m_CastlingPath[White | QueenSide] = 0xFFFFFFFFFFFFFFFF;
     } else if (pieceType == Pawn) {
         if (m.SourceSquare - m.DestinationSquare == 16)  // If white pushed pawn two squares
             m_EnPassantSquare = m.DestinationSquare + 8;
@@ -156,13 +144,22 @@ AlgebraicMove Board::Move(LongAlgebraicMove m) {
                 RemovePiece(m.DestinationSquare + 8);
             else
                 RemovePiece(m.DestinationSquare - 8);
-        } else if (m.DestinationSquare & 0xFF000000000000FF) {  // If pawn is promoting
+        } else if ((1ull << m.DestinationSquare) & 0xFF000000000000FF) {  // If pawn is promoting
             if (m.Promotion == Pawn || m.Promotion == King)
                 std::cout << "Must promote to another piece!\n";
 
             piece = TypeAndColour(m.Promotion, colour);
         }
     }
+
+    if (m.SourceSquare == 0 || m.DestinationSquare == 0)
+        m_CastlingPath[Black | KingSide] = 0xFFFFFFFFFFFFFFFF;
+    else if (m.SourceSquare == 7 || m.DestinationSquare == 7)
+        m_CastlingPath[Black | QueenSide] = 0xFFFFFFFFFFFFFFFF;
+    else if (m.SourceSquare == 56 || m.DestinationSquare == 56)
+        m_CastlingPath[White | KingSide] = 0xFFFFFFFFFFFFFFFF;
+    else if (m.SourceSquare == 63 || m.DestinationSquare == 63)
+        m_CastlingPath[White | QueenSide] = 0xFFFFFFFFFFFFFFFF;
 
     bool capture = m_Board[m.DestinationSquare] != Piece::None;
 
@@ -215,10 +212,10 @@ BitBoard Board::GetLegalMoves(Square piece) {
         BitBoard legalMoves = GetPseudoLegalMoves(piece);
         BitBoard controlledSquares = ControlledSquares(enemyColour);
         // Deals with castling. Perhaps move to GetPseudoLegalMoves()?
-        if (!((allPieces ^ king) & m_CastlingPath[playerColour | KingSide]) && !(controlledSquares & m_CastlingPath[playerColour | KingSide]))
-            legalMoves |= 0x40ull << (playerColour == White ? 56 : 0);
-        if (!((allPieces ^ king) & m_CastlingPath[playerColour | QueenSide]) && !(controlledSquares & m_CastlingPath[playerColour | QueenSide]))
-            legalMoves |= 0x04ull << (playerColour == White ? 56 : 0);
+        if (!((allPieces & ~king) & m_CastlingPath[playerColour | KingSide]) && !(controlledSquares & m_CastlingPath[playerColour | KingSide]))
+            legalMoves |= 0x40ull << (playerColour == White ? 0 : 56);
+        if (!((allPieces & ~king) & m_CastlingPath[playerColour | QueenSide]) && !(controlledSquares & m_CastlingPath[playerColour | QueenSide]))
+            legalMoves |= 0x04ull << (playerColour == White ? 0 : 56);
         return legalMoves & ~controlledSquares;
     }
 

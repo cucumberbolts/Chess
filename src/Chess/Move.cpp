@@ -13,6 +13,5 @@ LongAlgebraicMove::LongAlgebraicMove(std::string_view longAlgebraic)
         Promotion = CharToPieceType(longAlgebraic[4]);
     } else {
         std::cout << "invalid long algebraic notation!\n";
-
     }
 }

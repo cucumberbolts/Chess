@@ -35,7 +35,7 @@ private:
     static Piece CharToPiece(char c);
 
     BitBoard ControlledSquares(Colour colour);
-private:
+public:
     std::array<BitBoard, ColourCount> m_ColourBitBoards;
     std::array<BitBoard, PieceTypeCount> m_PieceBitBoards;
 
@@ -47,12 +47,10 @@ private:
     //
     // OR the Colour enum with the CastleSide enum to get the index
     // [0] = White | KingSide
-    // [1] = Black | QueenSide
-    // [2] = White | KingSide
+    // [1] = Black | KingSide
+    // [2] = White | QueenSide
     // [3] = Black | QueenSide
-    std::array<BitBoard, 4> m_CastlingPath = {
-        0x7000000000000000, 0x70, 0x1C00000000000000, 0x1C
-    };
+    std::array<BitBoard, 4> m_CastlingPath;
 
     // The target square for en passant on a bitboard
     Square m_EnPassantSquare = 0;
@@ -77,7 +75,6 @@ inline void Board::RemovePiece(Square s) {
     }
 }
 
-
 inline Piece Board::CharToPiece(char c) {
     switch (c) {
         case 'P': return WhitePawn;
@@ -101,7 +98,7 @@ inline Piece Board::CharToPiece(char c) {
 inline std::ostream& operator<<(std::ostream& os, const Board& board) {
     static std::array<std::string_view, ColourCount> rankNumbers = { "87654321", "12345678" };
 
-    for (Square rank = 0; rank < 8; rank++) {
+    for (Square rank = 7; rank < 8; rank--) {
         if (BoardFormat::s_BoardFormat.Coordinates)
             os << rankNumbers[BoardFormat::s_BoardFormat.Orientation][rank] << ' ';
 

@@ -75,11 +75,15 @@ inline PieceType CharToPieceType(char piece) {
     }
 }
 
+// Uses this format: https://www.chessprogramming.org/Square_Mapping_Considerations#LittleEndianRankFileMapping
+// Square == 0: a1
+// Square == 64: h8
+// Increases from left to right
 using Square = uint8_t;
 
 inline constexpr Square ToSquare(char file, char rank) {
-    uint8_t x = file - 'a';  // ASSERT(x < 8)
-    uint8_t y = 8 - (rank - '0'); // ASSERT(x < 8)
+    Square x = file - 'a';  // ASSERT(x < 8)
+    Square y = (rank - 1) - '0';  // ASSERT(x < 8)
     return y * 8 + x;
 }
 
@@ -88,8 +92,8 @@ inline constexpr Square ToSquare(std::string_view square) {
     if (square.size() > 2)
         return 0;
 
-    uint8_t x = square[0] - 'a';  // ASSERT(x < 8)
-    uint8_t y = 8 - (square[1] - '0'); // ASSERT(x < 8)
+    Square x = square[0] - 'a';  // ASSERT(x < 8)
+    Square y = (square[1] - 1) - '0'; // ASSERT(x < 8)
     return y * 8 + x;
 }
 
@@ -109,10 +113,10 @@ struct LongAlgebraicMove {
 
 inline std::ostream& operator<<(std::ostream& os, LongAlgebraicMove m) {
     os << (char)('a' + FileOf(m.SourceSquare));  // File
-    os << (char)('8' - RankOf(m.SourceSquare) / 8);  // Rank
+    os << (char)('1' + RankOf(m.SourceSquare) / 8);  // Rank
 
     os << (char)('a' + FileOf(m.DestinationSquare));  // File
-    os << (char)('8' - RankOf(m.DestinationSquare) / 8);  // Rank
+    os << (char)('1' + RankOf(m.DestinationSquare) / 8);  // Rank
 
     return os;
 }
@@ -138,7 +142,7 @@ inline std::ostream& operator<<(std::ostream& os, AlgebraicMove m) {
         os << 'x';
 
     os << (char)('a' + FileOf(m.Square));  // File
-    os << (char)('8' - RankOf(m.Square) / 8);  // Rank
+    os << (char)('1' + RankOf(m.Square) / 8);  // Rank
 
     return os;
 }
