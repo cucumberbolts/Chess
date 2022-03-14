@@ -15,8 +15,6 @@ public:
     public:
         BitSquareReference(BitBoard* board, size_t index) : m_Reference(board), m_Index(index) {}
 
-        BitSquareReference& operator=(BitSquareReference&& other) = delete;
-
         BitSquareReference& operator=(bool value) {
             m_Reference->m_Board ^= (-((int64_t)value) ^ m_Reference->m_Board) & (1ull << m_Index);
             return *this;

@@ -268,7 +268,7 @@ BitBoard Board::GetLegalMoves(Square piece) {
     if (checkMask == 0)
         checkMask = 0xFFFFFFFFFFFFFFFF;
     
-    // Get the number of checkers (using Kernighan's population count)
+    // Get the number of checkers (using Kernighan's population count)  TODO: user __popcnt64()?
     int numCheckers = 0;
     for (; checkers != 0; numCheckers++)
         checkers &= checkers - 1;

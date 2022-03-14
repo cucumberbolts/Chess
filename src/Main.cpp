@@ -2,9 +2,7 @@
 
 #include <iostream>
 
-#include <sstream>
-
-#include "Chess/Board.h"
+#include "Chess/KindergartenBitBoard.h"
 
 static uint32_t s_Allocations = 0;
 void* operator new(size_t size) {
@@ -13,7 +11,17 @@ void* operator new(size_t size) {
 }
 
 int main() {
-#if 1
+    BitBoard blockers = 0;
+    blockers[25] = true;  // b4
+    blockers[31] = true;  // h4
+    blockers[43] = true;  // d6
+    blockers[11] = true;  // d2
+    blockers[50] = true;  // c7
+    std::cout << "blockers:\n" << blockers << "\n";
+    std::cout << KindergartenBitBoard::BishopAttack(29, blockers);
+
+    std::cout << KindergartenBitBoard::RookAttack(18, blockers);
+#if 0
     std::cout << "Current working directory: " << std::filesystem::current_path() << std::endl;
 
     std::string_view stockfish14 = "Engines/stockfish_14_x64_avx2.exe";

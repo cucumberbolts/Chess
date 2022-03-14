@@ -99,7 +99,7 @@ inline constexpr Square ToSquare(std::string_view square) {
 
 // Returns the left-most square on the same rank as s
 inline constexpr Square RankOf(Square s) { return s & 0b11111000; }
-// Returns the right-most square on the same rank as s
+// Returns the bottom-most square on the same file as s
 inline constexpr Square FileOf(Square s) { return s & 0b00000111; }
 
 struct LongAlgebraicMove {
