@@ -2,6 +2,7 @@
 
 #include <iostream>
 
+#include "Chess/BitBoard.h"
 #include "Chess/KindergartenBitBoard.h"
 
 static uint32_t s_Allocations = 0;
@@ -11,16 +12,6 @@ void* operator new(size_t size) {
 }
 
 int main() {
-    BitBoard blockers = 0;
-    blockers[25] = true;  // b4
-    blockers[31] = true;  // h4
-    blockers[43] = true;  // d6
-    blockers[11] = true;  // d2
-    blockers[50] = true;  // c7
-    std::cout << "blockers:\n" << blockers << "\n";
-    std::cout << KindergartenBitBoard::BishopAttack(29, blockers);
-
-    std::cout << KindergartenBitBoard::RookAttack(18, blockers);
 #if 0
     std::cout << "Current working directory: " << std::filesystem::current_path() << std::endl;
 
@@ -55,12 +46,45 @@ int main() {
     std::cout << s_Allocations << " allocations!\n";
 
     std::cin.get();
-#elif 0
+#elif 1
+    BitBoard blockers = 0;
+    blockers |= 1ull << B4;
+    blockers |= 1ull << H4;
+    blockers |= 1ull << D6;
+    blockers |= 1ull << D2;
+    blockers |= 1ull << C7;
+    blockers |= 1ull << E3;
+
+    std::cout << "blockers:\n";
+    PrintBitBoard(blockers);
+
+    std::cout << "Pawns:\n";
+    PrintBitBoard(PseudoLegal::PawnAttack(E5, White));
+    PrintBitBoard(PseudoLegal::PawnMoves(E5, White, blockers, 0));
+    PrintBitBoard(PseudoLegal::PawnMoves(E7, Black, blockers, 0));
+    PrintBitBoard(PseudoLegal::PawnMoves(E2, White, blockers, 0));
+    PrintBitBoard(PseudoLegal::PawnMoves(F2, White, blockers, 0));
+
+    std::cout << "Piece attacks:\n";
+    PrintBitBoard(PseudoLegal::KnightAttack(F4));
+    PrintBitBoard(PseudoLegal::KnightAttack(F4));
+    PrintBitBoard(PseudoLegal::BishopAttack(F4, blockers));
+    PrintBitBoard(PseudoLegal::RookAttack(C3, blockers));
+    PrintBitBoard(PseudoLegal::QueenAttack(C3, blockers));
+
+    std::cout << "Lines:\n";
+    PrintBitBoard(PseudoLegal::Line(1ull << B2, 1ull << E5));
+    PrintBitBoard(PseudoLegal::Line(1ull << C1, 1ull << C7));
+    PrintBitBoard(PseudoLegal::Line(1ull << A8, 1ull << B7));
+    PrintBitBoard(PseudoLegal::Line(1ull << F7, 1ull << H7));
+    PrintBitBoard(PseudoLegal::Line(1ull << A1, 1ull << D6));
+    PrintBitBoard(PseudoLegal::Line(1ull << F7, 0));
+#elif 1
     Board board("b6k/8/8/3R4/1r1NK3/8/8/8 w - - 0 1");
 
     std::cout << board << "\n";
 
-    std::cout << board.GetLegalMoves(ToSquare('d', '5'));
-    std::cout << board.GetLegalMoves(ToSquare('d', '4'));
+    PrintBitBoard(board.GetLegalMoves(ToSquare('d', '5')));
+    PrintBitBoard(board.GetLegalMoves(ToSquare('d', '4')));
 #endif
 }

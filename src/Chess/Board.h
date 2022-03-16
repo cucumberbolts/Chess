@@ -58,19 +58,17 @@ public:
     Colour m_PlayerTurn = White;
 };
 
-constexpr size_t s = sizeof(Board);
-
 inline void Board::PlacePiece(Piece p, Square s) {
-    m_PieceBitBoards[GetPieceType(p)][s] = true;
-    m_ColourBitBoards[GetColour(p)][s] = true;
+    m_PieceBitBoards[GetPieceType(p)] |= 1ull << s;
+    m_ColourBitBoards[GetColour(p)] |= 1ull << s;
     m_Board[s] = p;
 }
 
 inline void Board::RemovePiece(Square s) {
     Piece p = m_Board[s];
     if (p != Piece::None) {
-        m_PieceBitBoards[GetPieceType(p)][s] = false;
-        m_ColourBitBoards[GetColour(p)][s] = false;
+        m_PieceBitBoards[GetPieceType(p)] &= ~(1ull << s);
+        m_ColourBitBoards[GetColour(p)] &= ~(1ull << s);
         m_Board[s] = Piece::None;
     }
 }
