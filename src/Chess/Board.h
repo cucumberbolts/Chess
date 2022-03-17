@@ -8,7 +8,7 @@
 #include "BoardFormat.h"
 #include "Move.h"
 
-// TODO: Error checking with ASSERT()s
+// TODO: Error handling with exceptions
 
 class Board {
 public:
@@ -24,18 +24,16 @@ public:
 
     AlgebraicMove Move(LongAlgebraicMove m);
 
-    BitBoard GetPseudoLegalMoves(Square piece);
-
     bool IsMoveLegal(LongAlgebraicMove move);
     BitBoard GetLegalMoves(Square piece);
 private:
+    BitBoard GetPseudoLegalMoves(Square piece);
+
     void PlacePiece(Piece p, Square s);
     void RemovePiece(Square s);
 
-    static Piece CharToPiece(char c);
-
     BitBoard ControlledSquares(Colour colour);
-public:
+private:
     std::array<BitBoard, ColourCount> m_ColourBitBoards;
     std::array<BitBoard, PieceTypeCount> m_PieceBitBoards;
 
@@ -52,11 +50,13 @@ public:
     // [3] = Black | QueenSide
     std::array<BitBoard, 4> m_CastlingPath;
 
-    // The target square for en passant on a bitboard
-    Square m_EnPassantSquare = 0;
+    // The target square for en passant
+    Square m_EnPassantSquare;
 
-    Colour m_PlayerTurn = White;
+    Colour m_PlayerTurn;
 };
+
+constexpr size_t size = sizeof(Board);
 
 inline void Board::PlacePiece(Piece p, Square s) {
     m_PieceBitBoards[GetPieceType(p)] |= 1ull << s;
@@ -70,26 +70,6 @@ inline void Board::RemovePiece(Square s) {
         m_PieceBitBoards[GetPieceType(p)] &= ~(1ull << s);
         m_ColourBitBoards[GetColour(p)] &= ~(1ull << s);
         m_Board[s] = Piece::None;
-    }
-}
-
-inline Piece Board::CharToPiece(char c) {
-    switch (c) {
-        case 'P': return WhitePawn;
-        case 'N': return WhiteKnight;
-        case 'B': return WhiteBishop;
-        case 'R': return WhiteRook;
-        case 'Q': return WhiteQueen;
-        case 'K': return WhiteKing;
-
-        case 'p': return BlackPawn;
-        case 'n': return BlackKnight;
-        case 'b': return BlackBishop;
-        case 'r': return BlackRook;
-        case 'q': return BlackQueen;
-        case 'k': return BlackKing;
-
-        default: return Piece::None;  // Error
     }
 }
 

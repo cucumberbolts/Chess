@@ -2,9 +2,6 @@
 
 #include <iostream>
 
-#include "Chess/BitBoard.h"
-#include "Chess/KindergartenBitBoard.h"
-
 static uint32_t s_Allocations = 0;
 void* operator new(size_t size) {
     s_Allocations++;
@@ -12,7 +9,7 @@ void* operator new(size_t size) {
 }
 
 int main() {
-#if 0
+#if 1
     std::cout << "Current working directory: " << std::filesystem::current_path() << std::endl;
 
     std::string_view stockfish14 = "Engines/stockfish_14_x64_avx2.exe";
@@ -46,7 +43,7 @@ int main() {
     std::cout << s_Allocations << " allocations!\n";
 
     std::cin.get();
-#elif 1
+#elif 0
     BitBoard blockers = 0;
     blockers |= 1ull << B4;
     blockers |= 1ull << H4;
@@ -80,11 +77,18 @@ int main() {
     PrintBitBoard(PseudoLegal::Line(1ull << A1, 1ull << D6));
     PrintBitBoard(PseudoLegal::Line(1ull << F7, 0));
 #elif 1
-    Board board("b6k/8/8/3R4/1r1NK3/8/8/8 w - - 0 1");
+    Board board("3q4/8/3B4/8/3K3r/8/8/8 w - - 0 1");
 
     std::cout << board << "\n";
 
-    PrintBitBoard(board.GetLegalMoves(ToSquare('d', '5')));
-    PrintBitBoard(board.GetLegalMoves(ToSquare('d', '4')));
+    PrintBitBoard(board.GetLegalMoves(D6));
+    PrintBitBoard(board.GetLegalMoves(D4));
+
+    board.FromFEN("8/8/1q3q2/3N4/3K4/8/8/8 w - - 0 1");
+
+    std::cout << board << "\n";
+
+    PrintBitBoard(board.GetLegalMoves(D5));
+    PrintBitBoard(board.GetLegalMoves(D4));
 #endif
 }

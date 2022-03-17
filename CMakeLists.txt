@@ -15,10 +15,9 @@ set(SOURCES
     "src/Chess/Board.h"
     "src/Chess/Board.cpp"
     "src/Chess/BoardFormat.h"
-    "src/Chess/KindergartenBitBoard.h"
-    "src/Chess/KindergartenBitBoard.cpp"
+    "src/Chess/PseudoLegal.h"
+    "src/Chess/PseudoLegal.cpp"
     "src/Chess/Move.h"
-    "src/Chess/Move.cpp"
 
     "src/Platform/Windows/WindowsEngine.h"
     "src/Platform/Windows/WindowsEngine.cpp"
