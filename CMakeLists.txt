@@ -5,12 +5,6 @@ project(Chess)
 set(SOURCES
     "src/Main.cpp"
 
-    "src/ChessEngine/Engine.h"
-    "src/ChessEngine/Engine.cpp"
-    "src/ChessEngine/Option.h"
-
-    "src/Utility/StringParser.h"
-
     "src/Chess/BitBoard.h"
     "src/Chess/Board.h"
     "src/Chess/Board.cpp"
@@ -18,6 +12,15 @@ set(SOURCES
     "src/Chess/PseudoLegal.h"
     "src/Chess/PseudoLegal.cpp"
     "src/Chess/Move.h"
+
+    "src/ChessEngine/Engine.h"
+    "src/ChessEngine/Engine.cpp"
+    "src/ChessEngine/Option.h"
+
+    "src/Graphics/Application.h"
+    "src/Graphics/Application.cpp"
+
+    "src/Utility/StringParser.h"
 
     "src/Platform/Windows/WindowsEngine.h"
     "src/Platform/Windows/WindowsEngine.cpp"
@@ -37,3 +40,19 @@ target_include_directories(${PROJECT_NAME}
     PRIVATE
     "src/"
 )
+
+#add_subdirectory(dependencies)
+
+set(BUILD_SHARED_LIBS OFF)
+set(GLFW_BUILD_EXAMPLES OFF)
+set(GLFW_BUILD_TESTS OFF)
+set(GLFW_BUILD_DOCS OFF)
+set(GLFW_INSTALL OFF)
+
+add_subdirectory(dependencies/glfw)
+
+find_package(OpenGL REQUIRED)
+
+target_include_directories(${PROJECT_NAME} PRIVATE "dependencies/glfw/include/")
+
+target_link_libraries(${PROJECT_NAME} PRIVATE glfw ${OPENGL_LIBRARY})
