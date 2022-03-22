@@ -7,9 +7,9 @@
 #include <iostream>
 #include <sstream>
 
-Engine::~Engine() {
-    Stop();
+using namespace std::chrono_literals;
 
+Engine::~Engine() {
     for (auto option : m_Options)
         delete option;
 }
@@ -19,29 +19,11 @@ bool Engine::Init() {
 
     //loop till "uciok" is received
     std::string data;
-#if 0
-    uint64_t time = GetTime();
-    while (m_State != State::Ready) {
-        if (GetTime() - time > waitTime) {  // Check every 50 milliseconds to avoid calling PeekNamedPipe() a lot
-            Receive(data);
-            HandleCommand(data);
-
-            time = GetTime();
-        }
-    }
-#elif 1
     while (m_State != State::Ready) {
         Receive(data);
         HandleCommand(data);
-        std::this_thread::sleep_for(std::chrono::milliseconds(waitTime));
-        //Sleep(waitTime);
+        std::this_thread::sleep_for(1ms);
     }
-#elif 1
-    while (m_State != State::Ready) {
-        Receive(data);
-        HandleCommand(data);
-    }
-#endif
 
     std::cout << "Engine initialized!\n";
 
@@ -57,8 +39,10 @@ void Engine::Run() {
     m_State = State::Running;
 
     Send("go\n");
-    
+
     m_Thread = std::thread(&Engine::RunLoop, this);
+
+    // TODO: Debug print()
 }
 
 void Engine::Stop() {
@@ -70,7 +54,7 @@ void Engine::Stop() {
 }
 
 bool Engine::SetButton(const std::string& name) {
-    if (auto option = FindOption(name, Option::OptionType::Button)) {
+    if (FindOption(name, Option::OptionType::Button)) {
         std::stringstream ss;
         ss << "setoption name " << name << "\r\n";
 
@@ -178,30 +162,12 @@ bool Engine::SetCombo(const std::string& name, size_t valueIndex) {
 }
 
 void Engine::RunLoop() {
-#if 1
-    std::string data;
-    uint64_t time = GetTime();
-    while (m_State == State::Running) {
-        if (GetTime() - time > waitTime) {  // Check every 500 milliseconds to avoid calling PeekNamedPipe() a lot
-            Receive(data);
-
-            if (!data.empty())
-                std::cout << "Received: " << data << "\n";
-
-            HandleCommand(data);
-
-            time = GetTime();
-        }
-    }
-#else
     std::string data;
     while (m_State == State::Running) {
         Receive(data);
-
-        if (!data.empty())
-            std::cout << "Received: " << data << "\n";
+        HandleCommand(data);
+        std::this_thread::sleep_for(1ms);
     }
-#endif
 }
 
 void Engine::HandleCommand(const std::string& text) {
@@ -352,22 +318,34 @@ void Engine::PrintInfo() {
     for (Option* option : m_Options) {
         std::cout << "Option name: " << option->Name << " type: " << Option::TypeToString(option->Type);
 
-        if (option->Type == Option::OptionType::Check) {
-            Check* c = (Check*)option;
-            std::cout << " Value: " << std::boolalpha << c->Value;
-        } else if (option->Type == Option::OptionType::Spin) {
-            Spin* s = (Spin*)option;
-            std::cout << " Value: " << s->Value << " Min: " << s->Min << " Max: " << s->Max;
-        } else if (option->Type == Option::OptionType::String) {
-            String* s = (String*)option;
-            std::cout << " Value: " << s->Value;
-        } else if (option->Type == Option::OptionType::Combo) {
-            Combo* c = (Combo*)option;
-            std::cout << " Values: ";
-            for (std::string& v : c->Values)
-                std::cout << v << " ";
+        switch (option->Type) {
+            case Option::OptionType::Check: {
+                Check* c = (Check*)option;
+                std::cout << " Value: " << std::boolalpha << c->Value;
+                break;
+            }
+            case Option::OptionType::Spin: {
+                Spin* s = (Spin*)option;
+                std::cout << " Value: " << s->Value << " Min: " << s->Min << " Max: " << s->Max;
+                break;
+            }
+            case Option::OptionType::Combo: {
+                Combo* c = (Combo*)option;
+                std::cout << " Values: ";
+                for (std::string& v : c->Values)
+                    std::cout << v << " ";
 
-            std::cout << " Default: " << c->Values[c->Value];
+                std::cout << " Default: " << c->Values[c->Value];
+                break;
+            }
+            case Option::OptionType::Button: {
+                break;
+            }
+            case Option::OptionType::String: {
+                String* s = (String*)option;
+                std::cout << " Value: " << s->Value;
+                break;
+            }
         }
 
         std::cout << "\n";

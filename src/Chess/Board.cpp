@@ -122,7 +122,7 @@ AlgebraicMove Board::Move(LongAlgebraicMove m) {
 
     // ASSERT(p != Piece::None)
 
-    std::cout << "Moving: " << m << "\n";
+    //std::cout << "Moving: " << m << "\n";
 
     if (!IsMoveLegal(m)) {
         std::cout << "Illegal move: " << m << "!\n";

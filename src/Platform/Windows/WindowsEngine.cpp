@@ -3,7 +3,7 @@
 #include <iostream>
 
 std::unique_ptr<Engine> Engine::Create(const std::filesystem::path& path) {
-    return std::make_unique<WindowsEngine>(std::filesystem::absolute(path).string());
+    return std::make_unique<WindowsEngine>(path.string());
 }
 
 WindowsEngine::WindowsEngine(const std::string& path) {
@@ -33,15 +33,15 @@ WindowsEngine::WindowsEngine(const std::string& path) {
 
     BOOL bSuccess = CreateProcess(path.c_str(), NULL, NULL, NULL, TRUE, 0, NULL, NULL, &startupInfo, &processInfo);
 
-    if (!bSuccess) {
+    if (!bSuccess)
         std::cout << "CreateProcess Failed: " << GetLastError() << std::endl;
-    }
 
     // Close handles to the child process and its primary thread.
     // Some applications might keep these handles to monitor the status
     // of the child process, for example. 
 
-    CloseHandle(processInfo.hProcess);
+    m_ProcessHandle = processInfo.hProcess;
+
     CloseHandle(processInfo.hThread);
 
     CloseHandle(hEngineOutputWrite);
@@ -49,8 +49,17 @@ WindowsEngine::WindowsEngine(const std::string& path) {
 }
 
 WindowsEngine::~WindowsEngine() {
+    if (m_State == State::Running)
+        Stop();
+    
+    if (!Send("quit\n"))
+        printf("Couldn't send \"quit\"!\n");
+
+    WaitForSingleObject(m_ProcessHandle, INFINITE);
+
     CloseHandle(m_EngineInputWrite);
     CloseHandle(m_EngineOutputRead);
+    CloseHandle(m_ProcessHandle);
 }
 
 bool WindowsEngine::Send(const std::string& message) {
@@ -78,8 +87,4 @@ bool WindowsEngine::Receive(std::string& message) {
     }
 
     return true;
-}
-
-uint64_t WindowsEngine::GetTime() {
-    return GetTickCount64();
 }

@@ -12,9 +12,8 @@ public:
 
     bool Send(const std::string& message) override;
     bool Receive(std::string& message) override;
-
-    uint64_t GetTime() override;
 private:
-    HANDLE m_EngineInputWrite;
-    HANDLE m_EngineOutputRead;
+    HANDLE m_EngineInputWrite = NULL;
+    HANDLE m_EngineOutputRead = NULL;
+    HANDLE m_ProcessHandle = NULL;
 };

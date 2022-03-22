@@ -112,14 +112,13 @@ inline constexpr Square RankOf(Square s) { return s & 0b11111000; }
 inline constexpr Square FileOf(Square s) { return s & 0b00000111; }
 
 struct LongAlgebraicMove {
-    Square SourceSquare;
-    Square DestinationSquare;
-    PieceType Promotion;
+    Square SourceSquare = 0;
+    Square DestinationSquare = 0;
+    PieceType Promotion = Pawn;
 
     LongAlgebraicMove() = default;
 
-    LongAlgebraicMove(std::string_view longAlgebraic)
-        : SourceSquare(0), DestinationSquare(0), Promotion(Pawn) {
+    LongAlgebraicMove(std::string_view longAlgebraic) {
         if (longAlgebraic.size() == 4) {
             SourceSquare = ToSquare(longAlgebraic[0], longAlgebraic[1]);
             DestinationSquare = ToSquare(longAlgebraic[2], longAlgebraic[3]);

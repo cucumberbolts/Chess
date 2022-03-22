@@ -41,8 +41,6 @@ target_include_directories(${PROJECT_NAME}
     "src/"
 )
 
-#add_subdirectory(dependencies)
-
 set(BUILD_SHARED_LIBS OFF)
 set(GLFW_BUILD_EXAMPLES OFF)
 set(GLFW_BUILD_TESTS OFF)

@@ -13,7 +13,7 @@
 #include "Utility/StringParser.h"
 
 class Engine {
-private:
+protected:
     enum class State {
         Uninitialized,
         Ready,
@@ -37,32 +37,27 @@ public:
     bool SetCombo(const std::string& name, size_t valueIndex);
 
     void PrintInfo();
-public:
+private:
     std::string m_Name, m_Author;
     std::vector<Option*> m_Options;
 
     struct {
         std::vector<AlgebraicMove> Continuation;
         LongAlgebraicMove PonderMove;
-        int32_t Depth;
-        int32_t Score;  // Could be centipawns or mate
-        bool Mate;  // If the score is mate or centipawns
+        int32_t Depth = 0;
+        int32_t Score = 0;  // Could be centipawns or mate
+        bool Mate = false;  // If the score is mate or centipawns
     } m_BestContinuation;
 
     Board m_Board;
-
-    //std::atomic<State> m_State = State::Uninitialized;
+    
     State m_State = State::Uninitialized;
-
-    static constexpr uint32_t waitTime = 50;
 
     std::thread m_Thread;
 private:
     virtual bool Send(const std::string& message) = 0;
     virtual bool Receive(std::string& message) = 0;
 
-    virtual uint64_t GetTime() = 0;
-    
     void RunLoop();
 
     void HandleCommand(const std::string& text);
