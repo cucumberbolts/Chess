@@ -1,5 +1,6 @@
 #pragma once
 
+#define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
 
 class Application {
@@ -16,6 +17,7 @@ private:
     static Application* s_Instance;
 private:
     void OnWindowClose();
+    void OnKeyPressed(int32_t key, int32_t scancode, int32_t action, int32_t mods);
 private:
     GLFWwindow* m_Window = nullptr;
 

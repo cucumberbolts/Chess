@@ -20,7 +20,7 @@ void operator delete(void* ptr) noexcept {
 }
 
 int main() {
-#if 0
+#if 1
     Application* app = new Application();
     app->Run();
     delete app;

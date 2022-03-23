@@ -56,8 +56,6 @@ private:
     Colour m_PlayerTurn;
 };
 
-constexpr size_t size = sizeof(Board);
-
 inline void Board::PlacePiece(Piece p, Square s) {
     m_PieceBitBoards[GetPieceType(p)] |= 1ull << s;
     m_ColourBitBoards[GetColour(p)] |= 1ull << s;

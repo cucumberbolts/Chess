@@ -13,12 +13,6 @@
 #include "Utility/StringParser.h"
 
 class Engine {
-protected:
-    enum class State {
-        Uninitialized,
-        Ready,
-        Running
-    };
 public:
     static std::unique_ptr<Engine> Create(const std::filesystem::path& path);
 
@@ -50,10 +44,16 @@ private:
     } m_BestContinuation;
 
     Board m_Board;
-    
-    State m_State = State::Uninitialized;
 
     std::thread m_Thread;
+protected:
+    enum class State {
+        Uninitialized,
+        Ready,
+        Running
+    };
+
+    State m_State = State::Uninitialized;
 private:
     virtual bool Send(const std::string& message) = 0;
     virtual bool Receive(std::string& message) = 0;

@@ -41,6 +41,9 @@ target_include_directories(${PROJECT_NAME}
     "src/"
 )
 
+# ---------- DEPENDENCIES ----------
+
+# GLFW
 set(BUILD_SHARED_LIBS OFF)
 set(GLFW_BUILD_EXAMPLES OFF)
 set(GLFW_BUILD_TESTS OFF)
@@ -49,8 +52,14 @@ set(GLFW_INSTALL OFF)
 
 add_subdirectory(dependencies/glfw)
 
+# OpenGL
 find_package(OpenGL REQUIRED)
 
-target_include_directories(${PROJECT_NAME} PRIVATE "dependencies/glfw/include/")
+# glad
+add_subdirectory(dependencies/glad)
 
-target_link_libraries(${PROJECT_NAME} PRIVATE glfw ${OPENGL_LIBRARY})
+target_link_libraries(${PROJECT_NAME} PRIVATE
+    glfw
+    ${OPENGL_LIBRARY}
+    glad
+)
