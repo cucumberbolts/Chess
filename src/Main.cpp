@@ -21,7 +21,7 @@ void operator delete(void* ptr) noexcept {
 
 int main() {
 #if 1
-    Application* app = new Application();
+    Application* app = new Application(640, 480, "Application");
     app->Run();
     delete app;
 #elif 0

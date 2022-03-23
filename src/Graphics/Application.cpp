@@ -6,7 +6,7 @@
 
 Application* Application::s_Instance = nullptr;
 
-Application::Application() {
+Application::Application(uint32_t width, uint32_t height, const std::string& name) {
     if (!s_Instance)
         s_Instance = this;
 
@@ -15,7 +15,7 @@ Application::Application() {
         return;
     }
 
-    m_Window = glfwCreateWindow(640, 480, "Hello World", NULL, NULL);
+    m_Window = glfwCreateWindow(width, height, name.c_str(), NULL, NULL);
     if (!m_Window) {
         std::cout << "Could not create window!\n";
         glfwTerminate();
@@ -51,10 +51,15 @@ void Application::Run() {
     // Temporary OpenGL code
     std::cout << "OpenGL Version: " << glGetString(GL_VERSION) << "\n";
 
+    uint32_t vertexArray;
+    glGenVertexArrays(1, &vertexArray);
+    glBindVertexArray(vertexArray);
+
     float vertexBufferData[] = {
-        -0.5f, 0.0f,
-         0.0f, 0.5f,
-         0.5f, 0.0f
+        -0.5f, -0.5f,
+         0.5f, -0.5f,
+         0.5f,  0.5f,
+        -0.5f,  0.5f
     };
 
     uint32_t vertexBuffer;
@@ -64,6 +69,16 @@ void Application::Run() {
 
     glVertexAttribPointer(0, 2, GL_FLOAT, false, 2 * sizeof(float), 0);
     glEnableVertexAttribArray(0);
+
+    uint32_t indexBufferData[] = {
+        0, 1, 2,
+        2, 3, 0
+    };
+
+    uint32_t indexBuffer;
+    glGenBuffers(1, &indexBuffer);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexBuffer);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indexBufferData), indexBufferData, GL_STATIC_DRAW);
 
     uint32_t program = glCreateProgram();
 
@@ -107,7 +122,7 @@ void main() {
     while (m_Running) {
         glClear(GL_COLOR_BUFFER_BIT);
 
-        glDrawArrays(GL_TRIANGLES, 0, 3);
+        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr);
 
         glfwSwapBuffers(m_Window);
 

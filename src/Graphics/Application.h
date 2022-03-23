@@ -3,9 +3,11 @@
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
 
+#include <string>
+
 class Application {
 public:
-    Application();
+    Application(uint32_t width, uint32_t height, const std::string& name);
     Application(const Application& other) = delete;
 
     ~Application();
