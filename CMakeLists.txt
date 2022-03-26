@@ -19,6 +19,12 @@ set(SOURCES
 
     "src/Graphics/Application.h"
     "src/Graphics/Application.cpp"
+    "src/Graphics/Buffer.h"
+    "src/Graphics/Buffer.cpp"
+    "src/Graphics/Shader.h"
+    "src/Graphics/Shader.cpp"
+    "src/Graphics/VertexArray.h"
+    "src/Graphics/VertexArray.cpp"
 
     "src/Utility/StringParser.h"
 
