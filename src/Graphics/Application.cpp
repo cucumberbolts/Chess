@@ -1,6 +1,7 @@
 #include "Application.h"
 #include "Buffer.h"
 #include "DebugContext.h"
+#include "Renderer.h"
 #include "Shader.h"
 #include "VertexArray.h"
 
@@ -83,12 +84,14 @@ void Application::Run() {
 
     IndexBuffer indexBuffer(indicies, 6);
 
-    Shader shader("resources/VertexShader.glsl", "resources/FragmentShader.glsl");
+    Shader shader("resources/shaders/VertexShader.glsl", "resources/shaders/FragmentShader.glsl");
+
+    Renderer renderer;
 
     while (m_Running) {
-        glClear(GL_COLOR_BUFFER_BIT);
+        renderer.Clear();
 
-        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr);
+        renderer.Draw(vertexArray, indexBuffer, shader, 6);
 
         glfwSwapBuffers(m_Window);
 
