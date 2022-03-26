@@ -27,6 +27,8 @@ set(SOURCES
     "src/Graphics/Renderer.cpp"
     "src/Graphics/Shader.h"
     "src/Graphics/Shader.cpp"
+    "src/Graphics/Texture.h"
+    "src/Graphics/Texture.cpp"
     "src/Graphics/VertexArray.h"
     "src/Graphics/VertexArray.cpp"
 
@@ -72,4 +74,9 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
     glfw
     ${OPENGL_LIBRARY}
     glad
+)
+
+target_include_directories(${PROJECT_NAME}
+    PRIVATE
+    "dependencies/stb_image/"
 )

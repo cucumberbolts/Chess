@@ -8,13 +8,22 @@ VertexArray::VertexArray(VertexBuffer vertexBuffer, const std::initializer_list<
     glGenVertexArrays(1, &m_BufferID);
     glBindVertexArray(m_BufferID);
 
+    int32_t stride = 0;
+    for (const auto& attribute : layout) {
+        switch (attribute.DataType) {
+            case VertexAttribute::Type::Float: stride += sizeof(float) * attribute.Count; break;
+        }
+    }
+
     uint32_t index = 0;
     uint32_t offset = 0;
 
     for (const auto& attribute : layout) {
         switch (attribute.DataType) {
-            case VertexAttribute::Type::Float: {
-                glVertexAttribPointer(index, attribute.Count, GL_FLOAT, false, attribute.Count * sizeof(float), (const void*)offset);
+            case VertexAttribute::Type::Float:
+            {
+                glVertexAttribPointer(index, attribute.Count, GL_FLOAT, false, stride, (const void*)offset);
+                offset += attribute.Count * sizeof(float);
             }
         }
 

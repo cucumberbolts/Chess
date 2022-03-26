@@ -6,6 +6,8 @@
 
 class Renderer {
 public:
+    Renderer();
+
     void Draw(const VertexArray& va, const IndexBuffer& ib, const Shader& shader, uint32_t vertexCount);
 
     void Clear();

@@ -3,6 +3,7 @@
 #include "DebugContext.h"
 #include "Renderer.h"
 #include "Shader.h"
+#include "Texture.h"
 #include "VertexArray.h"
 
 #include <glad/glad.h>
@@ -64,16 +65,17 @@ void Application::Run() {
     std::cout << "OpenGL Version: " << glGetString(GL_VERSION) << "\n";
     
     Vertex vertecies[] = {
-        { -0.5f, -0.5f },
-        {  0.5f, -0.5f },
-        {  0.5f,  0.5f },
-        { -0.5f,  0.5f }
+        { -0.5f, -0.5f, 0.0f, 0.0f },
+        {  0.5f, -0.5f, 1.0f, 0.0f },
+        {  0.5f,  0.5f, 1.0f, 1.0f },
+        { -0.5f,  0.5f, 0.0f, 1.0f }
     };
 
     VertexBuffer vertexBuffer(vertecies, 4);
 
     VertexArray vertexArray(vertexBuffer, {
-            { VertexAttribute::Type::Float, 2 }
+            { VertexAttribute::Type::Float, 2 },
+            { VertexAttribute::Type::Float, 2 },
         }
     );
 
@@ -85,7 +87,11 @@ void Application::Run() {
     IndexBuffer indexBuffer(indicies, 6);
 
     Shader shader("resources/shaders/VertexShader.glsl", "resources/shaders/FragmentShader.glsl");
-    shader.SetUniform("u_Colour", 1.0f, 1.0f, 1.0f, 1.0f);
+    //shader.SetUniform("u_Colour", 1.0f, 1.0f, 1.0f, 1.0f);
+
+    Texture texture("resources/textures/smiley.png");
+    texture.Bind(1);
+    shader.SetUniform("u_Texture", 1);
 
     Renderer renderer;
 

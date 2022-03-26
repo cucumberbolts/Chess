@@ -5,6 +5,8 @@
 struct Vertex {
     float X;
     float Y;
+    float TextureCoordsX;
+    float TextureCoordsY;
 };
 
 class VertexBuffer {
