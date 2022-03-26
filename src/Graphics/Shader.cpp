@@ -46,3 +46,23 @@ Shader::~Shader() {
 void Shader::Bind() const {
     glUseProgram(m_ShaderID);
 }
+
+void Shader::SetUniform(const std::string& name, float a, float b, float c, float d) {
+    int32_t location = GetUniformLocation(name.c_str());
+    if (location != -1)
+        glUniform4f(location, a, b, c, d);
+}
+
+void Shader::SetUniform(const std::string& name, int32_t a) {
+    int32_t location = GetUniformLocation(name.c_str());
+    if (location != 1)
+        glUniform1i(location, a);
+}
+
+int32_t Shader::GetUniformLocation(const std::string& name) const {
+    if (m_UniformLocationCache.find(name) != m_UniformLocationCache.end())
+        return m_UniformLocationCache[name];
+
+    m_UniformLocationCache[name] = glGetUniformLocation(m_ShaderID, name.c_str());
+    return m_UniformLocationCache[name];
+}

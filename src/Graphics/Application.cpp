@@ -85,6 +85,7 @@ void Application::Run() {
     IndexBuffer indexBuffer(indicies, 6);
 
     Shader shader("resources/shaders/VertexShader.glsl", "resources/shaders/FragmentShader.glsl");
+    shader.SetUniform("u_Colour", 1.0f, 1.0f, 1.0f, 1.0f);
 
     Renderer renderer;
 
