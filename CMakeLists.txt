@@ -21,6 +21,8 @@ set(SOURCES
     "src/Graphics/Application.cpp"
     "src/Graphics/Buffer.h"
     "src/Graphics/Buffer.cpp"
+    "src/Graphics/DebugContext.h"
+    "src/Graphics/DebugContext.cpp"
     "src/Graphics/Shader.h"
     "src/Graphics/Shader.cpp"
     "src/Graphics/VertexArray.h"

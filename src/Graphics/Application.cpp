@@ -1,5 +1,6 @@
 #include "Application.h"
 #include "Buffer.h"
+#include "DebugContext.h"
 #include "Shader.h"
 #include "VertexArray.h"
 
@@ -18,6 +19,10 @@ Application::Application(uint32_t width, uint32_t height, const std::string& nam
         std::cout << "Could not initialize GLFW!\n";
         return;
     }
+
+#if _DEBUG
+    glfwWindowHint(GLFW_CONTEXT_DEBUG, true);
+#endif
 
     m_Window = glfwCreateWindow(width, height, name.c_str(), NULL, NULL);
     if (!m_Window) {
@@ -43,6 +48,8 @@ Application::Application(uint32_t width, uint32_t height, const std::string& nam
     });
 
     gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
+
+    DebugContext::Init();
 }
 
 Application::~Application() {
