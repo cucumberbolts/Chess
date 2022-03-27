@@ -89,8 +89,7 @@ void Application::Run() {
     Shader shader("resources/shaders/VertexShader.glsl", "resources/shaders/FragmentShader.glsl");
     //shader.SetUniform("u_Colour", 1.0f, 1.0f, 1.0f, 1.0f);
 
-    Texture texture("resources/textures/smiley.png");
-    texture.Bind(1);
+    Texture texture("resources/textures/smiley.png", 1);
     shader.SetUniform("u_Texture", 1);
 
     Renderer renderer;

@@ -2,7 +2,7 @@
 
 #include <glad/glad.h>
 
-VertexArray::VertexArray(VertexBuffer vertexBuffer, const std::initializer_list<VertexAttribute>& layout) {
+VertexArray::VertexArray(const VertexBuffer& vertexBuffer, const std::initializer_list<VertexAttribute>& layout) {
     vertexBuffer.Bind();
 
     glGenVertexArrays(1, &m_BufferID);

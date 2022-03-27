@@ -8,7 +8,7 @@
 
 #include <glad/glad.h>
 
-Texture::Texture(const std::filesystem::path& image) {
+Texture::Texture(const std::filesystem::path& image, uint32_t slot) {
     stbi_set_flip_vertically_on_load(1);
     uint8_t* imageBuffer = stbi_load(image.u8string().c_str(), &m_Width, &m_Height, &m_BBP, 4);
 
@@ -21,7 +21,9 @@ Texture::Texture(const std::filesystem::path& image) {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, m_Width, m_Height, 0, GL_RGBA, GL_UNSIGNED_BYTE, imageBuffer);
-    glBindTexture(GL_TEXTURE_2D, 0);
+
+    glActiveTexture(GL_TEXTURE0 + slot);
+    glBindTexture(GL_TEXTURE_2D, m_TextureID);
 
     if (imageBuffer)
         stbi_image_free(imageBuffer);

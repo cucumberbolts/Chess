@@ -12,7 +12,8 @@ struct Vertex {
 class VertexBuffer {
 public:
     VertexBuffer(Vertex* data, uint32_t count);
-//private:  // For Renderer when we create one
+    VertexBuffer(const VertexBuffer& other) = delete;
+
     void Bind() const;
 private:
     uint32_t m_BufferID = 0;
@@ -21,7 +22,8 @@ private:
 class IndexBuffer {
 public:
     IndexBuffer(uint32_t* data, uint32_t count);
-//private:
+    IndexBuffer(const IndexBuffer& other) = delete;
+
     void Bind() const;
 private:
     uint32_t m_BufferID = 0;

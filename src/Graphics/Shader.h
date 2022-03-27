@@ -6,6 +6,7 @@
 class Shader {
 public:
     Shader(const std::filesystem::path& vertexShader, const std::filesystem::path& fragmentShader);
+    Shader(const Shader& other) = delete;
     ~Shader();
 
     void Bind() const;
