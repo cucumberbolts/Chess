@@ -9,6 +9,9 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+
 #include <iostream>
 
 Application* Application::s_Instance = nullptr;
@@ -65,10 +68,10 @@ void Application::Run() {
     std::cout << "OpenGL Version: " << glGetString(GL_VERSION) << "\n";
     
     Vertex vertecies[] = {
-        { -0.5f, -0.5f, 0.0f, 0.0f },
-        {  0.5f, -0.5f, 1.0f, 0.0f },
-        {  0.5f,  0.5f, 1.0f, 1.0f },
-        { -0.5f,  0.5f, 0.0f, 1.0f }
+        { { -0.5f, -0.5f }, { 0.0f, 0.0f } },
+        { {  0.5f, -0.5f }, { 1.0f, 0.0f } },
+        { {  0.5f,  0.5f }, { 1.0f, 1.0f } },
+        { { -0.5f,  0.5f }, { 0.0f, 1.0f } }
     };
 
     VertexBuffer vertexBuffer(vertecies, 4);
@@ -92,6 +95,9 @@ void Application::Run() {
     Texture texture("resources/textures/smiley.png", 1);
     shader.SetUniform("u_Texture", 1);
 
+    glm::mat4 projectionMatrix = glm::ortho(-2.f, 2.f, -1.5f, 1.5f);
+    shader.SetUniform("u_MVP", projectionMatrix);
+
     Renderer renderer;
 
     while (m_Running) {
@@ -110,7 +116,7 @@ void Application::OnWindowClose() {
 }
 
 void Application::OnKeyPressed(int32_t key, int32_t scancode, int32_t action, int32_t mods) {
-    if (key == GLFW_KEY_ESCAPE) {
+    if (key == GLFW_KEY_ESCAPE  || key == GLFW_KEY_ENTER) {
         m_Running = false;
     }
 }

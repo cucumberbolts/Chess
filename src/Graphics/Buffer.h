@@ -2,11 +2,11 @@
 
 #include <cstdint>
 
+#include <glm/glm.hpp>
+
 struct Vertex {
-    float X;
-    float Y;
-    float TextureCoordsX;
-    float TextureCoordsY;
+    glm::vec2 position;  // Vertex position
+    glm::vec2 texCoord;  // Texture coordinates
 };
 
 class VertexBuffer {

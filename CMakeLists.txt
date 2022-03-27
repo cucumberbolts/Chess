@@ -79,4 +79,5 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
 target_include_directories(${PROJECT_NAME}
     PRIVATE
     "dependencies/stb_image/"
+    "dependencies/glm"
 )

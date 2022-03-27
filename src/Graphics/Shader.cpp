@@ -59,6 +59,12 @@ void Shader::SetUniform(const std::string& name, int32_t a) {
         glUniform1i(location, a);
 }
 
+void Shader::SetUniform(const std::string& name, const glm::mat4& a) {
+    int32_t location = GetUniformLocation(name.c_str());
+    if (location != 1)
+        glUniformMatrix4fv(location, 1, GL_FALSE, &a[0][0]);
+}
+
 int32_t Shader::GetUniformLocation(const std::string& name) const {
     if (m_UniformLocationCache.find(name) != m_UniformLocationCache.end())
         return m_UniformLocationCache[name];
