@@ -22,5 +22,10 @@ private:
 private:
     GLFWwindow* m_Window = nullptr;
 
+    struct {
+        uint32_t Width, Height;
+        std::string Name;
+    } m_WindowProperties;
+
     bool m_Running = false;
 };

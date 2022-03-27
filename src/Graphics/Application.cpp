@@ -16,7 +16,8 @@
 
 Application* Application::s_Instance = nullptr;
 
-Application::Application(uint32_t width, uint32_t height, const std::string& name) {
+Application::Application(uint32_t width, uint32_t height, const std::string& name)
+    : m_WindowProperties{ width, height, name } {
     if (!s_Instance)
         s_Instance = this;
 
@@ -96,7 +97,10 @@ void Application::Run() {
     shader.SetUniform("u_Texture", 1);
 
     glm::mat4 projectionMatrix = glm::ortho(-2.f, 2.f, -1.5f, 1.5f);
-    shader.SetUniform("u_MVP", projectionMatrix);
+    glm::mat4 viewMatrix = glm::translate(glm::mat4(1.f), glm::vec3(-0.9f, 0, 0));
+    glm::mat4 modelMatrix = glm::translate(glm::mat4(1.f), glm::vec3(0));
+
+    shader.SetUniform("u_MVP", projectionMatrix * viewMatrix * modelMatrix);
 
     Renderer renderer;
 
