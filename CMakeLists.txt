@@ -36,6 +36,14 @@ set(SOURCES
 
     "src/Platform/Windows/WindowsEngine.h"
     "src/Platform/Windows/WindowsEngine.cpp"
+
+    "dependencies/imgui/imgui.cpp"
+    "dependencies/imgui/imgui_demo.cpp"
+    "dependencies/imgui/imgui_draw.cpp"
+    "dependencies/imgui/imgui_tables.cpp"
+    "dependencies/imgui/imgui_widgets.cpp"
+    "dependencies/imgui/backends/imgui_impl_glfw.cpp"
+    "dependencies/imgui/backends/imgui_impl_opengl3.cpp"
 )
 
 if (MSVC)
@@ -79,5 +87,6 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
 target_include_directories(${PROJECT_NAME}
     PRIVATE
     "dependencies/stb_image/"
-    "dependencies/glm"
+    "dependencies/glm/"
+    "dependencies/imgui/"
 )

@@ -26,3 +26,4 @@ cmake ..
 - [glad](https://glad.dav1d.de/)
 - [stb_image](https://github.com/nothings/stb/)
 - [glm](https://github.com/https://github.com/g-truc/glm)
+- [imgui](https://github.com/ocornut/imgui)
