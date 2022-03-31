@@ -4,6 +4,8 @@
 
 class Texture {
 public:
+    Texture(int32_t width, int32_t height, uint32_t slot);
+    Texture(uint8_t* data, int32_t width, int32_t height, uint32_t slot);
     Texture(const std::filesystem::path& image, uint32_t slot);
     Texture(const Texture& other) = delete;
     ~Texture();
@@ -13,6 +15,8 @@ public:
     inline int32_t GetBytesPerPixel() const { return m_BBP; }
 
     void Bind(uint32_t slot);
+
+    void SetData(void* data);
 private:
     uint32_t m_TextureID = 0;
 

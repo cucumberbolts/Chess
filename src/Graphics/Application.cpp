@@ -1,10 +1,8 @@
 #include "Application.h"
-#include "Buffer.h"
 #include "DebugContext.h"
 #include "Renderer.h"
 #include "Shader.h"
 #include "Texture.h"
-#include "VertexArray.h"
 
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
@@ -19,6 +17,11 @@
 #include <iostream>
 
 Application* Application::s_Instance = nullptr;
+
+static glm::vec4 HexToColour(uint32_t colour) {
+    uint8_t r = 0, g = 0, b = 0, a = 0;
+    return { r / 255.f, g / 255.f, b / 255.f, a / 255.f};
+}
 
 Application::Application(uint32_t width, uint32_t height, const std::string& name)
     : m_WindowProperties{ width, height, name } {
@@ -74,7 +77,7 @@ Application::Application(uint32_t width, uint32_t height, const std::string& nam
 
     // Setup Platform/Renderer backends
     ImGui_ImplGlfw_InitForOpenGL(m_Window, true);
-    ImGui_ImplOpenGL3_Init("#version 430");
+    ImGui_ImplOpenGL3_Init("#version 450");
 }
 
 Application::~Application() {
@@ -90,44 +93,31 @@ void Application::Run() {
 
     // Temporary OpenGL code
     std::cout << "OpenGL Version: " << glGetString(GL_VERSION) << "\n";
-    
-    Vertex vertecies[] = {
-        { { -0.5f, -0.5f }, { 0.0f, 0.0f } },
-        { {  0.5f, -0.5f }, { 1.0f, 0.0f } },
-        { {  0.5f,  0.5f }, { 1.0f, 1.0f } },
-        { { -0.5f,  0.5f }, { 0.0f, 1.0f } }
-    };
-
-    VertexBuffer vertexBuffer(vertecies, 4);
-
-    VertexArray vertexArray(vertexBuffer, {
-            { VertexAttribute::Type::Float, 2 },
-            { VertexAttribute::Type::Float, 2 },
-        }
-    );
-
-    uint32_t indicies[] = {
-        0, 1, 2,
-        2, 3, 0
-    };
-
-    IndexBuffer indexBuffer(indicies, 6);
 
     Shader shader("resources/shaders/VertexShader.glsl", "resources/shaders/FragmentShader.glsl");
-    shader.SetUniform("u_Colour", 1.0f, 0, 0, 1.0f);
 
-    Texture texture("resources/textures/smiley.png", 1);
-    shader.SetUniform("u_Texture", 1);
-
-    glm::vec3 modelTranslation(0);
+    Texture texture("resources/textures/smiley.png", 6);
 
     glm::mat4 projectionMatrix = glm::ortho(-8.f, 8.f, -4.5f, 4.5f);
     glm::mat4 viewMatrix = glm::translate(glm::mat4(1.f), glm::vec3(0));
     glm::mat4 modelMatrix = glm::translate(glm::mat4(1.f), glm::vec3(0));
 
+    shader.SetUniform("u_MVP", projectionMatrix * viewMatrix * modelMatrix);
+
+    int32_t textures[32];
+    for (int i = 0; i < 32; i++)
+        textures[i] = i;
+
+    shader.SetUniform("u_Textures", textures, sizeof(textures));
+
+    glm::vec3 rectPosition = { -2.0f, 0.5f, 0 };
+    glm::vec4 rectColour = { 1.0f, 0.7f, 0.5, 1.0f };
+    // #FF6600FF is a cool colour
+
     Renderer renderer;
 
     while (m_Running) {
+        glClearColor(0.2f, 0.2f, 0.2f, 1.0f);
         renderer.Clear();
 
         // Start the Dear ImGui frame
@@ -137,15 +127,19 @@ void Application::Run() {
 
         //ImGui::ShowDemoWindow();
 
-        ImGui::Begin("Hmm");
-        ImGui::SliderFloat("x position", &modelTranslation.x, -8.f, 8.f);
-        ImGui::SliderFloat("y position", &modelTranslation.y, -4.5f, 4.5f);
+        ImGui::Begin("Rectangle position");
+        ImGui::SliderFloat("x position", &rectPosition.x, -8.f, 8.f);
+        ImGui::SliderFloat("y position", &rectPosition.y, -4.5f, 4.5f);
         ImGui::End();
 
-        modelMatrix = glm::translate(glm::mat4(1.f), modelTranslation);
-        shader.SetUniform("u_MVP", projectionMatrix * viewMatrix * modelMatrix);
+        ImGui::Begin("Rectangle colour");
+        ImGui::ColorPicker4("Rectangle colour", &rectColour[0]);
+        ImGui::End();
 
-        renderer.Draw(vertexArray, indexBuffer, shader, 6);
+        renderer.DrawRect(rectPosition, { 1.0f, 1.0f }, rectColour);
+        renderer.DrawRect({ 3.0f, 3.0f, 0}, { 1.0f, 1.0f }, texture);
+
+        renderer.Flush();
 
         ImGui::Render();
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
@@ -161,7 +155,7 @@ void Application::OnWindowClose() {
 }
 
 void Application::OnKeyPressed(int32_t key, int32_t scancode, int32_t action, int32_t mods) {
-    if (key == GLFW_KEY_ESCAPE  || key == GLFW_KEY_ENTER) {
+    if (key == GLFW_KEY_ESCAPE) {
         m_Running = false;
     }
 }

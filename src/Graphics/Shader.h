@@ -15,6 +15,7 @@ public:
 
     void SetUniform(const std::string& name, float a, float b, float c, float d);
     void SetUniform(const std::string& name, int32_t a);
+    void SetUniform(const std::string& name, int32_t* a, uint32_t count);
     void SetUniform(const std::string& name, const glm::mat4& a);
 private:
     int32_t GetUniformLocation(const std::string& name) const;
