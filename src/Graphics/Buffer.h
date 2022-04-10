@@ -2,15 +2,6 @@
 
 #include <cstdint>
 
-#include <glm/glm.hpp>
-
-struct Vertex {
-    glm::vec2 Position;
-    glm::vec4 Colour;
-    glm::vec2 TexCoord;
-    float TextureSlot;
-};
-
 class VertexBuffer {
 public:
     VertexBuffer(size_t size);

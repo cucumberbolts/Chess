@@ -1,7 +1,6 @@
 #include "Application.h"
 #include "DebugContext.h"
 #include "Renderer.h"
-#include "Shader.h"
 #include "Texture.h"
 
 #include <glad/glad.h>
@@ -19,7 +18,10 @@
 Application* Application::s_Instance = nullptr;
 
 static glm::vec4 HexToColour(uint32_t colour) {
-    uint8_t r = 0, g = 0, b = 0, a = 0;
+    uint8_t r = (colour & 0xff000000) >> 24;
+	uint8_t g = (colour & 0x00ff0000) >> 16;
+    uint8_t b = (colour & 0x0000ff00) >> 8;
+	uint8_t a = (colour & 0x000000ff);
     return { r / 255.f, g / 255.f, b / 255.f, a / 255.f};
 }
 
@@ -78,6 +80,8 @@ Application::Application(uint32_t width, uint32_t height, const std::string& nam
     // Setup Platform/Renderer backends
     ImGui_ImplGlfw_InitForOpenGL(m_Window, true);
     ImGui_ImplOpenGL3_Init("#version 450");
+
+    Renderer::Init(glm::ortho(-8.f, 8.f, -4.5f, 4.5f));
 }
 
 Application::~Application() {
@@ -94,31 +98,13 @@ void Application::Run() {
     // Temporary OpenGL code
     std::cout << "OpenGL Version: " << glGetString(GL_VERSION) << "\n";
 
-    Shader shader("resources/shaders/VertexShader.glsl", "resources/shaders/FragmentShader.glsl");
-
-    Texture texture("resources/textures/smiley.png", 6);
-
-    glm::mat4 projectionMatrix = glm::ortho(-8.f, 8.f, -4.5f, 4.5f);
-    glm::mat4 viewMatrix = glm::translate(glm::mat4(1.f), glm::vec3(0));
-    glm::mat4 modelMatrix = glm::translate(glm::mat4(1.f), glm::vec3(0));
-
-    shader.SetUniform("u_MVP", projectionMatrix * viewMatrix * modelMatrix);
-
-    int32_t textures[32];
-    for (int i = 0; i < 32; i++)
-        textures[i] = i;
-
-    shader.SetUniform("u_Textures", textures, sizeof(textures));
-
-    glm::vec3 rectPosition = { -2.0f, 0.5f, 0 };
-    glm::vec4 rectColour = { 1.0f, 0.7f, 0.5, 1.0f };
-    // #FF6600FF is a cool colour
-
-    Renderer renderer;
+    Texture texture("resources/textures/smiley.png");
+    
+    glm::vec4 darkColour = HexToColour(0x532A00FF);
+    glm::vec4 lightColour = HexToColour(0xFFB160FF);
 
     while (m_Running) {
-        glClearColor(0.2f, 0.2f, 0.2f, 1.0f);
-        renderer.Clear();
+        Renderer::ClearScreen({ 0.2f, 0.2f, 0.2f, 1.0f });
 
         // Start the Dear ImGui frame
         ImGui_ImplOpenGL3_NewFrame();
@@ -127,19 +113,19 @@ void Application::Run() {
 
         //ImGui::ShowDemoWindow();
 
-        ImGui::Begin("Rectangle position");
-        ImGui::SliderFloat("x position", &rectPosition.x, -8.f, 8.f);
-        ImGui::SliderFloat("y position", &rectPosition.y, -4.5f, 4.5f);
+        ImGui::Begin("Square colours");
+        ImGui::ColorPicker4("Dark square colour", &darkColour[0]);
+        ImGui::ColorPicker4("Light square colour", &lightColour[0]);
         ImGui::End();
 
-        ImGui::Begin("Rectangle colour");
-        ImGui::ColorPicker4("Rectangle colour", &rectColour[0]);
-        ImGui::End();
+        for (int x = 0; x < 8; x++) {
+            for (int y = 0; y < 8; y++) {
+                const glm::vec4 colour = (x + y) % 2 == 0? lightColour : darkColour;
+                Renderer::DrawRect({ -4.0f + x, 4.0f - y, 0.0f }, { 1, 1 }, colour);
+            }
+        }
 
-        renderer.DrawRect(rectPosition, { 1.0f, 1.0f }, rectColour);
-        renderer.DrawRect({ 3.0f, 3.0f, 0}, { 1.0f, 1.0f }, texture);
-
-        renderer.Flush();
+        Renderer::Flush();
 
         ImGui::Render();
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());

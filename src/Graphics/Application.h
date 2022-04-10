@@ -8,8 +8,12 @@ class Application {
 public:
     Application(uint32_t width, uint32_t height, const std::string& name);
     Application(const Application& other) = delete;
+    Application(Application&& other) = delete;
 
     ~Application();
+
+    Application& operator=(const Application& other) = delete;
+    Application& operator=(Application&& other) = delete;
 
     static Application& Get() { return *s_Instance; }
 
