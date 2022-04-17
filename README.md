@@ -27,3 +27,6 @@ cmake ..
 - [stb_image](https://github.com/nothings/stb/)
 - [glm](https://github.com/https://github.com/g-truc/glm)
 - [imgui](https://github.com/ocornut/imgui)
+
+### Chess pieces
+By jurgenwesterhof (adapted from work of Cburnett) - http://commons.wikimedia.org/wiki/Template:SVG_chess_pieces, CC BY-SA 3.0, https://commons.wikimedia.org/w/index.php?curid=35634436

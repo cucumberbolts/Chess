@@ -1,6 +1,8 @@
 #include "Application.h"
+#include "Chess/Board.h"
 #include "DebugContext.h"
 #include "Renderer.h"
+#include "SubTexture.h"
 #include "Texture.h"
 
 #include <glad/glad.h>
@@ -99,12 +101,22 @@ void Application::Run() {
     std::cout << "OpenGL Version: " << glGetString(GL_VERSION) << "\n";
 
     Texture texture("resources/textures/smiley.png");
-    
+
+    Board board;
+
+    Texture chessPieces("resources/textures/Chess_Pieces_Sprite.png");
+    SubTexture chessPieceSprites[12];
+    for (int x = 0; x < 6; x++)
+        for (int y = 0; y < 2; y++)
+            chessPieceSprites[y * 6 + x] = SubTexture(chessPieces, { x, y }, { 45.0f, 45.0f });
+
     glm::vec4 darkColour = HexToColour(0x532A00FF);
     glm::vec4 lightColour = HexToColour(0xFFB160FF);
 
+    Renderer::SetClearColour({ 0.2f, 0.2f, 0.2f, 1.0f });
+
     while (m_Running) {
-        Renderer::ClearScreen({ 0.2f, 0.2f, 0.2f, 1.0f });
+        Renderer::ClearScreen();
 
         // Start the Dear ImGui frame
         ImGui_ImplOpenGL3_NewFrame();
@@ -112,16 +124,42 @@ void Application::Run() {
         ImGui::NewFrame();
 
         //ImGui::ShowDemoWindow();
-
+        
         ImGui::Begin("Square colours");
         ImGui::ColorPicker4("Dark square colour", &darkColour[0]);
         ImGui::ColorPicker4("Light square colour", &lightColour[0]);
         ImGui::End();
 
-        for (int x = 0; x < 8; x++) {
-            for (int y = 0; y < 8; y++) {
-                const glm::vec4 colour = (x + y) % 2 == 0? lightColour : darkColour;
+        for (int y = 0; y < 8; y++) {
+			for (int x = 0; x < 8; x++) {
+                const glm::vec4 colour = (x + y) % 2 == 0 ? lightColour : darkColour;
                 Renderer::DrawRect({ -4.0f + x, 4.0f - y, 0.0f }, { 1, 1 }, colour);
+            }
+        }
+        
+        for (int y = 0; y < 8; y++) {
+            for (int x = 0; x < 8; x++) {
+                SubTexture piece;
+                switch (board[y * 8 + x]) {
+					case WhitePawn:     piece = chessPieceSprites[11]; break;
+	                case WhiteKnight:   piece = chessPieceSprites[9];  break;
+	                case WhiteBishop:   piece = chessPieceSprites[8];  break;
+	                case WhiteRook:     piece = chessPieceSprites[10]; break;
+	                case WhiteQueen:    piece = chessPieceSprites[7];  break;
+	                case WhiteKing:     piece = chessPieceSprites[6];  break;
+	                case BlackPawn:     piece = chessPieceSprites[5];  break;
+	                case BlackKnight:   piece = chessPieceSprites[3];  break;
+	                case BlackBishop:   piece = chessPieceSprites[2];  break;
+	                case BlackRook:     piece = chessPieceSprites[4];  break;
+	                case BlackQueen:    piece = chessPieceSprites[1];  break;
+	                case BlackKing:     piece = chessPieceSprites[0];  break;
+	                case None: continue;
+                }
+
+                //if (y == 7 && x == 7)
+                //    Renderer::Flush();
+        
+                Renderer::DrawRect({ -4.0f + x, 4.0f - y, 0.0f }, { 1, 1 }, piece);
             }
         }
 

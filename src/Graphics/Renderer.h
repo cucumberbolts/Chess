@@ -1,5 +1,6 @@
 #pragma once
 
+#include "SubTexture.h"
 #include "Texture.h"
 
 #include <glm/glm.hpp>
@@ -18,8 +19,10 @@ public:
 
     static void DrawRect(glm::vec3 position, glm::vec2 size, glm::vec4 colour);
     static void DrawRect(glm::vec3 position, glm::vec2 size, const Texture& texture);
+    static void DrawRect(glm::vec3 position, glm::vec2 size, const SubTexture& subTexture);
 
     static void Flush();
 
-    static void ClearScreen(glm::vec4 colour);
+    static void SetClearColour(glm::vec4 colour);
+    static void ClearScreen();
 };

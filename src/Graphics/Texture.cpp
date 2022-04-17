@@ -7,7 +7,7 @@
 
 Texture::Texture(int32_t width, int32_t height) : m_Width(width), m_Height(height) {
     glCreateTextures(GL_TEXTURE_2D, 1, &m_TextureID);
-    glTextureStorage2D(m_TextureID, 1, GL_RGB8, m_Width, m_Height);
+    glTextureStorage2D(m_TextureID, 1, GL_RGBA8, m_Width, m_Height);
 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -17,7 +17,7 @@ Texture::Texture(int32_t width, int32_t height) : m_Width(width), m_Height(heigh
 
 Texture::Texture(uint8_t* data, int32_t width, int32_t height) : m_Width(width), m_Height(height) {
     glCreateTextures(GL_TEXTURE_2D, 1, &m_TextureID);
-    glTextureStorage2D(m_TextureID, 1, GL_RGB8, m_Width, m_Height);
+    glTextureStorage2D(m_TextureID, 1, GL_RGBA8, m_Width, m_Height);
 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -32,7 +32,7 @@ Texture::Texture(const std::filesystem::path& image) {
     uint8_t* data = stbi_load(image.u8string().c_str(), &m_Width, &m_Height, &m_BBP, 4);
 
     glCreateTextures(GL_TEXTURE_2D, 1, &m_TextureID);
-    glTextureStorage2D(m_TextureID, 1, GL_RGB8, m_Width, m_Height);
+    glTextureStorage2D(m_TextureID, 1, GL_RGBA8, m_Width, m_Height);
 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);

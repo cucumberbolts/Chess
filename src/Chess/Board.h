@@ -22,6 +22,8 @@ public:
 
     friend std::ostream& operator<<(std::ostream& os, const Board& board);
 
+    inline Piece operator[](Square s) const { return m_Board[s]; }
+
     AlgebraicMove Move(LongAlgebraicMove m);
 
     bool IsMoveLegal(LongAlgebraicMove move);

@@ -11,6 +11,8 @@
 
 #include <glm/gtc/matrix_transform.hpp>
 
+// TODO: Cache textures by ID (make them shared_ptrs) and add transforms to renderer
+
 namespace {
 
     constexpr size_t maxQuadCount = 100;
@@ -181,6 +183,56 @@ void Renderer::DrawRect(glm::vec3 position, glm::vec2 size, const Texture& textu
     s_NextTexture++;
 }
 
+void Renderer::DrawRect(glm::vec3 position, glm::vec2 size, const SubTexture& subTexture) {
+    uint32_t vertexCount = s_NextVertex - s_Vertecies;
+
+    if (vertexCount > maxVertexCount - 4 || s_NextTexture == maxTextureCount) {
+        Flush();
+        vertexCount = s_NextVertex - s_Vertecies;
+    }
+
+    subTexture.GetTexture().Bind(s_NextTexture);
+
+    s_NextVertex->Position = { position.x, position.y - size.y };
+    s_NextVertex->Colour = { 1.0f, 1.0f, 1.0f, 1.0f };
+    s_NextVertex->TexCoord = subTexture.GetTextureCoordinates()[0];
+    s_NextVertex->TextureSlot = static_cast<float>(s_NextTexture);
+    s_NextVertex++;
+
+    s_NextVertex->Position = { position.x + size.x, position.y - size.y };
+    s_NextVertex->Colour = { 1.0f, 1.0f, 1.0f, 1.0f };
+    s_NextVertex->TexCoord = subTexture.GetTextureCoordinates()[1];
+    s_NextVertex->TextureSlot = static_cast<float>(s_NextTexture);
+    s_NextVertex++;
+
+    s_NextVertex->Position = { position.x + size.x, position.y };
+    s_NextVertex->Colour = { 1.0f, 1.0f, 1.0f, 1.0f };
+    s_NextVertex->TexCoord = subTexture.GetTextureCoordinates()[2];
+    s_NextVertex->TextureSlot = static_cast<float>(s_NextTexture);
+    s_NextVertex++;
+
+    s_NextVertex->Position = { position.x, position.y };
+    s_NextVertex->Colour = { 1.0f, 1.0f, 1.0f, 1.0f };
+    s_NextVertex->TexCoord = subTexture.GetTextureCoordinates()[3];
+    s_NextVertex->TextureSlot = static_cast<float>(s_NextTexture);
+    s_NextVertex++;
+
+    static constexpr uint32_t indicies[] = {
+        0, 1, 2,
+        2, 3, 0,
+
+        4, 5, 6,
+        6, 7, 4,
+    };
+
+    for (size_t i = 0; i < 6; i++) {
+        *s_NextIndex = vertexCount + indicies[i];
+        s_NextIndex++;
+    }
+
+    s_NextTexture++;
+}
+
 void Renderer::Flush() {
     s_VertexArray->Bind();
     s_IndexBuffer->Bind();
@@ -199,7 +251,10 @@ void Renderer::Flush() {
     s_NextTexture = 1;
 }
 
+void Renderer::SetClearColour(glm::vec4 colour) {
+    glClearColor(colour.r, colour.g, colour.b, colour.a);
+}
 
-void Renderer::ClearScreen(glm::vec4 colour) {
+void Renderer::ClearScreen() {
     glClear(GL_COLOR_BUFFER_BIT);
 }

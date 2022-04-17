@@ -27,6 +27,8 @@ set(SOURCES
     "src/Graphics/Renderer.cpp"
     "src/Graphics/Shader.h"
     "src/Graphics/Shader.cpp"
+    "src/Graphics/SubTexture.h"
+    "src/Graphics/SubTexture.cpp"
     "src/Graphics/Texture.h"
     "src/Graphics/Texture.cpp"
     "src/Graphics/VertexArray.h"

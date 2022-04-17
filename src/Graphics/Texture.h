@@ -2,6 +2,8 @@
 
 #include <filesystem>
 
+#include <glm/glm.hpp>
+
 class Texture {
 public:
     Texture(int32_t width, int32_t height);
@@ -13,6 +15,7 @@ public:
     inline int32_t GetWidth() const { return m_Width; }
     inline int32_t GetHeight() const { return m_Height; }
     inline int32_t GetBytesPerPixel() const { return m_BBP; }
+    inline glm::vec2 GetSize() const { return { m_Width, m_Height }; }
 
     void Bind(uint32_t slot) const;
 
