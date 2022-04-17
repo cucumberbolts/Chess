@@ -7,19 +7,19 @@
 
 class Renderer {
 public:
-    static void Init(glm::mat4 projection);
+    static void Init(const glm::mat4& projection);
 
     Renderer() = delete;
-    Renderer(const Renderer& other) = delete;
-    Renderer(Renderer&& other) = delete;
+    Renderer(const Renderer&) = delete;
+    Renderer(Renderer&&) = delete;
     ~Renderer();
 
-    Renderer& operator=(const Renderer& other) = delete;
-    Renderer& operator=(Renderer&& other) = delete;
+    Renderer& operator=(const Renderer&) = delete;
+    Renderer& operator=(Renderer&&) = delete;
 
-    static void DrawRect(glm::vec3 position, glm::vec2 size, glm::vec4 colour);
-    static void DrawRect(glm::vec3 position, glm::vec2 size, const Texture& texture);
-    static void DrawRect(glm::vec3 position, glm::vec2 size, const SubTexture& subTexture);
+    static void DrawRect(const glm::vec3& position, const glm::vec2& size, const glm::vec4& colour);
+    static void DrawRect(const glm::vec3& position, const glm::vec2& size, const std::shared_ptr<Texture>& texture);
+    static void DrawRect(const glm::vec3& position, const glm::vec2& size, const std::shared_ptr<SubTexture>& subTexture);
 
     static void Flush();
 

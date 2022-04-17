@@ -104,11 +104,11 @@ void Application::Run() {
 
     Board board;
 
-    Texture chessPieces("resources/textures/Chess_Pieces_Sprite.png");
-    SubTexture chessPieceSprites[12];
+    std::shared_ptr<Texture> chessPieces = std::make_shared<Texture>("resources/textures/Chess_Pieces_Sprite.png");
+    std::shared_ptr<SubTexture> chessPieceSprites[12];
     for (int x = 0; x < 6; x++)
         for (int y = 0; y < 2; y++)
-            chessPieceSprites[y * 6 + x] = SubTexture(chessPieces, { x, y }, { 45.0f, 45.0f });
+            chessPieceSprites[y * 6 + x] = std::make_shared<SubTexture>(chessPieces, glm::vec2(x, y), glm::vec2(45.0f, 45.0f));
 
     glm::vec4 darkColour = HexToColour(0x532A00FF);
     glm::vec4 lightColour = HexToColour(0xFFB160FF);
@@ -139,7 +139,7 @@ void Application::Run() {
         
         for (int y = 0; y < 8; y++) {
             for (int x = 0; x < 8; x++) {
-                SubTexture piece;
+                std::shared_ptr<SubTexture> piece;
                 switch (board[y * 8 + x]) {
 					case WhitePawn:     piece = chessPieceSprites[11]; break;
 	                case WhiteKnight:   piece = chessPieceSprites[9];  break;
