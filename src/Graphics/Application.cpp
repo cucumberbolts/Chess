@@ -155,9 +155,6 @@ void Application::Run() {
 	                case BlackKing:     piece = chessPieceSprites[0];  break;
 	                case None: continue;
                 }
-
-                //if (y == 7 && x == 7)
-                //    Renderer::Flush();
         
                 Renderer::DrawRect({ -4.0f + x, 4.0f - y, 0.0f }, { 1, 1 }, piece);
             }
