@@ -209,6 +209,9 @@ BitBoard Board::GetLegalMoves(Square piece) {
     Colour playerColour = GetColour(m_Board[piece]);
     Colour enemyColour = OppositeColour(playerColour);
 
+    if (enemyColour == m_PlayerTurn)
+        return 0;
+
     BitBoard allPieces = m_ColourBitBoards[White] | m_ColourBitBoards[Black];
     BitBoard king = m_ColourBitBoards[playerColour] & m_PieceBitBoards[King];
     BitBoard enemyPieces = m_ColourBitBoards[enemyColour];
@@ -224,7 +227,7 @@ BitBoard Board::GetLegalMoves(Square piece) {
         return legalMoves & ~controlledSquares;
     }
 
-    Square kingSquare = PseudoLegal::GetSquare(king);
+    Square kingSquare = GetSquare(king);
 
     BitBoard checkMask = 0;
     BitBoard checkers = 0;
@@ -301,7 +304,7 @@ BitBoard Board::GetPseudoLegalMoves(Square piece) {
         case Queen:  return PseudoLegal::QueenAttack(piece, blockers) & ~m_ColourBitBoards[c];
         case King:   return PseudoLegal::KingAttack(piece) & ~m_ColourBitBoards[c];
 
-        default: std::cout << "Invalid piece type!\n"; return 0;
+        default: return 0;
     }
 }
 
@@ -320,7 +323,7 @@ BitBoard Board::ControlledSquares(Colour c) {
                 case Queen:  controlledSquares |= PseudoLegal::QueenAttack(s, blockers) & ~m_ColourBitBoards[c]; break;
                 case King:   controlledSquares |= PseudoLegal::KingAttack(s) & ~m_ColourBitBoards[c]; break;
 
-                default: std::cout << "Invalid piece type!\n"; return 0;
+                default: return 0;
             }
         }
     }

@@ -15,6 +15,4 @@ namespace PseudoLegal {
 
     BitBoard Line(BitBoard square1, BitBoard square2);
 
-    Square GetSquare(BitBoard board);
-
 }

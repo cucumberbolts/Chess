@@ -4,7 +4,15 @@
 
 #include "BoardFormat.h"
 
+#include <intrin.h>
+
 using BitBoard = uint64_t;
+
+// Returns least significant bit on bitboard
+inline Square GetSquare(BitBoard board) {
+    unsigned long index;
+    return _BitScanForward64(&index, board) ? (Square)index : 0;
+}
 
 // For debugging
 inline void PrintBitBoard(BitBoard board) {

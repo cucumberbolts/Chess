@@ -1,6 +1,5 @@
 #pragma once
 
-#include <iostream>
 #include <string_view>
 
 enum Colour : uint8_t {
@@ -88,21 +87,12 @@ enum SquareValues : Square {
     A6, B6, C6, D6, E6, F6, G6, H6,
     A7, B7, C7, D7, E7, F7, G7, H7,
     A8, B8, C8, D8, E8, F8, G8, H8,
+    SQUARE_MAX = 64, INVALID_SQUARE = 64
 };
 
 inline constexpr Square ToSquare(char file, char rank) {
     Square x = file - 'a';  // ASSERT(x < 8)
     Square y = (rank - 1) - '0';  // ASSERT(x < 8)
-    return y * 8 + x;
-}
-
-inline constexpr Square ToSquare(std::string_view square) {
-    // ASSERT
-    if (square.size() > 2)
-        return 0;
-
-    Square x = square[0] - 'a';  // ASSERT(x < 8)
-    Square y = (square[1] - 1) - '0'; // ASSERT(x < 8)
     return y * 8 + x;
 }
 
@@ -117,6 +107,8 @@ struct LongAlgebraicMove {
     PieceType Promotion = Pawn;
 
     LongAlgebraicMove() = default;
+
+    LongAlgebraicMove(Square a, Square b) : SourceSquare(a), DestinationSquare(b) {}
 
     LongAlgebraicMove(std::string_view longAlgebraic) {
         if (longAlgebraic.size() == 4) {

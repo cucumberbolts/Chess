@@ -51,19 +51,20 @@ Application::Application(uint32_t width, uint32_t height, const std::string& nam
     glfwMakeContextCurrent(m_Window);
 
     glfwSwapInterval(1);
-
-    glfwSetWindowUserPointer(m_Window, this);
-
+    
     glfwSetWindowCloseCallback(m_Window, [](GLFWwindow* window)
     {
-        Application* app = (Application*)glfwGetWindowUserPointer(window);
-        app->OnWindowClose();
+        Get().OnWindowClose();
     });
 
     glfwSetKeyCallback(m_Window, [](GLFWwindow* window, int key, int scancode, int action, int mods)
     {
-        Application* app = (Application*)glfwGetWindowUserPointer(window);
-        app->OnKeyPressed(key, scancode, action, mods);
+        Get().OnKeyPressed(key, scancode, action, mods);
+    });
+
+    glfwSetMouseButtonCallback(m_Window, [](GLFWwindow* window, int button, int action, int mods)
+    {
+        Get().OnMouseButton(button, action, mods);
     });
 
     gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
@@ -100,10 +101,6 @@ void Application::Run() {
     // Temporary OpenGL code
     std::cout << "OpenGL Version: " << glGetString(GL_VERSION) << "\n";
 
-    Texture texture("resources/textures/smiley.png");
-
-    Board board;
-
     std::shared_ptr<Texture> chessPieces = std::make_shared<Texture>("resources/textures/Chess_Pieces_Sprite.png");
     std::shared_ptr<SubTexture> chessPieceSprites[12];
     for (int x = 0; x < 6; x++)
@@ -112,6 +109,7 @@ void Application::Run() {
 
     glm::vec4 darkColour = HexToColour(0x532A00FF);
     glm::vec4 lightColour = HexToColour(0xFFB160FF);
+    glm::vec4 legalMoveColour = { 1.0f, 0.0f, 1.0f, 0.5f };
 
     Renderer::SetClearColour({ 0.2f, 0.2f, 0.2f, 1.0f });
 
@@ -130,21 +128,31 @@ void Application::Run() {
         ImGui::ColorPicker4("Light square colour", &lightColour[0]);
         ImGui::End();
 
+        // Draw chess board
         for (int y = 0; y < 8; y++) {
 			for (int x = 0; x < 8; x++) {
                 const glm::vec4 colour = (x + y) % 2 == 0 ? lightColour : darkColour;
                 Renderer::DrawRect({ -4.0f + x, 4.0f - y, 0.0f }, { 1, 1 }, colour);
             }
         }
-        
+
+		// Draw legal moves (loop through m_LegalMoves bitboard
+        for (BitBoard legalMoves = m_LegalMoves; legalMoves; legalMoves &= legalMoves - 1) {
+            Square square = GetSquare(legalMoves);
+            int rank = RankOf(square) / 8;
+            int file = FileOf(square);
+            Renderer::DrawRect({ -4 + file, -3 + rank, 0.0f }, { 1.0f, 1.0f }, legalMoveColour);
+        }
+
+        // Draw pieces
         for (int y = 0; y < 8; y++) {
             for (int x = 0; x < 8; x++) {
                 std::shared_ptr<SubTexture> piece;
-                switch (board[y * 8 + x]) {
+                switch (m_Board[y * 8 + x]) {
 					case WhitePawn:     piece = chessPieceSprites[11]; break;
-	                case WhiteKnight:   piece = chessPieceSprites[9];  break;
+                    case WhiteKnight:   piece = chessPieceSprites[9];  break;
 	                case WhiteBishop:   piece = chessPieceSprites[8];  break;
-	                case WhiteRook:     piece = chessPieceSprites[10]; break;
+                    case WhiteRook:     piece = chessPieceSprites[10]; break;
 	                case WhiteQueen:    piece = chessPieceSprites[7];  break;
 	                case WhiteKing:     piece = chessPieceSprites[6];  break;
 	                case BlackPawn:     piece = chessPieceSprites[5];  break;
@@ -156,7 +164,7 @@ void Application::Run() {
 	                case None: continue;
                 }
         
-                Renderer::DrawRect({ -4.0f + x, 4.0f - y, 0.0f }, { 1, 1 }, piece);
+                Renderer::DrawRect({ -4 + x, -3 + y, 0.0f }, { 1, 1 }, piece);
             }
         }
 
@@ -178,5 +186,33 @@ void Application::OnWindowClose() {
 void Application::OnKeyPressed(int32_t key, int32_t scancode, int32_t action, int32_t mods) {
     if (key == GLFW_KEY_ESCAPE) {
         m_Running = false;
+    }
+}
+
+void Application::OnMouseButton(int32_t button, int32_t action, int32_t mods) {
+    if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) {
+        double x, y;
+        glfwGetCursorPos(m_Window, &x, &y);
+
+        // TODO: Use glm somehow??
+        x = (x - m_WindowProperties.Width / 2) / (m_WindowProperties.Width / 2) * 8.0;
+        y = (y - m_WindowProperties.Height / 2) / (m_WindowProperties.Height / 2) * -4.5;
+
+        if (x > -4 && x < 4 && y > -4 && y < 4) {
+            Square rank = (Square)(x + 4.0);
+            Square file = (Square)(y + 4.0);
+
+            Square selectedSquare = ToSquare('a' + rank, '1' + file);
+
+            if (m_SelectedPiece != INVALID_SQUARE) {
+                if (m_LegalMoves & (1ull << selectedSquare))
+                    m_Board.Move({ m_SelectedPiece, selectedSquare });
+                m_SelectedPiece = INVALID_SQUARE;
+                m_LegalMoves = 0;
+            } else {
+                m_LegalMoves = m_Board.GetLegalMoves(selectedSquare);
+                m_SelectedPiece = m_LegalMoves == 0 ? INVALID_SQUARE : selectedSquare;
+            }
+        }
     }
 }

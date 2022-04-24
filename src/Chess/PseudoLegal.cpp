@@ -2,8 +2,6 @@
 
 #include <array>
 
-#include <intrin.h>
-
 namespace PseudoLegal {
 
     namespace {
@@ -287,9 +285,8 @@ namespace PseudoLegal {
         inBetween |= (square1 | square2);  // Include both squares; the larger one will disappear
 
         // Gets the relevant squares
-        unsigned long s1, s2;
-        _BitScanForward64(&s1, square1);
-        _BitScanForward64(&s2, square2);
+        Square s1 = GetSquare(square1);
+        Square s2 = GetSquare(square2);
 
         if (FileOf(s1) == FileOf(s2))
             return inBetween & (aFile << FileOf(s1));
@@ -301,11 +298,6 @@ namespace PseudoLegal {
             return inBetween & antiDiagonals[s1];
 
         return 0;
-    }
-
-    Square GetSquare(BitBoard board) {
-        unsigned long index;
-        return _BitScanForward64(&index, board) ? (Square)index : 0;
     }
 
 }
