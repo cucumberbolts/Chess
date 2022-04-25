@@ -1,7 +1,7 @@
 # Chess
-Chess GUI (in progress).
+Chess GUI.
 
-Download an engine and put it in the same directory as the executable.
+![](/screenshot.png?raw=true)
 
 ### Requirements
 - Windows (Unix support coming at some point)

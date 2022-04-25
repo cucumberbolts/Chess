@@ -216,8 +216,6 @@ BitBoard Board::GetLegalMoves(Square piece) {
     if (GetPieceType(m_Board[piece]) == King) {
         BitBoard legalMoves = GetPseudoLegalMoves(piece);
         BitBoard controlledSquares = ControlledSquares(enemyColour);
-        std::cout << "Controlled squares:\n";
-        PrintBitBoard(controlledSquares);
         // Deals with castling
         if (!((allPieces & ~king) & m_CastlingPath[playerColour | KingSide]) && !(controlledSquares & m_CastlingPath[playerColour | KingSide]))
             legalMoves |= 0x40ull << (playerColour == White ? 0 : 56);
