@@ -144,6 +144,11 @@ void Application::Run() {
             Renderer::DrawRect({ -4 + file, -3 + rank, 0.0f }, { 1.0f, 1.0f }, legalMoveColour);
         }
 
+        //Renderer::DrawRect({ -5.0f, 0.0f, 0.0f }, { 1.0f, 1.0f }, chessPieceSprites[0]);
+
+        // TODO: Get rid of the white pixels that appear on textures after drawing legal move squares (without having to Flush())
+        Renderer::Flush();  // Gets rid of white pixels on texture when drawing colours, drawing textures don't make them appear
+
         // Draw pieces
         for (int y = 0; y < 8; y++) {
             for (int x = 0; x < 8; x++) {

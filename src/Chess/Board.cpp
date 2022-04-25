@@ -104,7 +104,7 @@ void Board::FromFEN(const std::string& fen) {
     std::string_view enPassantSquare;
     fenParser.Next(enPassantSquare);
     if (enPassantSquare != "-")
-        m_EnPassantSquare = ToSquare(enPassantSquare[0], enPassantSquare[1]);
+        m_EnPassantSquare = 1ull << ToSquare(enPassantSquare[0], enPassantSquare[1]);
 }
 
 // TODO: Implement this at some point
@@ -115,14 +115,7 @@ AlgebraicMove Board::Move(LongAlgebraicMove m) {
     Colour colour = GetColour(piece);
     PieceType pieceType = GetPieceType(piece);
 
-    if (colour != m_PlayerTurn) {
-        std::cout << "Not " << (colour == White ? " white" : " black") << "'s turn!\n";
-        return {};
-    }
-
     // ASSERT(p != Piece::None)
-
-    //std::cout << "Moving: " << m << "\n";
 
     if (!IsMoveLegal(m)) {
         std::cout << "Illegal move: " << m << "!\n";
@@ -133,6 +126,8 @@ AlgebraicMove Board::Move(LongAlgebraicMove m) {
         std::cout << "Destination:\n";
         PrintBitBoard(1ull << m.DestinationSquare);
     }
+
+    BitBoard enPassantSquare = 0;
 
     if (pieceType == King) {
         int direction = m.DestinationSquare - m.SourceSquare;  // Kingside or queenside
@@ -156,16 +151,16 @@ AlgebraicMove Board::Move(LongAlgebraicMove m) {
         m_CastlingPath[colour | KingSide] = 0xFFFFFFFFFFFFFFFF;
         m_CastlingPath[colour | QueenSide] = 0xFFFFFFFFFFFFFFFF;
     } else if (pieceType == Pawn) {
-        if (m.SourceSquare - m.DestinationSquare == 16)  // If white pushed pawn two squares
-            m_EnPassantSquare = m.DestinationSquare + 8;
-        else if (m.DestinationSquare - m.SourceSquare == 16)  // If white pushed pawn two squares
-            m_EnPassantSquare = m.DestinationSquare - 8;
-        else if (m.DestinationSquare == m_EnPassantSquare) {  // If taking en passant
+        if (m.SourceSquare - m.DestinationSquare == 16) {  // If black pushed pawn two squares
+            enPassantSquare = 1ull << (m.DestinationSquare + 8);
+        } else if (m.DestinationSquare - m.SourceSquare == 16) {  // If white pushed pawn two squares
+            enPassantSquare = 1ull << (m.DestinationSquare - 8);
+        } else if ((1ull << m.DestinationSquare) & m_EnPassantSquare) {  // If taking en passant
             // Remove the en passant-ed pawn
             if (colour == White)
-                RemovePiece(m.DestinationSquare + 8);
-            else
                 RemovePiece(m.DestinationSquare - 8);
+            else
+                RemovePiece(m.DestinationSquare + 8);
         } else if ((1ull << m.DestinationSquare) & 0xFF000000000000FF) {  // If pawn is promoting
             if (m.Promotion == Pawn || m.Promotion == King)
                 std::cout << "Must promote to another piece!\n";
@@ -173,6 +168,8 @@ AlgebraicMove Board::Move(LongAlgebraicMove m) {
             piece = TypeAndColour(m.Promotion, colour);
         }
     }
+
+    m_EnPassantSquare = enPassantSquare;
 
     if (m.SourceSquare == 0 || m.DestinationSquare == 0)
         m_CastlingPath[Black | KingSide] = 0xFFFFFFFFFFFFFFFF;
@@ -219,6 +216,8 @@ BitBoard Board::GetLegalMoves(Square piece) {
     if (GetPieceType(m_Board[piece]) == King) {
         BitBoard legalMoves = GetPseudoLegalMoves(piece);
         BitBoard controlledSquares = ControlledSquares(enemyColour);
+        std::cout << "Controlled squares:\n";
+        PrintBitBoard(controlledSquares);
         // Deals with castling
         if (!((allPieces & ~king) & m_CastlingPath[playerColour | KingSide]) && !(controlledSquares & m_CastlingPath[playerColour | KingSide]))
             legalMoves |= 0x40ull << (playerColour == White ? 0 : 56);
@@ -290,7 +289,7 @@ BitBoard Board::GetLegalMoves(Square piece) {
     return pseudoLegal;
 }
 
-BitBoard Board::GetPseudoLegalMoves(Square piece) {
+BitBoard Board::GetPseudoLegalMoves(Square piece) const {
     PieceType pt = GetPieceType(m_Board[piece]);
     Colour c = GetColour(m_Board[piece]);
 
@@ -308,7 +307,7 @@ BitBoard Board::GetPseudoLegalMoves(Square piece) {
     }
 }
 
-BitBoard Board::ControlledSquares(Colour c) {
+BitBoard Board::ControlledSquares(Colour c) const {
     BitBoard king = m_ColourBitBoards[OppositeColour(c)] & m_PieceBitBoards[King];
     BitBoard blockers = (m_ColourBitBoards[White] | m_ColourBitBoards[Black]) ^ king;
 
@@ -317,11 +316,11 @@ BitBoard Board::ControlledSquares(Colour c) {
         if (m_Board[s] != Piece::None && GetColour(m_Board[s]) == c) {
             switch (GetPieceType(m_Board[s])) {
                 case Pawn:   controlledSquares |= PseudoLegal::PawnAttack(s, c); break;
-                case Knight: controlledSquares |= PseudoLegal::KnightAttack(s) & ~m_ColourBitBoards[c]; break;
-                case Bishop: controlledSquares |= PseudoLegal::BishopAttack(s, blockers) & ~m_ColourBitBoards[c]; break;
-                case Rook:   controlledSquares |= PseudoLegal::RookAttack(s, blockers) & ~m_ColourBitBoards[c]; break;
-                case Queen:  controlledSquares |= PseudoLegal::QueenAttack(s, blockers) & ~m_ColourBitBoards[c]; break;
-                case King:   controlledSquares |= PseudoLegal::KingAttack(s) & ~m_ColourBitBoards[c]; break;
+                case Knight: controlledSquares |= PseudoLegal::KnightAttack(s); break;
+                case Bishop: controlledSquares |= PseudoLegal::BishopAttack(s, blockers); break;
+                case Rook:   controlledSquares |= PseudoLegal::RookAttack(s, blockers); break;
+                case Queen:  controlledSquares |= PseudoLegal::QueenAttack(s, blockers); break;
+                case King:   controlledSquares |= PseudoLegal::KingAttack(s); break;
 
                 default: return 0;
             }

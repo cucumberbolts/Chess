@@ -29,12 +29,12 @@ public:
     bool IsMoveLegal(LongAlgebraicMove move);
     BitBoard GetLegalMoves(Square piece);
 private:
-    BitBoard GetPseudoLegalMoves(Square piece);
+    BitBoard GetPseudoLegalMoves(Square piece) const;
 
     void PlacePiece(Piece p, Square s);
     void RemovePiece(Square s);
 
-    BitBoard ControlledSquares(Colour colour);
+    BitBoard ControlledSquares(Colour colour) const;
 private:
     std::array<BitBoard, ColourCount> m_ColourBitBoards;
     std::array<BitBoard, PieceTypeCount> m_PieceBitBoards;
@@ -53,10 +53,12 @@ private:
     std::array<BitBoard, 4> m_CastlingPath;
 
     // The target square for en passant
-    Square m_EnPassantSquare;
+    BitBoard m_EnPassantSquare;
 
     Colour m_PlayerTurn;
 };
+
+constexpr static size_t x = sizeof(Board);
 
 inline void Board::PlacePiece(Piece p, Square s) {
     m_PieceBitBoards[GetPieceType(p)] |= 1ull << s;
