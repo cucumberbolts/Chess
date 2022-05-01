@@ -39,4 +39,5 @@ private:
     Board m_Board;
     Square m_SelectedPiece = INVALID_SQUARE;
     BitBoard m_LegalMoves = 0;
+    std::string m_BoardFEN;
 };

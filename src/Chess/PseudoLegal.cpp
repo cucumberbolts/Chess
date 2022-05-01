@@ -226,9 +226,8 @@ namespace PseudoLegal {
 
     } // anonymous namespace
 
-    BitBoard PawnMoves(Square square, Colour colour, BitBoard blockers, BitBoard enPassant) {
-        //blockers |= 1ull << enPassant;
-        blockers |= enPassant;
+    BitBoard PawnMoves(Square square, Colour colour, BitBoard blockers, Square enPassant) {
+        blockers |= 1ull << enPassant;
 
         BitBoard colourMask;
         if (colour == White) {

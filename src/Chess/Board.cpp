@@ -5,6 +5,7 @@
 #include "Utility/StringParser.h"
 
 #include <iostream>
+#include <sstream>
 
 static constexpr std::array<Piece, 64> s_StartBoard = {
     WhiteRook, WhiteKnight, WhiteBishop, WhiteQueen, WhiteKing, WhiteBishop, WhiteKnight, WhiteRook,
@@ -32,7 +33,7 @@ static constexpr std::array<BitBoard, ColourCount> s_ColourBitBoards = {
 };
 
 static constexpr std::array<BitBoard, 4> s_CastlingPaths = {
-        0x70, 0x70ull << 56, 0xE, 0xEull << 56
+	0x70, 0x70ull << 56, 0xE, 0xEull << 56
 };
 
 void Board::Reset() {
@@ -104,11 +105,71 @@ void Board::FromFEN(const std::string& fen) {
     std::string_view enPassantSquare;
     fenParser.Next(enPassantSquare);
     if (enPassantSquare != "-")
-        m_EnPassantSquare = 1ull << ToSquare(enPassantSquare[0], enPassantSquare[1]);
+        m_EnPassantSquare = ToSquare(enPassantSquare[0], enPassantSquare[1]);
+
+    fenParser.Next(m_HalfMoves);
+    fenParser.Next(m_FullMoves);
 }
 
-// TODO: Implement this at some point
-std::string Board::ToFEN() { return ""; }
+std::string Board::ToFEN() {
+    std::ostringstream fen;
+
+    uint32_t emptySquares = 0;
+
+    for (Square rank = 7; rank < 8; rank--) {
+	    for (Square file = 0; file < 8; file++) {
+            Piece p = m_Board[ToSquare('a' + file, '1' + rank)];
+            if (p == Piece::None) {
+                emptySquares++;
+            } else {
+                // Outputs the number of empty squares
+                if (emptySquares > 0) {
+                    fen << emptySquares;
+                    emptySquares = 0;
+                }
+
+                fen << PieceToChar(p);
+            }
+	    }
+
+        // Outputs the number of empty squares
+        if (emptySquares > 0)
+            fen << emptySquares;
+        fen << "/";
+        emptySquares = 0;
+    }
+
+    fen << " " << (m_PlayerTurn == White ? "w " : "b ");
+
+    uint32_t castlingCount = 0;
+    if (m_CastlingPath[White | KingSide] != NO_CASTLE) {
+        fen << "K";
+        castlingCount++;
+    }
+    if (m_CastlingPath[White | QueenSide] != NO_CASTLE) {
+        fen << "Q";
+    	castlingCount++;
+    }
+    if (m_CastlingPath[Black | KingSide] != NO_CASTLE) {
+        fen << "k";
+    	castlingCount++;
+    }
+    if (m_CastlingPath[Black | QueenSide] != NO_CASTLE) {
+        fen << "q";
+    	castlingCount++;
+    }
+    if (castlingCount == 0)
+        fen << "-";
+
+    if (m_EnPassantSquare != 0)
+        fen << " " << 'a' + FileOf(m_EnPassantSquare) << '1' + RankOf(m_EnPassantSquare) / 8;
+    else
+        fen << " -";
+
+    fen << " " << m_HalfMoves << " " << m_FullMoves;
+
+	return fen.str();
+}
 
 AlgebraicMove Board::Move(LongAlgebraicMove m) {
     Piece piece = m_Board[m.SourceSquare];
@@ -127,7 +188,8 @@ AlgebraicMove Board::Move(LongAlgebraicMove m) {
         PrintBitBoard(1ull << m.DestinationSquare);
     }
 
-    BitBoard enPassantSquare = 0;
+    Square enPassantSquare = 0;
+    bool pawnMoveOrCapture = 0;
 
     if (pieceType == King) {
         int direction = m.DestinationSquare - m.SourceSquare;  // Kingside or queenside
@@ -151,11 +213,12 @@ AlgebraicMove Board::Move(LongAlgebraicMove m) {
         m_CastlingPath[colour | KingSide] = 0xFFFFFFFFFFFFFFFF;
         m_CastlingPath[colour | QueenSide] = 0xFFFFFFFFFFFFFFFF;
     } else if (pieceType == Pawn) {
+        pawnMoveOrCapture = true;
         if (m.SourceSquare - m.DestinationSquare == 16) {  // If black pushed pawn two squares
-            enPassantSquare = 1ull << (m.DestinationSquare + 8);
+            enPassantSquare = m.DestinationSquare + 8;
         } else if (m.DestinationSquare - m.SourceSquare == 16) {  // If white pushed pawn two squares
-            enPassantSquare = 1ull << (m.DestinationSquare - 8);
-        } else if ((1ull << m.DestinationSquare) & m_EnPassantSquare) {  // If taking en passant
+            enPassantSquare = m.DestinationSquare - 8;
+        } else if (m.DestinationSquare == m_EnPassantSquare) {  // If taking en passant
             // Remove the en passant-ed pawn
             if (colour == White)
                 RemovePiece(m.DestinationSquare - 8);
@@ -186,6 +249,9 @@ AlgebraicMove Board::Move(LongAlgebraicMove m) {
     // We have to erase the piece from the bit boards before we capture it
     RemovePiece(m.DestinationSquare);
     PlacePiece(piece, m.DestinationSquare);
+
+    m_HalfMoves += pawnMoveOrCapture || capture;
+    m_FullMoves += m_PlayerTurn == Black;
 
     m_PlayerTurn = OppositeColour(m_PlayerTurn);
 

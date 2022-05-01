@@ -111,6 +111,9 @@ void Application::Run() {
     glm::vec4 lightColour = HexToColour(0xFFB160FF);
     glm::vec4 legalMoveColour = { 1.0f, 0.0f, 1.0f, 0.5f };
 
+    m_BoardFEN = std::string(100, '\0');
+    strcpy(m_BoardFEN.data(), "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
+
     Renderer::SetClearColour({ 0.2f, 0.2f, 0.2f, 1.0f });
 
     while (m_Running) {
@@ -126,6 +129,13 @@ void Application::Run() {
         ImGui::Begin("Square colours");
         ImGui::ColorPicker4("Dark square colour", &darkColour[0]);
         ImGui::ColorPicker4("Light square colour", &lightColour[0]);
+        ImGui::End();
+
+        ImGui::Begin("FEN: ");
+        if (ImGui::InputText("FEN", m_BoardFEN.data(), m_BoardFEN.size(), ImGuiInputTextFlags_EnterReturnsTrue))
+            m_Board.FromFEN(m_BoardFEN);
+        if (ImGui::Button("Copy FEN to clipboard"))
+            glfwSetClipboardString(m_Window, m_BoardFEN.c_str());
         ImGui::End();
 
         // Draw chess board
@@ -210,8 +220,10 @@ void Application::OnMouseButton(int32_t button, int32_t action, int32_t mods) {
             Square selectedSquare = ToSquare('a' + rank, '1' + file);
 
             if (m_SelectedPiece != INVALID_SQUARE) {
-                if (m_LegalMoves & (1ull << selectedSquare))
+                if (m_LegalMoves & (1ull << selectedSquare)) {
                     m_Board.Move({ m_SelectedPiece, selectedSquare });
+                    m_BoardFEN = m_Board.ToFEN();
+                }
                 m_SelectedPiece = INVALID_SQUARE;
                 m_LegalMoves = 0;
             } else {

@@ -52,10 +52,15 @@ private:
     // [3] = Black | QueenSide
     std::array<BitBoard, 4> m_CastlingPath;
 
+    constexpr static BitBoard NO_CASTLE = 0xFFFFFFFFFFFFFFFF;
+
     // The target square for en passant
-    BitBoard m_EnPassantSquare;
+    Square m_EnPassantSquare;
 
     Colour m_PlayerTurn;
+
+    int32_t m_HalfMoves = 0;  // Number of half moves since the last pawn move or capture
+    int32_t m_FullMoves = 1;  // The number of the full moves; it starts at 1, and is incremented after Black's move
 };
 
 inline void Board::PlacePiece(Piece p, Square s) {
