@@ -28,6 +28,8 @@ public:
 
     bool IsMoveLegal(LongAlgebraicMove move);
     BitBoard GetLegalMoves(Square piece);
+
+    static constexpr std::string_view StartFen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1\0";
 private:
     BitBoard GetPseudoLegalMoves(Square piece) const;
 

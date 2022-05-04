@@ -4,6 +4,7 @@
 
 #include <Graphics/Application.h>
 
+#if 0
 static uint32_t s_Allocations = 0;
 static uint32_t s_BytesAllocated = 0;
 static uint32_t s_Frees = 0;
@@ -18,6 +19,7 @@ void operator delete(void* ptr) noexcept {
     s_Frees++;
     free(ptr);
 }
+#endif
 
 int main() {
 #if 1

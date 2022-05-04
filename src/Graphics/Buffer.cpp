@@ -41,7 +41,7 @@ void IndexBuffer::Bind() const {
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_BufferID);
 }
 
-void IndexBuffer::SetData(uint32_t* data, size_t count) {
+void IndexBuffer::SetData(uint32_t* data, uint32_t count) {
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_BufferID);
     glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, 0, count * sizeof(uint32_t), data);
 

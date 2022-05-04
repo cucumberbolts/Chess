@@ -11,25 +11,23 @@
 
 #include <glm/gtc/matrix_transform.hpp>
 
-// TODO: add transforms to renderer
-
 namespace {
 
     constexpr size_t maxQuadCount = 100;
     constexpr size_t maxVertexCount = maxQuadCount * 4;
     constexpr size_t maxIndexCount = maxQuadCount * 6;
 
-    constexpr size_t maxTextureCount = 32;
+    constexpr int32_t maxTextureCount = 32;
 
     struct Vertex {
-        glm::vec2 Position;
+        glm::vec4 Position;
         glm::vec4 Colour;
         glm::vec2 TexCoord;
         float TextureSlot;
     };
 
     constexpr std::initializer_list<VertexAttribute> s_VertexLayout = {
-        { VertexAttribute::Type::Float, 2 },  // Position
+        { VertexAttribute::Type::Float, 4 },  // Position
         { VertexAttribute::Type::Float, 4 },  // Colour
         { VertexAttribute::Type::Float, 2 },  // Texture coordinates
         { VertexAttribute::Type::Float, 1 },  // Texture ID
@@ -47,6 +45,28 @@ namespace {
 
     std::array<std::shared_ptr<Texture>, maxTextureCount> m_Textures;
     uint32_t m_NextTexture = 1;  // Slot of next texture. Begins at 1 because 0 is for the white texture
+
+    constexpr std::array<glm::vec4, 4> s_RectPositions = {
+        glm::vec4{ -0.5f, -0.5f, 0.0f, 1.0f },
+        glm::vec4{  0.5f, -0.5f, 0.0f, 1.0f },
+        glm::vec4{  0.5f,  0.5f, 0.0f, 1.0f },
+        glm::vec4{ -0.5f,  0.5f, 0.0f, 1.0f },
+    };
+
+    constexpr std::array<uint32_t, 12> s_RectIndicies = {
+        0, 1, 2,
+        2, 3, 0,
+
+        4, 5, 6,
+        6, 7, 4,
+    };
+
+    constexpr std::array<glm::vec2, 4> s_TextureCoords = {
+        glm::vec2{ 0.0f, 0.0f },
+        glm::vec2{ 1.0f, 0.0f },
+        glm::vec2{ 1.0f, 1.0f },
+        glm::vec2{ 0.0f, 1.0f },
+    };
 
 }
 
@@ -77,7 +97,7 @@ void Renderer::Init(const glm::mat4& projection) {
 
     int32_t textures[maxTextureCount];
 
-    for (size_t i = 0; i < maxTextureCount; i++)
+    for (int32_t i = 0; i < maxTextureCount; i++)
         textures[i] = i;
 
     s_Shader->SetUniform("u_Textures", textures, sizeof(textures));
@@ -89,53 +109,28 @@ Renderer::~Renderer() {
 }
 
 void Renderer::DrawRect(const glm::vec3& position, const glm::vec2& size, const glm::vec4& colour) {
-    uint32_t vertexCount = s_NextVertex - s_Vertecies;
+    glm::mat4 transform = glm::translate(glm::mat4(1.0f), position)
+		* glm::scale(glm::mat4(1.0f), { size.x, size.y, 1.0f });
 
-    if (vertexCount > maxVertexCount - 4 || m_NextTexture == maxTextureCount) {
-        Flush();
-        vertexCount = s_NextVertex - s_Vertecies;
-    }
-
-    s_NextVertex->Position = { position.x, position.y - size.y };
-    s_NextVertex->Colour = colour;
-    s_NextVertex->TexCoord = { 0.0f, 0.0f };
-    s_NextVertex->TextureSlot = 0.0f;
-    s_NextVertex++;
-
-    s_NextVertex->Position = { position.x + size.x, position.y - size.y };
-    s_NextVertex->Colour = colour;
-    s_NextVertex->TexCoord = { 1.0f, 0.0f };
-    s_NextVertex->TextureSlot = 0.0f;
-    s_NextVertex++;
-
-    s_NextVertex->Position = { position.x + size.x, position.y };
-    s_NextVertex->Colour = colour;
-    s_NextVertex->TexCoord = { 1.0f, 1.0f };
-    s_NextVertex->TextureSlot = 0.0f;
-    s_NextVertex++;
-
-    s_NextVertex->Position = { position.x, position.y };
-    s_NextVertex->Colour = colour;
-    s_NextVertex->TexCoord = { 0.0f, 1.0f };
-    s_NextVertex->TextureSlot = 0.0f;
-    s_NextVertex++;
-
-    static constexpr uint32_t indicies[] = {
-        0, 1, 2,
-        2, 3, 0,
-
-        4, 5, 6,
-        6, 7, 4,
-    };
-
-    for (size_t i = 0; i < 6; i++) {
-        *s_NextIndex = vertexCount + indicies[i];
-        s_NextIndex++;
-    }
+    DrawRect(transform, colour, m_Textures[0], s_TextureCoords.data());
 }
 
 void Renderer::DrawRect(const glm::vec3& position, const glm::vec2& size, const std::shared_ptr<Texture>& texture) {
-    uint32_t vertexCount = s_NextVertex - s_Vertecies;
+    glm::mat4 transform = glm::translate(glm::mat4(1.0f), position)
+        * glm::scale(glm::mat4(1.0f), { size.x, size.y, 1.0f });
+
+    DrawRect(transform, { 1.0f, 1.0f, 1.0f, 1.0f }, texture, s_TextureCoords.data());
+}
+
+void Renderer::DrawRect(const glm::vec3& position, const glm::vec2& size, const std::shared_ptr<SubTexture>& subTexture) {
+    glm::mat4 transform = glm::translate(glm::mat4(1.0f), position)
+        * glm::scale(glm::mat4(1.0f), { size.x, size.y, 1.0f });
+
+    DrawRect(transform, { 1.0f, 1.0f, 1.0f, 1.0f }, subTexture->GetTexture(), subTexture->GetTextureCoordinates());
+}
+
+void Renderer::DrawRect(const glm::mat4& transform, const glm::vec4& colour, const std::shared_ptr<Texture>& texture, const glm::vec2* textureCoords) {
+    uint64_t vertexCount = s_NextVertex - s_Vertecies;
 
     if (vertexCount > maxVertexCount - 4 || m_NextTexture == maxTextureCount) {
         Flush();
@@ -150,103 +145,20 @@ void Renderer::DrawRect(const glm::vec3& position, const glm::vec2& size, const 
         m_Textures[m_NextTexture]->Bind(m_NextTexture);
         textureSlot = (float)m_NextTexture;
         m_NextTexture++;
-    }
-    else {
-        textureSlot = (float)(*existingTexture)->GetSlot();
-    }
-
-    s_NextVertex->Position = { position.x, position.y - size.y };
-    s_NextVertex->Colour = { 1.0f, 1.0f, 1.0f, 1.0f };
-    s_NextVertex->TexCoord = { 0.0f, 0.0f };
-    s_NextVertex->TextureSlot = textureSlot;
-    s_NextVertex++;
-
-    s_NextVertex->Position = { position.x + size.x, position.y - size.y };
-    s_NextVertex->Colour = { 1.0f, 1.0f, 1.0f, 1.0f };
-    s_NextVertex->TexCoord = { 1.0f, 0.0f };
-    s_NextVertex->TextureSlot = textureSlot;
-    s_NextVertex++;
-
-    s_NextVertex->Position = { position.x + size.x, position.y };
-    s_NextVertex->Colour = { 1.0f, 1.0f, 1.0f, 1.0f };
-    s_NextVertex->TexCoord = { 1.0f, 1.0f };
-    s_NextVertex->TextureSlot = textureSlot;
-    s_NextVertex++;
-
-    s_NextVertex->Position = { position.x, position.y };
-    s_NextVertex->Colour = { 1.0f, 1.0f, 1.0f, 1.0f };
-    s_NextVertex->TexCoord = { 0.0f, 1.0f };
-    s_NextVertex->TextureSlot = textureSlot;
-    s_NextVertex++;
-
-    static constexpr uint32_t indicies[] = {
-        0, 1, 2,
-        2, 3, 0,
-
-        4, 5, 6,
-        6, 7, 4,
-    };
-
-    for (size_t i = 0; i < 6; i++) {
-        *s_NextIndex = vertexCount + indicies[i];
-        s_NextIndex++;
-    }
-}
-
-void Renderer::DrawRect(const glm::vec3& position, const glm::vec2& size, const std::shared_ptr<SubTexture>& subTexture) {
-    uint32_t vertexCount = s_NextVertex - s_Vertecies;
-
-    if (vertexCount > maxVertexCount - 4 || m_NextTexture == maxTextureCount) {
-        Flush();
-        vertexCount = s_NextVertex - s_Vertecies;
-    }
-
-    float textureSlot;
-    
-    auto existingTexture = std::find(m_Textures.begin(), m_Textures.end(), subTexture->GetTexture());
-    if (existingTexture == m_Textures.end()) {
-        m_Textures[m_NextTexture] = subTexture->GetTexture();
-        m_Textures[m_NextTexture]->Bind(m_NextTexture);
-        textureSlot = (float)m_NextTexture;
-        m_NextTexture++;
     } else {
         textureSlot = (float)(*existingTexture)->GetSlot();
     }
 
-    s_NextVertex->Position = { position.x, position.y - size.y };
-    s_NextVertex->Colour = { 1.0f, 1.0f, 1.0f, 1.0f };
-    s_NextVertex->TexCoord = subTexture->GetTextureCoordinates()[0];
-    s_NextVertex->TextureSlot = textureSlot;
-    s_NextVertex++;
-
-    s_NextVertex->Position = { position.x + size.x, position.y - size.y };
-    s_NextVertex->Colour = { 1.0f, 1.0f, 1.0f, 1.0f };
-    s_NextVertex->TexCoord = subTexture->GetTextureCoordinates()[1];
-    s_NextVertex->TextureSlot = textureSlot;
-    s_NextVertex++;
-
-    s_NextVertex->Position = { position.x + size.x, position.y };
-    s_NextVertex->Colour = { 1.0f, 1.0f, 1.0f, 1.0f };
-    s_NextVertex->TexCoord = subTexture->GetTextureCoordinates()[2];
-    s_NextVertex->TextureSlot = textureSlot;
-    s_NextVertex++;
-
-    s_NextVertex->Position = { position.x, position.y };
-    s_NextVertex->Colour = { 1.0f, 1.0f, 1.0f, 1.0f };
-    s_NextVertex->TexCoord = subTexture->GetTextureCoordinates()[3];
-    s_NextVertex->TextureSlot = textureSlot;
-    s_NextVertex++;
-
-    static constexpr uint32_t indicies[] = {
-        0, 1, 2,
-        2, 3, 0,
-
-        4, 5, 6,
-        6, 7, 4,
-    };
+    for (size_t i = 0; i < 4; i++) {
+        s_NextVertex->Position = transform * s_RectPositions[i];
+        s_NextVertex->Colour = colour;
+        s_NextVertex->TexCoord = textureCoords[i];
+        s_NextVertex->TextureSlot = textureSlot;
+        s_NextVertex++;
+    }
 
     for (size_t i = 0; i < 6; i++) {
-        *s_NextIndex = vertexCount + indicies[i];
+        *s_NextIndex = vertexCount + s_RectIndicies[i];
         s_NextIndex++;
     }
 }

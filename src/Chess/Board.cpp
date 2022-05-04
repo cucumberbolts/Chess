@@ -44,6 +44,9 @@ void Board::Reset() {
     m_PlayerTurn = White;
     m_CastlingPath = s_CastlingPaths;
     m_EnPassantSquare = 0;
+
+    m_HalfMoves = 0;
+    m_FullMoves = 1;
 }
 
 void Board::FromFEN(const std::string& fen) {
@@ -162,7 +165,7 @@ std::string Board::ToFEN() {
         fen << "-";
 
     if (m_EnPassantSquare != 0)
-        fen << " " << 'a' + FileOf(m_EnPassantSquare) << '1' + RankOf(m_EnPassantSquare) / 8;
+        fen << " " << (char)('a' + FileOf(m_EnPassantSquare)) << (char)('1' + RankOf(m_EnPassantSquare) / 8);
     else
         fen << " -";
 
@@ -250,7 +253,8 @@ AlgebraicMove Board::Move(LongAlgebraicMove m) {
     RemovePiece(m.DestinationSquare);
     PlacePiece(piece, m.DestinationSquare);
 
-    m_HalfMoves += pawnMoveOrCapture || capture;
+    pawnMoveOrCapture = pawnMoveOrCapture || capture;
+    m_HalfMoves = pawnMoveOrCapture ? 0 : m_HalfMoves + 1;
     m_FullMoves += m_PlayerTurn == Black;
 
     m_PlayerTurn = OppositeColour(m_PlayerTurn);

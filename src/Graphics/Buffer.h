@@ -29,7 +29,7 @@ public:
 
     uint32_t GetCount() const { return m_Count; }
 
-    void SetData(uint32_t* data, size_t count);
+    void SetData(uint32_t* data, uint32_t count);
 private:
     uint32_t m_BufferID = 0;
 

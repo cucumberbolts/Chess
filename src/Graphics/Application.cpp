@@ -112,7 +112,7 @@ void Application::Run() {
     glm::vec4 legalMoveColour = { 1.0f, 0.0f, 1.0f, 0.5f };
 
     m_BoardFEN = std::string(100, '\0');
-    strcpy(m_BoardFEN.data(), "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
+    strcpy(m_BoardFEN.data(), Board::StartFen.data());
 
     Renderer::SetClearColour({ 0.2f, 0.2f, 0.2f, 1.0f });
 
@@ -124,7 +124,7 @@ void Application::Run() {
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
 
-        //ImGui::ShowDemoWindow();
+        ImGui::ShowDemoWindow();
         
         ImGui::Begin("Square colours");
         ImGui::ColorPicker4("Dark square colour", &darkColour[0]);
@@ -132,39 +132,48 @@ void Application::Run() {
         ImGui::End();
 
         ImGui::Begin("FEN: ");
-        if (ImGui::InputText("FEN", m_BoardFEN.data(), m_BoardFEN.size(), ImGuiInputTextFlags_EnterReturnsTrue))
+
+        // Last part of FEN not showing...
+        if (ImGui::InputText("FEN", m_BoardFEN.data(), m_BoardFEN.capacity() + 1, ImGuiInputTextFlags_EnterReturnsTrue))
             m_Board.FromFEN(m_BoardFEN);
+
         if (ImGui::Button("Copy FEN to clipboard"))
             glfwSetClipboardString(m_Window, m_BoardFEN.c_str());
+
+        if (ImGui::Button("Reset board")) {
+            m_Board.Reset();  // Reset FEN string
+            m_BoardFEN = Board::StartFen;
+        }
+
         ImGui::End();
 
         // Draw chess board
         for (int y = 0; y < 8; y++) {
 			for (int x = 0; x < 8; x++) {
                 const glm::vec4 colour = (x + y) % 2 == 0 ? lightColour : darkColour;
-                Renderer::DrawRect({ -4.0f + x, 4.0f - y, 0.0f }, { 1, 1 }, colour);
+                Renderer::DrawRect({ -3.5f + x, 3.5f - y, 0.0f }, { 1, 1 }, colour);
             }
         }
 
-		// Draw legal moves (loop through m_LegalMoves bitboard
+		// Draw legal moves (loop through m_LegalMoves bitboard)
         for (BitBoard legalMoves = m_LegalMoves; legalMoves; legalMoves &= legalMoves - 1) {
             Square square = GetSquare(legalMoves);
             int rank = RankOf(square) / 8;
             int file = FileOf(square);
-            Renderer::DrawRect({ -4 + file, -3 + rank, 0.0f }, { 1.0f, 1.0f }, legalMoveColour);
+            Renderer::DrawRect({ -3.5f + file, -3.5f + rank, 0.0f }, { 1.0f, 1.0f }, legalMoveColour);
         }
 
         //Renderer::DrawRect({ -5.0f, 0.0f, 0.0f }, { 1.0f, 1.0f }, chessPieceSprites[0]);
 
         // TODO: Get rid of the white pixels that appear on textures after drawing legal move squares (without having to Flush())
-        Renderer::Flush();  // Gets rid of white pixels on texture when drawing colours, drawing textures don't make them appear
+        //Renderer::Flush();  // Gets rid of white pixels on texture when drawing colours, drawing textures don't make them appear
 
         // Draw pieces
         for (int y = 0; y < 8; y++) {
             for (int x = 0; x < 8; x++) {
                 std::shared_ptr<SubTexture> piece;
                 switch (m_Board[y * 8 + x]) {
-					case WhitePawn:     piece = chessPieceSprites[11]; break;
+                    case WhitePawn:     piece = chessPieceSprites[11]; break;
                     case WhiteKnight:   piece = chessPieceSprites[9];  break;
 	                case WhiteBishop:   piece = chessPieceSprites[8];  break;
                     case WhiteRook:     piece = chessPieceSprites[10]; break;
@@ -179,7 +188,7 @@ void Application::Run() {
 	                case None: continue;
                 }
         
-                Renderer::DrawRect({ -4 + x, -3 + y, 0.0f }, { 1, 1 }, piece);
+                Renderer::DrawRect({ -3.5f + x, -3.5f + y, 0.0f }, { 1, 1 }, piece);
             }
         }
 
