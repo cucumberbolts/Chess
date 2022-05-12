@@ -192,7 +192,7 @@ AlgebraicMove Board::Move(LongAlgebraicMove m) {
     }
 
     Square enPassantSquare = 0;
-    bool pawnMoveOrCapture = 0;
+    bool pawnMoveOrCapture = false;
 
     if (pieceType == King) {
         int direction = m.DestinationSquare - m.SourceSquare;  // Kingside or queenside
@@ -254,7 +254,7 @@ AlgebraicMove Board::Move(LongAlgebraicMove m) {
     PlacePiece(piece, m.DestinationSquare);
 
     pawnMoveOrCapture = pawnMoveOrCapture || capture;
-    m_HalfMoves = pawnMoveOrCapture ? 0 : m_HalfMoves + 1;
+    m_HalfMoves = (m_HalfMoves + 1) * !pawnMoveOrCapture;  // Increments if no pawn move or capture
     m_FullMoves += m_PlayerTurn == Black;
 
     m_PlayerTurn = OppositeColour(m_PlayerTurn);
@@ -271,7 +271,6 @@ bool Board::IsMoveLegal(LongAlgebraicMove move) {
 }
 
 BitBoard Board::GetLegalMoves(Square piece) {
-    // TODO: En passant pins
     // TODO: Think about caching the masks
     Colour playerColour = GetColour(m_Board[piece]);
     Colour enemyColour = OppositeColour(playerColour);
@@ -353,6 +352,18 @@ BitBoard Board::GetLegalMoves(Square piece) {
         pseudoLegal &= bishopPin & PseudoLegal::BishopAttack(piece, allPieces);
 
     pseudoLegal &= checkMask;
+
+    // Handles en passant pin: 8/4p3/8/2K2P1r/8/8/8/7k b - - 0 1
+    if (GetPieceType(m_Board[piece]) == Pawn && king & 0x000000FFFF000000 && m_EnPassantSquare) {
+        // Gets the two pawns involved in en passant
+        BitBoard twoPawns = ((1ull << m_EnPassantSquare + 8) | (1ull << m_EnPassantSquare - 8)) & 0x000000FFFF000000;
+        twoPawns |= pieceSquare;
+
+        // Removes the pawns and sees if king is in check
+        rookView = PseudoLegal::RookAttack(kingSquare, allPieces & ~twoPawns);
+        if (rookView & enemyPieces & (m_PieceBitBoards[Rook] | m_PieceBitBoards[Queen]))
+            pseudoLegal &= ~(1ull << m_EnPassantSquare);
+    }
 
     return pseudoLegal;
 }

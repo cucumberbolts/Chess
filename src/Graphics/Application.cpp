@@ -124,7 +124,7 @@ void Application::Run() {
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
 
-        ImGui::ShowDemoWindow();
+        //ImGui::ShowDemoWindow();
         
         ImGui::Begin("Square colours");
         ImGui::ColorPicker4("Dark square colour", &darkColour[0]);
