@@ -8,7 +8,7 @@
 #include "BoardFormat.h"
 #include "Move.h"
 
-// TODO: Error handling with exceptions
+// TODO: Error handling with exceptions https://docs.microsoft.com/en-us/cpp/cpp/errors-and-exception-handling-modern-cpp
 
 class Board {
 public:

@@ -151,11 +151,11 @@ void Application::Run() {
         for (int y = 0; y < 8; y++) {
 			for (int x = 0; x < 8; x++) {
                 const glm::vec4 colour = (x + y) % 2 == 0 ? lightColour : darkColour;
-                Renderer::DrawRect({ -3.5f + x, 3.5f - y, 0.0f }, { 1, 1 }, colour);
+                Renderer::DrawRect({ -3.5f + x, 3.5f - y, 0.0f }, { 1.0f, 1.0f }, colour);
             }
         }
 
-		// Draw legal moves (loop through m_LegalMoves bitboard)
+        // Draw legal moves (loop through m_LegalMoves bitboard)
         for (BitBoard legalMoves = m_LegalMoves; legalMoves; legalMoves &= legalMoves - 1) {
             Square square = GetSquare(legalMoves);
             int rank = RankOf(square) / 8;
@@ -163,10 +163,8 @@ void Application::Run() {
             Renderer::DrawRect({ -3.5f + file, -3.5f + rank, 0.0f }, { 1.0f, 1.0f }, legalMoveColour);
         }
 
-        //Renderer::DrawRect({ -5.0f, 0.0f, 0.0f }, { 1.0f, 1.0f }, chessPieceSprites[0]);
-
         // TODO: Get rid of the white pixels that appear on textures after drawing legal move squares (without having to Flush())
-        //Renderer::Flush();  // Gets rid of white pixels on texture when drawing colours, drawing textures don't make them appear
+        Renderer::Flush();  // Gets rid of white pixels on texture when drawing colours, drawing textures don't make them appear
 
         // Draw pieces
         for (int y = 0; y < 8; y++) {
@@ -217,8 +215,7 @@ void Application::OnMouseButton(int32_t button, int32_t action, int32_t mods) {
     if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) {
         double x, y;
         glfwGetCursorPos(m_Window, &x, &y);
-
-        // TODO: Use glm somehow??
+        
         x = (x - m_WindowProperties.Width / 2) / (m_WindowProperties.Width / 2) * 8.0;
         y = (y - m_WindowProperties.Height / 2) / (m_WindowProperties.Height / 2) * -4.5;
 

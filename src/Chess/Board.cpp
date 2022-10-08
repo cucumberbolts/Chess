@@ -271,7 +271,6 @@ bool Board::IsMoveLegal(LongAlgebraicMove move) {
 }
 
 BitBoard Board::GetLegalMoves(Square piece) {
-    // TODO: Think about caching the masks
     Colour playerColour = GetColour(m_Board[piece]);
     Colour enemyColour = OppositeColour(playerColour);
 

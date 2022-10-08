@@ -81,7 +81,7 @@ void Renderer::Init(const glm::mat4& projection) {
 
     constexpr uint32_t whitePixel = 0xFFFFFFFF;
     m_Textures[0] = std::make_shared<Texture>((uint8_t*)&whitePixel, 1, 1);
-    m_Textures[0]->Bind(0);
+    m_Textures[0]->Bind(0.0f);
 
     s_Vertecies = new Vertex[maxVertexCount];
     s_Indicies = new uint32_t[maxIndexCount];
@@ -139,7 +139,7 @@ void Renderer::DrawRect(const glm::mat4& transform, const glm::vec4& colour, con
 
     float textureSlot;
 
-    auto existingTexture = std::find(m_Textures.begin(), m_Textures.end(), texture);
+    const auto existingTexture = std::find(m_Textures.begin(), m_Textures.end(), texture);
     if (existingTexture == m_Textures.end()) {
         m_Textures[m_NextTexture] = texture;
         m_Textures[m_NextTexture]->Bind(m_NextTexture);
@@ -148,6 +148,10 @@ void Renderer::DrawRect(const glm::mat4& transform, const glm::vec4& colour, con
     } else {
         textureSlot = (float)(*existingTexture)->GetSlot();
     }
+
+    //texture->Bind(m_NextTexture);
+    //m_NextTexture++;
+    //m_Textures[m_NextTexture] = texture;
 
     for (size_t i = 0; i < 4; i++) {
         s_NextVertex->Position = transform * s_RectPositions[i];

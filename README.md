@@ -7,6 +7,7 @@ Chess GUI.
 - Windows (Unix support coming at some point)
 - OpenGL 4.6
 - C++ 17
+- CMake
 
 ### Compiling
 Clone the repository:
@@ -17,8 +18,12 @@ cd Chess
 Build using CMake:
 ``` bash
 mkdir build
-cd build
-cmake ..
+cmake -B build
+cmake --build build
+```
+Or on MSVC (Visual Studio), to build release:
+```
+cmake --build build --config Release
 ```
 
 ### Dependencies
