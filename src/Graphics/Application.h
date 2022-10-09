@@ -38,6 +38,7 @@ private:
 
     Board m_Board;
     Square m_SelectedPiece = INVALID_SQUARE;
+    bool m_IsHoldingPiece = false;  // If the selected piece follows the mouse
     BitBoard m_LegalMoves = 0;
     std::string m_BoardFEN;
 };

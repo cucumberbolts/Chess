@@ -185,8 +185,20 @@ void Application::Run() {
 	                case BlackKing:     piece = chessPieceSprites[0];  break;
 	                case None: continue;
                 }
-        
-                Renderer::DrawRect({ -3.5f + x, -3.5f + y, 0.0f }, { 1, 1 }, piece);
+
+                if (y * 8 + x == m_SelectedPiece && m_IsHoldingPiece) {
+                    // Draw selected piece following the mouse
+
+                    double x, y;
+                    glfwGetCursorPos(m_Window, &x, &y);
+
+                    x = (x - m_WindowProperties.Width / 2) / (m_WindowProperties.Width / 2) * 8.0;
+                    y = (y - m_WindowProperties.Height / 2) / (m_WindowProperties.Height / 2) * -4.5;
+
+                    Renderer::DrawRect({ x, y, 0.0f }, { 1, 1 }, piece);
+                } else {
+                    Renderer::DrawRect({ -3.5f + x, -3.5f + y, 0.0f }, { 1.0f, 1.0f }, piece);
+                }
             }
         }
 
@@ -212,30 +224,70 @@ void Application::OnKeyPressed(int32_t key, int32_t scancode, int32_t action, in
 }
 
 void Application::OnMouseButton(int32_t button, int32_t action, int32_t mods) {
-    if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) {
-        double x, y;
-        glfwGetCursorPos(m_Window, &x, &y);
-        
-        x = (x - m_WindowProperties.Width / 2) / (m_WindowProperties.Width / 2) * 8.0;
-        y = (y - m_WindowProperties.Height / 2) / (m_WindowProperties.Height / 2) * -4.5;
+    if (button == GLFW_MOUSE_BUTTON_LEFT) {
+        if (action == GLFW_PRESS) {
+            m_IsHoldingPiece = true;
 
-        if (x > -4 && x < 4 && y > -4 && y < 4) {
-            Square rank = (Square)(x + 4.0);
-            Square file = (Square)(y + 4.0);
+            double x, y;
+            glfwGetCursorPos(m_Window, &x, &y);
 
-            Square selectedSquare = ToSquare('a' + rank, '1' + file);
+            x = (x - m_WindowProperties.Width / 2) / (m_WindowProperties.Width / 2) * 8.0;
+            y = (y - m_WindowProperties.Height / 2) / (m_WindowProperties.Height / 2) * -4.5;
 
-            if (m_SelectedPiece != INVALID_SQUARE) {
-                if (m_LegalMoves & (1ull << selectedSquare)) {
-                    m_Board.Move({ m_SelectedPiece, selectedSquare });
-                    m_BoardFEN = m_Board.ToFEN();
+            if (x > -4 && x < 4 && y > -4 && y < 4) {
+                Square rank = (Square)(x + 4.0);
+                Square file = (Square)(y + 4.0);
+
+                // The square the mouse clicked on
+                Square selectedSquare = ToSquare('a' + rank, '1' + file);
+
+                // If a piece was already selected, move piece to clicked square
+                if (m_SelectedPiece != INVALID_SQUARE) {
+                    if (m_LegalMoves & (1ull << selectedSquare)) {
+                        m_Board.Move({ m_SelectedPiece, selectedSquare });
+                        m_BoardFEN = m_Board.ToFEN();
+                    }
+
+                    m_SelectedPiece = INVALID_SQUARE;
+                    m_LegalMoves = 0;
+                } else {  // If no piece already selected, select piece
+                    m_LegalMoves = m_Board.GetLegalMoves(selectedSquare);
+                    m_SelectedPiece = m_LegalMoves == 0 ? INVALID_SQUARE : selectedSquare;
                 }
+            } else {
                 m_SelectedPiece = INVALID_SQUARE;
                 m_LegalMoves = 0;
-            } else {
-                m_LegalMoves = m_Board.GetLegalMoves(selectedSquare);
-                m_SelectedPiece = m_LegalMoves == 0 ? INVALID_SQUARE : selectedSquare;
             }
+        } else if (action == GLFW_RELEASE) {
+            double x, y;
+            glfwGetCursorPos(m_Window, &x, &y);
+
+            x = (x - m_WindowProperties.Width / 2) / (m_WindowProperties.Width / 2) * 8.0;
+            y = (y - m_WindowProperties.Height / 2) / (m_WindowProperties.Height / 2) * -4.5;
+
+            if (x > -4 && x < 4 && y > -4 && y < 4) {
+                Square rank = (Square)(x + 4.0);
+                Square file = (Square)(y + 4.0);
+
+                // The square the mouse was released on
+                Square selectedSquare = ToSquare('a' + rank, '1' + file);
+
+                // This check *probably* isn't necessary...
+                if (m_SelectedPiece != INVALID_SQUARE) {
+                    if (m_LegalMoves & (1ull << selectedSquare)) {
+                        m_Board.Move({ m_SelectedPiece, selectedSquare });
+                        m_BoardFEN = m_Board.ToFEN();
+                        m_SelectedPiece = INVALID_SQUARE;
+                        m_LegalMoves = 0;
+                    }
+                }
+            }
+
+            m_IsHoldingPiece = false;
         }
+    } else if (button == GLFW_MOUSE_BUTTON_RIGHT) {
+        m_SelectedPiece = INVALID_SQUARE;
+        m_IsHoldingPiece = false;
+        m_LegalMoves = 0;
     }
 }
