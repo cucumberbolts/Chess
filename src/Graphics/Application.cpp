@@ -186,7 +186,7 @@ void Application::Run() {
 	                case None: continue;
                 }
 
-                if (y * 8 + x == m_SelectedPiece && m_IsHoldingPiece) {
+                if (m_SelectedPiece == y * 8 + x && m_IsHoldingPiece) {
                     // Draw selected piece following the mouse
 
                     double x, y;
@@ -225,14 +225,14 @@ void Application::OnKeyPressed(int32_t key, int32_t scancode, int32_t action, in
 
 void Application::OnMouseButton(int32_t button, int32_t action, int32_t mods) {
     if (button == GLFW_MOUSE_BUTTON_LEFT) {
+        double x, y;
+        glfwGetCursorPos(m_Window, &x, &y);
+
+        x = (x - m_WindowProperties.Width / 2) / (m_WindowProperties.Width / 2) * 8.0;
+        y = (y - m_WindowProperties.Height / 2) / (m_WindowProperties.Height / 2) * -4.5;
+
         if (action == GLFW_PRESS) {
             m_IsHoldingPiece = true;
-
-            double x, y;
-            glfwGetCursorPos(m_Window, &x, &y);
-
-            x = (x - m_WindowProperties.Width / 2) / (m_WindowProperties.Width / 2) * 8.0;
-            y = (y - m_WindowProperties.Height / 2) / (m_WindowProperties.Height / 2) * -4.5;
 
             if (x > -4 && x < 4 && y > -4 && y < 4) {
                 Square rank = (Square)(x + 4.0);
@@ -242,8 +242,8 @@ void Application::OnMouseButton(int32_t button, int32_t action, int32_t mods) {
                 Square selectedSquare = ToSquare('a' + rank, '1' + file);
 
                 // If a piece was already selected, move piece to clicked square
-                if (m_SelectedPiece != INVALID_SQUARE) {
-                    if (m_LegalMoves & (1ull << selectedSquare)) {
+                if (m_SelectedPiece != INVALID_SQUARE && m_SelectedPiece != selectedSquare) {
+                    if (m_LegalMoves & (1ull << selectedSquare) || selectedSquare == m_SelectedPiece) {
                         m_Board.Move({ m_SelectedPiece, selectedSquare });
                         m_BoardFEN = m_Board.ToFEN();
                     }
@@ -259,20 +259,13 @@ void Application::OnMouseButton(int32_t button, int32_t action, int32_t mods) {
                 m_LegalMoves = 0;
             }
         } else if (action == GLFW_RELEASE) {
-            double x, y;
-            glfwGetCursorPos(m_Window, &x, &y);
-
-            x = (x - m_WindowProperties.Width / 2) / (m_WindowProperties.Width / 2) * 8.0;
-            y = (y - m_WindowProperties.Height / 2) / (m_WindowProperties.Height / 2) * -4.5;
-
             if (x > -4 && x < 4 && y > -4 && y < 4) {
                 Square rank = (Square)(x + 4.0);
                 Square file = (Square)(y + 4.0);
 
                 // The square the mouse was released on
                 Square selectedSquare = ToSquare('a' + rank, '1' + file);
-
-                // This check *probably* isn't necessary...
+                
                 if (m_SelectedPiece != INVALID_SQUARE) {
                     if (m_LegalMoves & (1ull << selectedSquare)) {
                         m_Board.Move({ m_SelectedPiece, selectedSquare });

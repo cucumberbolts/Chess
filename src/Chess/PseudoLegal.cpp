@@ -97,6 +97,8 @@ namespace PseudoLegal {
                     result[s] = 0x0102040810204080 >> (8 * (distanceTop - distanceLeft));
                 else
                     result[s] = 0x0102040810204080 << (8 * (distanceBottom - distanceRight));
+
+                result[s] ^= 1ull << s;
             }
 
             return result;
@@ -116,6 +118,8 @@ namespace PseudoLegal {
                     result[s] = 0x8040201008040201 >> (8 * (distanceTop - distanceRight));
                 else
                     result[s] = 0x8040201008040201 << (8 * (distanceBottom - distanceLeft));
+
+                result[s] ^= 1ull << s;
             }
 
             return result;
