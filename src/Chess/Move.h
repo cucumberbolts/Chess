@@ -138,7 +138,7 @@ struct AlgebraicMove {
     Piece Piece;
     Square Square;
 
-    char Specifier;  // the specific rank or file the piece is from (in case there are 2) ex. n*b*d7
+    char Specifier;  // the specific rank or file the piece is from (in case there are 2) ex. nbd7
     bool Capture;
 
     // Piece Promotion;

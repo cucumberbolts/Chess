@@ -24,7 +24,6 @@ public:
     static void DrawRect(const glm::mat4& transform, const glm::vec4& colour, const std::shared_ptr<Texture>& texture, const glm::vec2* textureCoords);
 
     static void Flush();
-
-    static void SetClearColour(glm::vec4 colour);
-    static void ClearScreen();
+    
+    static void ClearScreen(glm::vec4 colour);
 };

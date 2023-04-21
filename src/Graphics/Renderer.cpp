@@ -74,6 +74,9 @@ void Renderer::Init(const glm::mat4& projection) {
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
+    glEnable(GL_DEPTH_TEST);
+    glDepthFunc(GL_LESS);
+
     s_IndexBuffer = std::make_unique<IndexBuffer>(maxIndexCount * sizeof(uint32_t));
     s_Shader = std::make_unique<Shader>("resources/shaders/VertexShader.glsl", "resources/shaders/FragmentShader.glsl");
     s_VertexBuffer = std::make_unique<VertexBuffer>(maxVertexCount * sizeof(Vertex));
@@ -185,10 +188,7 @@ void Renderer::Flush() {
     m_NextTexture = 1;
 }
 
-void Renderer::SetClearColour(glm::vec4 colour) {
+void Renderer::ClearScreen(glm::vec4 colour) {
     glClearColor(colour.r, colour.g, colour.b, colour.a);
-}
-
-void Renderer::ClearScreen() {
-    glClear(GL_COLOR_BUFFER_BIT);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }

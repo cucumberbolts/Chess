@@ -1,6 +1,7 @@
 #include "Application.h"
 #include "Chess/Board.h"
 #include "DebugContext.h"
+#include "Framebuffer.h"
 #include "Renderer.h"
 #include "SubTexture.h"
 #include "Texture.h"
@@ -71,13 +72,13 @@ Application::Application(uint32_t width, uint32_t height, const std::string& nam
 
     DebugContext::Init();
 
-    // Setup Dear ImGui context
+    // Setup ImGui context
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO(); (void)io;
     io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
 
-    // Setup Dear ImGui style
+    // ImGui style
     ImGui::StyleColorsDark();
 
     // Setup Platform/Renderer backends
@@ -114,10 +115,15 @@ void Application::Run() {
     m_BoardFEN = std::string(100, '\0');
     strcpy(m_BoardFEN.data(), Board::StartFen.data());
 
-    Renderer::SetClearColour({ 0.2f, 0.2f, 0.2f, 1.0f });
+    FramebufferSpecification spec;
+    spec.Width = 1280;
+    spec.Height = 720;
+    std::shared_ptr<Framebuffer> framebuffer = std::make_shared<Framebuffer>(spec);
 
     while (m_Running) {
-        Renderer::ClearScreen();
+        framebuffer->Bind();
+
+        Renderer::ClearScreen({ 0.2f, 0.2f, 0.2f, 1.0f });
 
         // Start the Dear ImGui frame
         ImGui_ImplOpenGL3_NewFrame();
@@ -131,27 +137,35 @@ void Application::Run() {
         ImGui::ColorPicker4("Light square colour", &lightColour[0]);
         ImGui::End();
 
-        ImGui::Begin("FEN: ");
+        {
+            ImGui::Begin("FEN: ");
 
-        // Last part of FEN not showing...
-        if (ImGui::InputText("FEN", m_BoardFEN.data(), m_BoardFEN.capacity() + 1, ImGuiInputTextFlags_EnterReturnsTrue))
-            m_Board.FromFEN(m_BoardFEN);
+            // Last part of FEN not showing...
+            if (ImGui::InputText("FEN", m_BoardFEN.data(), m_BoardFEN.capacity() + 1, ImGuiInputTextFlags_EnterReturnsTrue))
+                m_Board.FromFEN(m_BoardFEN);
 
-        if (ImGui::Button("Copy FEN to clipboard"))
-            glfwSetClipboardString(m_Window, m_BoardFEN.c_str());
+            if (ImGui::Button("Copy FEN to clipboard"))
+                glfwSetClipboardString(m_Window, m_BoardFEN.c_str());
 
-        if (ImGui::Button("Reset board")) {
-            m_Board.Reset();  // Reset FEN string
-            m_BoardFEN = Board::StartFen;
+            if (ImGui::Button("Reset board")) {
+                m_Board.Reset();  // Reset FEN string
+                m_BoardFEN = Board::StartFen;
+            }
+
+            ImGui::End();
         }
 
-        ImGui::End();
+        {
+            ImGui::Begin("Chessboard");
+            ImGui::Image((void*)framebuffer->GetColourAttachment(), { 1280.0f, 720.0f });
+            ImGui::End();
+        }
 
         // Draw chess board
         for (int y = 0; y < 8; y++) {
 			for (int x = 0; x < 8; x++) {
                 const glm::vec4 colour = (x + y) % 2 == 0 ? lightColour : darkColour;
-                Renderer::DrawRect({ -3.5f + x, 3.5f - y, 0.0f }, { 1.0f, 1.0f }, colour);
+                Renderer::DrawRect({ -3.5f + x, 3.5f - y, -0.5f }, { 1.0f, 1.0f }, colour);
             }
         }
 
@@ -164,7 +178,7 @@ void Application::Run() {
         }
 
         // TODO: Get rid of the white pixels that appear on textures after drawing legal move squares (without having to Flush())
-        Renderer::Flush();  // Gets rid of white pixels on texture when drawing colours, drawing textures don't make them appear
+        //Renderer::Flush();  // Gets rid of white pixels on texture when drawing colours, drawing textures don't make them appear
 
         // Draw pieces
         for (int y = 0; y < 8; y++) {
@@ -185,17 +199,17 @@ void Application::Run() {
 	                case BlackKing:     piece = chessPieceSprites[0];  break;
 	                case None: continue;
                 }
-
+        
                 if (m_SelectedPiece == y * 8 + x && m_IsHoldingPiece) {
                     // Draw selected piece following the mouse
-
+        
                     double x, y;
                     glfwGetCursorPos(m_Window, &x, &y);
-
+        
                     x = (x - m_WindowProperties.Width / 2) / (m_WindowProperties.Width / 2) * 8.0;
                     y = (y - m_WindowProperties.Height / 2) / (m_WindowProperties.Height / 2) * -4.5;
-
-                    Renderer::DrawRect({ x, y, 0.0f }, { 1, 1 }, piece);
+        
+                    Renderer::DrawRect({ x, y, 0.5f }, { 1, 1 }, piece);
                 } else {
                     Renderer::DrawRect({ -3.5f + x, -3.5f + y, 0.0f }, { 1.0f, 1.0f }, piece);
                 }
@@ -203,6 +217,8 @@ void Application::Run() {
         }
 
         Renderer::Flush();
+
+        framebuffer->Unbind();
 
         ImGui::Render();
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());

@@ -23,6 +23,8 @@ set(SOURCES
     "src/Graphics/Buffer.cpp"
     "src/Graphics/DebugContext.h"
     "src/Graphics/DebugContext.cpp"
+    "src/Graphics/Framebuffer.h"
+    "src/Graphics/Framebuffer.cpp"
     "src/Graphics/Renderer.h"
     "src/Graphics/Renderer.cpp"
     "src/Graphics/Shader.h"
