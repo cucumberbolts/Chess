@@ -304,4 +304,12 @@ namespace PseudoLegal {
         return 0;
     }
 
+    BitBoard File(Square square) {
+        return aFile << FileOf(square);
+    }
+
+    BitBoard Rank(Square square) {
+        return rank1 << RankOf(square);
+    }
+
 }

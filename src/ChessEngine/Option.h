@@ -4,6 +4,10 @@
 #include <string>
 #include <vector>
 
+// TODO: Refactor the chess component of the project into namespaces
+
+// namespace Option?
+
 struct Option {
     enum class OptionType {
         Check,  // boolean value
@@ -30,11 +34,11 @@ struct Option {
     OptionType Type;
 };
 
-struct Check : public Option {
-    Check(std::string_view name, bool value)
+struct OptionCheck : public Option {
+    OptionCheck(std::string_view name, bool value)
         : Option(name, OptionType::Check), Value(value) {}
 
-    inline Check& operator=(bool value) {
+    inline OptionCheck& operator=(bool value) {
         Value = value;
         return *this;
     }

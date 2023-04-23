@@ -143,6 +143,8 @@ void Application::Run() {
         if (ImGui::Button("Reset board")) {
             m_Board.Reset();  // Reset FEN string
             m_BoardFEN = Board::StartFen;
+
+            std::cout << "\n\n----------Board reset----------\n\n";
         }
 
         ImGui::End();
@@ -244,14 +246,14 @@ void Application::OnMouseButton(int32_t button, int32_t action, int32_t mods) {
                 // If a piece was already selected, move piece to clicked square
                 if (m_SelectedPiece != INVALID_SQUARE && m_SelectedPiece != selectedSquare) {
                     if (m_LegalMoves & (1ull << selectedSquare) || selectedSquare == m_SelectedPiece) {
-                        m_Board.Move({ m_SelectedPiece, selectedSquare });
+                        std::cout << m_Board.Move({ m_SelectedPiece, selectedSquare }) << std::endl;
                         m_BoardFEN = m_Board.ToFEN();
                     }
 
                     m_SelectedPiece = INVALID_SQUARE;
                     m_LegalMoves = 0;
                 } else {  // If no piece already selected, select piece
-                    m_LegalMoves = m_Board.GetLegalMoves(selectedSquare);
+                    m_LegalMoves = m_Board.GetPieceLegalMoves(selectedSquare);
                     m_SelectedPiece = m_LegalMoves == 0 ? INVALID_SQUARE : selectedSquare;
                 }
             } else {
@@ -268,7 +270,7 @@ void Application::OnMouseButton(int32_t button, int32_t action, int32_t mods) {
                 
                 if (m_SelectedPiece != INVALID_SQUARE) {
                     if (m_LegalMoves & (1ull << selectedSquare)) {
-                        m_Board.Move({ m_SelectedPiece, selectedSquare });
+                        std::cout << m_Board.Move({ m_SelectedPiece, selectedSquare }) << std::endl;
                         m_BoardFEN = m_Board.ToFEN();
                         m_SelectedPiece = INVALID_SQUARE;
                         m_LegalMoves = 0;

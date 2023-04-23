@@ -2,13 +2,14 @@
 
 #include <string_view>
 
+#include <iostream>
+
 enum Colour : uint8_t {
     White, Black,
 
     ColourCount = 2
 };
 
-// Mainly used for bitboards
 enum PieceType : uint8_t {
     Pawn,
     Knight,
@@ -42,6 +43,8 @@ enum Piece : uint8_t {
 enum CastleSide : uint8_t {
     KingSide = 0b00,
     QueenSide = 0b10,
+
+    // TODO: move NO_CASTLE here?
 };
 
 // Returns the PieceType of the given Piece
@@ -60,6 +63,12 @@ inline char PieceToChar(Piece p) {
     constexpr static char s_PieceToChar[] = "PNBRQK  pnbrqk";
 
     return s_PieceToChar[p];
+}
+
+inline char PieceTypeToChar(PieceType t) {
+    constexpr static char s_PieceTypeToChar[] = "PNBRQK";
+
+    return s_PieceTypeToChar[t];
 }
 
 inline PieceType CharToPieceType(char piece) {
@@ -97,6 +106,7 @@ inline constexpr Square ToSquare(char file, char rank) {
 }
 
 // Returns the left-most square on the same rank as s
+// TODO: Make this not-stupid
 inline constexpr Square RankOf(Square s) { return s & 0b11111000; }
 // Returns the bottom-most square on the same file as s
 inline constexpr Square FileOf(Square s) { return s & 0b00000111; }
@@ -134,28 +144,56 @@ inline std::ostream& operator<<(std::ostream& os, LongAlgebraicMove m) {
     return os;
 }
 
+enum MoveFlags : uint8_t {
+    // To check for promotion, & with 0b111
+    PromoteKnight = 0b001,
+    PromoteBishop = 0b011,
+    PromoteRook   = 0b100,
+    PromoteQueen  = 0b101,
+
+    CastleKingSide  = 1 << 3,
+    CastleQueenSide = 1 << 4,
+
+	Capture         = 1 << 5,
+    Check           = 1 << 6,
+    Checkmate       = 1 << 7,
+};
+
+// TODO: Think about making these bitfields
+enum SpecifierFlags : uint8_t {
+    File = 1 << 7,
+    Rank = 1 << 6,
+    FileAndRank = 0b11 << 6,
+
+    RemoveSpecifierFlag = 0b00111111,
+};
+
+class Board;
+
 struct AlgebraicMove {
-    Piece Piece;
-    Square Square;
+    PieceType MovingPiece;
+    Square Destination;
 
-    char Specifier;  // the specific rank or file the piece is from (in case there are 2) ex. n*b*d7
-    bool Capture;
+    // The specific rank or file the piece is from (in case there are 2) ex. Nbd7
+    // If the file is needed, | it with 1 << 7
+    // If the rank is needed, | it with 1 << 6
+    // If both are needed (very rare), | it with 0b11 << 6
+    Square Specifier;
 
-    // Piece Promotion;
+    // Other information like check(mate), captures, castling, and promotion
+    MoveFlags Flags;
+
+    AlgebraicMove(PieceType movingPiece, Square destination, Square specifier, MoveFlags flags)
+	    : MovingPiece(movingPiece), Destination(destination), Specifier(specifier), Flags(flags) {}
+
+    AlgebraicMove(LongAlgebraicMove move, Board& board);
+    AlgebraicMove(const std::string& str);
+
+    std::string ToString();
 };
 
 inline std::ostream& operator<<(std::ostream& os, AlgebraicMove m) {
-    if (GetPieceType(m.Piece) != Pawn)
-        os << (char)std::tolower(PieceToChar(m.Piece));
-
-    if (m.Specifier)
-        os << m.Specifier;
-
-    if (m.Capture)
-        os << 'x';
-
-    os << (char)('a' + FileOf(m.Square));  // File
-    os << (char)('1' + RankOf(m.Square) / 8);  // Rank
+    os << m.ToString();
 
     return os;
 }

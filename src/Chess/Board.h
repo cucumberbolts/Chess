@@ -24,10 +24,13 @@ public:
 
     inline Piece operator[](Square s) const { return m_Board[s]; }
 
+    inline Colour GetPlayerTurn() const { return m_PlayerTurn; }
+
     AlgebraicMove Move(LongAlgebraicMove m);
 
     bool IsMoveLegal(LongAlgebraicMove move);
-    BitBoard GetLegalMoves(Square piece);
+    BitBoard GetAllLegalMoves(Colour colour);
+    BitBoard GetPieceLegalMoves(Square piece);
 
     static constexpr std::string_view StartFen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1\0";
 private:

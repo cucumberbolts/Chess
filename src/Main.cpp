@@ -27,6 +27,37 @@ int main() {
     app->Run();
     delete app;
 #elif 0
+    Board b;
+
+    // With a pin
+    std::cout << b.Move({ E2, E4 }) << std::endl;
+    std::cout << b.Move({ E7, E5 }) << std::endl;
+    std::cout << b.Move({ G1, F3 }) << std::endl;
+    std::cout << b.Move({ B8, C6 }) << std::endl;
+    std::cout << b.Move({ F1, B5 }) << std::endl;
+    std::cout << b.Move({ D7, D6 }) << std::endl;
+    std::cout << b.Move({ B1, C3 }) << std::endl;
+    std::cout << b.Move({ G8, E7 }) << std::endl;
+    std::cout << b.Move({ B5, C6 }) << std::endl;
+
+    std::cout << "---------------------------------------------------\n";
+
+    // Without a pin
+    b.FromFEN("r1bqkbnr/pppp1ppp/2n5/4p3/2B1P3/5N2/PPPP1PPP/RNBQK2R b KQkq - 3 3");
+    std::cout << b << std::endl;
+    std::cout << b.Move({ G8, E7 }) << std::endl;
+
+    // Rank stuff
+    std::cout << "---------------------------------------------------\n";
+
+    b.FromFEN("1k6/8/8/2N5/8/2N5/8/1K6 w - - 0 1");
+    std::cout << b.Move({ C3, E4 }) << std::endl;
+
+    std::cout << "---------------------------------------------------\n";
+
+    b.FromFEN("1k6/8/8/2N5/8/2N3N1/8/1K6 w - - 0 1");
+    std::cout << b.Move({ C3, E4 }) << std::endl;
+#elif 0
     std::cout << "Current working directory: " << std::filesystem::current_path() << std::endl;
 
     std::string_view stockfish14 = "Engines/stockfish_14_x64_avx2.exe";

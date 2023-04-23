@@ -5,6 +5,7 @@ project(Chess)
 set(SOURCES
     "src/Main.cpp"
 
+    "src/Chess/AlgebraicMove.cpp"
     "src/Chess/BitBoard.h"
     "src/Chess/Board.h"
     "src/Chess/Board.cpp"
