@@ -15,9 +15,5 @@ namespace PseudoLegal {
 
     // A line (diagnol, vertical, or horizontal) between two squares
     BitBoard Line(BitBoard square1, BitBoard square2);
-    // The entire file of a square
-    BitBoard File(Square square);
-    // The entire rank of a square
-    BitBoard Rank(Square square);
 
 }

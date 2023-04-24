@@ -2,6 +2,22 @@
 
 static char s_Promotions[] = " NBRQ";
 
+std::string LongAlgebraicMove::ToString() {
+	char result[5]; // source square + destination square + possible promotion
+	char* ptr = result;
+
+	*(ptr++) = (char)('a' + FileOf(SourceSquare));
+	*(ptr++) = (char)('1' + RankOf(SourceSquare));
+	*(ptr++) = (char)('a' + FileOf(DestinationSquare));
+	*(ptr++) = (char)('1' + RankOf(DestinationSquare));
+
+	if (Promotion != Pawn && Promotion != King)
+		*(ptr++) = s_Promotions[(size_t)Promotion];
+
+	return { result, ptr };
+}
+
+
 std::string AlgebraicMove::ToString() {
 	if (Flags & MoveFlags::CastleKingSide) {
 		if (Flags & MoveFlags::Check)
@@ -31,12 +47,12 @@ std::string AlgebraicMove::ToString() {
 		// Gets the specifier (like the 'b' in 'Nbd2')
 
 		// If the specefier is a file (for example: 'Nbd2')
-		if (Specifier & SpecifierFlags::File)
+		if (Specifier & SpecifyFile)
 			*(ptr++) = (char)('a' + FileOf(Specifier & RemoveSpecifierFlag));
 
 		// If the specefier is a rank (for example: 'N1d2')
-		if (Specifier & SpecifierFlags::Rank)
-			*(ptr++) = (char)('1' + RankOf(Specifier & RemoveSpecifierFlag) / 8);
+		if (Specifier & SpecifyRank)
+			*(ptr++) = (char)('1' + RankOf(Specifier & RemoveSpecifierFlag));
 	}
 
 	// Adds an 'x' for a capture
@@ -50,7 +66,7 @@ std::string AlgebraicMove::ToString() {
 
 	// The destination square
 	*(ptr++) = (char)('a' + FileOf(Destination));
-	*(ptr++) = (char)('1' + RankOf(Destination) / 8);
+	*(ptr++) = (char)('1' + RankOf(Destination));
 
 	// Promotion
 	if (Flags & 0b111) {

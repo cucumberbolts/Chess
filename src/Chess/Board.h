@@ -57,8 +57,6 @@ private:
     // [3] = Black | QueenSide
     std::array<BitBoard, 4> m_CastlingPath;
 
-    constexpr static BitBoard NO_CASTLE = 0xFFFFFFFFFFFFFFFF;
-
     // The target square for en passant
     Square m_EnPassantSquare;
 

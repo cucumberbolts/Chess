@@ -160,7 +160,7 @@ void Application::Run() {
         // Draw legal moves (loop through m_LegalMoves bitboard)
         for (BitBoard legalMoves = m_LegalMoves; legalMoves; legalMoves &= legalMoves - 1) {
             Square square = GetSquare(legalMoves);
-            int rank = RankOf(square) / 8;
+            int rank = RankOf(square);
             int file = FileOf(square);
             Renderer::DrawRect({ -3.5f + file, -3.5f + rank, 0.0f }, { 1.0f, 1.0f }, legalMoveColour);
         }

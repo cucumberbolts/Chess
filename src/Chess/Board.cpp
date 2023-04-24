@@ -7,6 +7,8 @@
 #include <iostream>
 #include <sstream>
 
+BitBoard VerticalAttack(Square square, BitBoard blockers);
+
 static constexpr std::array<Piece, 64> s_StartBoard = {
     WhiteRook, WhiteKnight, WhiteBishop, WhiteQueen, WhiteKing, WhiteBishop, WhiteKnight, WhiteRook,
     WhitePawn, WhitePawn,   WhitePawn,   WhitePawn,  WhitePawn, WhitePawn,   WhitePawn,   WhitePawn,
@@ -165,7 +167,7 @@ std::string Board::ToFEN() {
         fen << "-";
 
     if (m_EnPassantSquare != 0)
-        fen << " " << (char)('a' + FileOf(m_EnPassantSquare)) << (char)('1' + RankOf(m_EnPassantSquare) / 8);
+        fen << " " << (char)('a' + FileOf(m_EnPassantSquare)) << (char)('1' + RankOf(m_EnPassantSquare));
     else
         fen << " -";
 
@@ -190,9 +192,11 @@ AlgebraicMove Board::Move(LongAlgebraicMove m) {
         std::cout << "Destination:\n";
         PrintBitBoard(1ull << m.DestinationSquare);
     }
-
-    m_EnPassantSquare = 0;
-    bool pawnMoveOrCapture = false;
+    
+    bool pawnMove = false;
+    bool capture = m_Board[m.DestinationSquare] != Piece::None;
+    Square newEnPassantSquare = 0;
+    uint8_t moveFlags = 0;
 
     if (pieceType == King) {
         int direction = m.DestinationSquare - m.SourceSquare;  // Kingside or queenside
@@ -204,9 +208,11 @@ AlgebraicMove Board::Move(LongAlgebraicMove m) {
             if (direction < 0) {  // Queenside
                 rookSquare = m.SourceSquare - 4;
                 newRookSquare = m.DestinationSquare + 1;
+                moveFlags |= MoveFlags::CastleQueenSide;
             } else {              // Kingside
                 rookSquare = m.SourceSquare + 3;
                 newRookSquare = m.DestinationSquare - 1;
+                moveFlags |= MoveFlags::CastleKingSide;
             }
 
             // Only move the rook because the king will be moved below
@@ -217,11 +223,11 @@ AlgebraicMove Board::Move(LongAlgebraicMove m) {
         m_CastlingPath[colour | KingSide] = NO_CASTLE;
         m_CastlingPath[colour | QueenSide] = NO_CASTLE;
     } else if (pieceType == Pawn) {
-        pawnMoveOrCapture = true;
+        pawnMove = true;
         if (m.SourceSquare - m.DestinationSquare == 16) {  // If black pushed pawn two squares
-            m_EnPassantSquare = m.DestinationSquare + 8;
+            newEnPassantSquare = m.DestinationSquare + 8;
         } else if (m.DestinationSquare - m.SourceSquare == 16) {  // If white pushed pawn two squares
-            m_EnPassantSquare = m.DestinationSquare - 8;
+            newEnPassantSquare = m.DestinationSquare - 8;
         } else if (m.DestinationSquare == m_EnPassantSquare) {  // If taking en passant
             // Remove the en passant-ed pawn
             // m.DestinationSquare + (-8 * (-1 * colour))     lol
@@ -229,6 +235,8 @@ AlgebraicMove Board::Move(LongAlgebraicMove m) {
                 RemovePiece(m.DestinationSquare - 8);
             else
                 RemovePiece(m.DestinationSquare + 8);
+
+            capture = true;
         } else if ((1ull << m.DestinationSquare) & 0xFF000000000000FF) {  // If pawn is promoting
             if (m.Promotion == Pawn || m.Promotion == King)
                 std::cout << "Must promote to another piece!\n";
@@ -236,6 +244,8 @@ AlgebraicMove Board::Move(LongAlgebraicMove m) {
             piece = TypeAndColour(m.Promotion, colour);
         }
     }
+
+    m_EnPassantSquare = newEnPassantSquare;
 
     // If a rook moves or is captured, remove castling rights accordingly
     if (m.SourceSquare == A1 || m.DestinationSquare == A1)
@@ -247,9 +257,7 @@ AlgebraicMove Board::Move(LongAlgebraicMove m) {
     else if (m.SourceSquare == H8 || m.DestinationSquare == H8)
         m_CastlingPath[White | QueenSide] = 0xFFFFFFFFFFFFFFFF;
 
-    bool capture = m_Board[m.DestinationSquare] != Piece::None;
-    pawnMoveOrCapture = pawnMoveOrCapture || capture;
-    m_HalfMoves = (m_HalfMoves + 1) * !pawnMoveOrCapture;  // Increments if no pawn move or capture, sets to 0 otherwise
+    m_HalfMoves = (m_HalfMoves + 1) * !(pawnMove || capture);  // Increments if no pawn move or capture, sets to 0 otherwise
     m_FullMoves += m_PlayerTurn == Black;
 
     RemovePiece(m.SourceSquare);
@@ -259,39 +267,40 @@ AlgebraicMove Board::Move(LongAlgebraicMove m) {
 
     //
     // Figure out the algebraic notation
-    // TODO: Move to a separate function?
     //
 
     Square specifier = m.SourceSquare;
 
-    // For things like 'axb7', the 'a' is needed
-    if (capture && pieceType == Pawn)
-        specifier |= SpecifierFlags::File;
+    if (pieceType == Pawn) {
+        // For things like 'axb7', the 'a' is needed
+        specifier |= SpecifyFile * capture;
+    } else if (pieceType != King) {
+        // Other pieces that could have gone to the same square
+        BitBoard destinationView;
+        const BitBoard allPieces = m_ColourBitBoards[White] | m_ColourBitBoards[Black];
+        switch (pieceType) {
+            case Knight: destinationView = PseudoLegal::KnightAttack(m.DestinationSquare); break;
+            case Bishop: destinationView = PseudoLegal::BishopAttack(m.DestinationSquare, allPieces); break;
+            case Rook:   destinationView = PseudoLegal::RookAttack(m.DestinationSquare, allPieces); break;
+            case Queen:  destinationView = PseudoLegal::QueenAttack(m.DestinationSquare, allPieces); break;
+            default: destinationView = 0;
+        }
 
-    // Other pieces that could have gone to the same square
-    BitBoard otherPieces;
-	switch (GetPieceType(piece)) {
-		case Knight: otherPieces = PseudoLegal::KnightAttack(m.DestinationSquare); break;
-        case Bishop: otherPieces = PseudoLegal::BishopAttack(m.DestinationSquare, 0); break;
-        case Rook:   otherPieces = PseudoLegal::RookAttack(m.DestinationSquare, 0); break;
-        case Queen:  otherPieces = PseudoLegal::QueenAttack(m.DestinationSquare, 0); break;
-		default: otherPieces = 0;
-	}
+        BitBoard possiblePieces = m_ColourBitBoards[colour] & m_PieceBitBoards[pieceType];
+        possiblePieces &= destinationView;// &~(1ull << m.SourceSquare);
 
-    BitBoard test = m_ColourBitBoards[colour] & m_PieceBitBoards[GetPieceType(piece)];
-    BitBoard possiblePieces = otherPieces & test & ~(1ull << m.SourceSquare);
+        // Loop through the possible pieces, remove the ones that can't move (pinned)
+        for (BitBoard b = possiblePieces; b != 0; b &= b - 1)
+            if (!GetPieceLegalMoves(GetSquare(b)))
+                possiblePieces &= possiblePieces - 1;
 
-    // Loop through the possible pieces, remove the ones that can't move (pinned)
-    for (BitBoard b = possiblePieces; b != 0; b &= b - 1)
-        if (!GetPieceLegalMoves(GetSquare(b)))
-            possiblePieces &= possiblePieces - 1;
-    
-    if (__popcnt64((possiblePieces * 0x0101010101010101) >> 56) > 1)
-        specifier |= SpecifierFlags::File;
+        if (__popcnt64((possiblePieces * 0x0101010101010101) >> 56) > 1)
+            specifier |= SpecifyFile;
 
-    // On the same file
-    if (PseudoLegal::File(m.SourceSquare) & possiblePieces)
-        specifier |= SpecifierFlags::Rank;
+        // On the same file
+        if (VerticalAttack(m.SourceSquare, allPieces) & possiblePieces)
+            specifier |= SpecifyRank;
+    }
 
     // Next player's turn
     m_PlayerTurn = OppositeColour(m_PlayerTurn);
@@ -300,7 +309,6 @@ AlgebraicMove Board::Move(LongAlgebraicMove m) {
     bool isCheck = m_PieceBitBoards[King] & m_ColourBitBoards[m_PlayerTurn] & ControlledSquares(colour);
     bool isMate = GetAllLegalMoves(m_PlayerTurn) == 0 && isCheck;
     
-    uint8_t moveFlags = 0;
     moveFlags |= MoveFlags::Check * isCheck;
     moveFlags |= MoveFlags::Checkmate * isMate;
     moveFlags |= MoveFlags::Capture * capture;

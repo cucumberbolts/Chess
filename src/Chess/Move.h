@@ -40,11 +40,11 @@ enum Piece : uint8_t {
 };
 
 // ORed with Colour enum to get the index to the m_CastlingRights array in the Board class
-enum CastleSide : uint8_t {
+enum CastleSide : uint64_t {
     KingSide = 0b00,
     QueenSide = 0b10,
 
-    // TODO: move NO_CASTLE here?
+    NO_CASTLE = 0xFFFFFFFFFFFFFFFF,
 };
 
 // Returns the PieceType of the given Piece
@@ -105,10 +105,9 @@ inline constexpr Square ToSquare(char file, char rank) {
     return y * 8 + x;
 }
 
-// Returns the left-most square on the same rank as s
-// TODO: Make this not-stupid
-inline constexpr Square RankOf(Square s) { return s & 0b11111000; }
-// Returns the bottom-most square on the same file as s
+// Returns the rank number of 's'
+inline constexpr Square RankOf(Square s) { return (s & 0b11111000) >> 3; }
+// Returns the file number of 's'
 inline constexpr Square FileOf(Square s) { return s & 0b00000111; }
 
 struct LongAlgebraicMove {
@@ -132,15 +131,12 @@ struct LongAlgebraicMove {
             std::cout << "invalid long algebraic notation!\n";
         }
     }
+
+    std::string ToString();
 };
 
 inline std::ostream& operator<<(std::ostream& os, LongAlgebraicMove m) {
-    os << (char)('a' + FileOf(m.SourceSquare));  // File
-    os << (char)('1' + RankOf(m.SourceSquare) / 8);  // Rank
-
-    os << (char)('a' + FileOf(m.DestinationSquare));  // File
-    os << (char)('1' + RankOf(m.DestinationSquare) / 8);  // Rank
-
+    os << m.ToString();
     return os;
 }
 
@@ -161,9 +157,9 @@ enum MoveFlags : uint8_t {
 
 // TODO: Think about making these bitfields
 enum SpecifierFlags : uint8_t {
-    File = 1 << 7,
-    Rank = 1 << 6,
-    FileAndRank = 0b11 << 6,
+    SpecifyFile = 1 << 7,
+    SpecifyRank = 1 << 6,
+    SpecifyFileAndRank = 0b11 << 6,
 
     RemoveSpecifierFlag = 0b00111111,
 };
@@ -194,6 +190,5 @@ struct AlgebraicMove {
 
 inline std::ostream& operator<<(std::ostream& os, AlgebraicMove m) {
     os << m.ToString();
-
     return os;
 }
