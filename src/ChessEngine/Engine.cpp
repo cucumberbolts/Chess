@@ -68,7 +68,7 @@ bool Engine::SetButton(const std::string& name) {
 
 bool Engine::SetCheck(const std::string& name, bool value) {
     if (auto option = FindOption(name, Option::OptionType::Check)) {
-        OptionCheck* check = (OptionCheck*)option.value();
+        Check* check = (Check*)option.value();
 
         check->Value = value;
 
@@ -212,7 +212,7 @@ void Engine::HandleOptionCommand(StringParser& sp) {
     if (type == "check") {
         bool value;
         sp.Next(value);
-        m_Options.push_back(new OptionCheck(name, value));
+        m_Options.push_back(new Check(name, value));
     } else if (type == "spin") {
         int32_t value, min, max;
         sp.Next(value, "min");
@@ -320,7 +320,7 @@ void Engine::PrintInfo() {
 
         switch (option->Type) {
             case Option::OptionType::Check: {
-                OptionCheck* c = (OptionCheck*)option;
+                Check* c = (Check*)option;
                 std::cout << " Value: " << std::boolalpha << c->Value;
                 break;
             }

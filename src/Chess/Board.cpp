@@ -208,11 +208,11 @@ AlgebraicMove Board::Move(LongAlgebraicMove m) {
             if (direction < 0) {  // Queenside
                 rookSquare = m.SourceSquare - 4;
                 newRookSquare = m.DestinationSquare + 1;
-                moveFlags |= MoveFlags::CastleQueenSide;
+                moveFlags |= MoveFlag::CastleQueenSide;
             } else {              // Kingside
                 rookSquare = m.SourceSquare + 3;
                 newRookSquare = m.DestinationSquare - 1;
-                moveFlags |= MoveFlags::CastleKingSide;
+                moveFlags |= MoveFlag::CastleKingSide;
             }
 
             // Only move the rook because the king will be moved below
@@ -309,11 +309,11 @@ AlgebraicMove Board::Move(LongAlgebraicMove m) {
     bool isCheck = m_PieceBitBoards[King] & m_ColourBitBoards[m_PlayerTurn] & ControlledSquares(colour);
     bool isMate = GetAllLegalMoves(m_PlayerTurn) == 0 && isCheck;
     
-    moveFlags |= MoveFlags::Check * isCheck;
-    moveFlags |= MoveFlags::Checkmate * isMate;
-    moveFlags |= MoveFlags::Capture * capture;
+    moveFlags |= MoveFlag::Check * isCheck;
+    moveFlags |= MoveFlag::Checkmate * isMate;
+    moveFlags |= MoveFlag::Capture * capture;
 
-    return { pieceType, m.DestinationSquare, specifier, (MoveFlags)moveFlags };
+    return { pieceType, m.DestinationSquare, specifier, moveFlags };
 }
 
 bool Board::IsMoveLegal(LongAlgebraicMove move) {

@@ -140,23 +140,26 @@ inline std::ostream& operator<<(std::ostream& os, LongAlgebraicMove m) {
     return os;
 }
 
-enum MoveFlags : uint8_t {
-    // To check for promotion, & with 0b111
-    PromoteKnight = 0b001,
-    PromoteBishop = 0b011,
-    PromoteRook   = 0b100,
-    PromoteQueen  = 0b101,
+using MoveFlags = uint8_t;
 
-    CastleKingSide  = 1 << 3,
-    CastleQueenSide = 1 << 4,
+namespace MoveFlag {
+    enum : uint8_t {
+        // To check for promotion, & with 0b111
+        PromoteKnight = 0b001,
+        PromoteBishop = 0b010,
+        PromoteRook   = 0b011,
+        PromoteQueen  = 0b100,
 
-	Capture         = 1 << 5,
-    Check           = 1 << 6,
-    Checkmate       = 1 << 7,
-};
+        CastleKingSide = 1 << 3,
+        CastleQueenSide = 1 << 4,
 
-// TODO: Think about making these bitfields
-enum SpecifierFlags : uint8_t {
+        Capture = 1 << 5,
+        Check = 1 << 6,
+        Checkmate = 1 << 7,
+    };
+}
+
+enum : uint8_t {
     SpecifyFile = 1 << 7,
     SpecifyRank = 1 << 6,
     SpecifyFileAndRank = 0b11 << 6,
@@ -167,22 +170,21 @@ enum SpecifierFlags : uint8_t {
 class Board;
 
 struct AlgebraicMove {
-    PieceType MovingPiece;
-    Square Destination;
+    PieceType MovingPiece = Pawn;
+    Square Destination = 0;
 
     // The specific rank or file the piece is from (in case there are 2) ex. Nbd7
     // If the file is needed, | it with 1 << 7
     // If the rank is needed, | it with 1 << 6
     // If both are needed (very rare), | it with 0b11 << 6
-    Square Specifier;
+    Square Specifier = 0;
 
     // Other information like check(mate), captures, castling, and promotion
-    MoveFlags Flags;
+    MoveFlags Flags = 0;
 
     AlgebraicMove(PieceType movingPiece, Square destination, Square specifier, MoveFlags flags)
 	    : MovingPiece(movingPiece), Destination(destination), Specifier(specifier), Flags(flags) {}
-
-    AlgebraicMove(LongAlgebraicMove move, Board& board);
+    
     AlgebraicMove(const std::string& str);
 
     std::string ToString();

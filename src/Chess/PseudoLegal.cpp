@@ -4,6 +4,7 @@
 
 // Source:
 // https://www.chessprogramming.org/Kindergarten_Bitboards
+//
 
 namespace {
 
@@ -237,7 +238,8 @@ namespace {
         return rankAttacks[FileOf(square)][index] & relevantBits;
     }
 
-}
+} // anonymous namespace
+
 
 
 // Board.cpp uses this function
@@ -326,4 +328,4 @@ namespace PseudoLegal {
         return 0;
     }
 
-}
+} // namespace PseudoLegal

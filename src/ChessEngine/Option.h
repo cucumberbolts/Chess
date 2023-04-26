@@ -34,11 +34,11 @@ struct Option {
     OptionType Type;
 };
 
-struct OptionCheck : public Option {
-    OptionCheck(std::string_view name, bool value)
+struct Check : public Option {
+    Check(std::string_view name, bool value)
         : Option(name, OptionType::Check), Value(value) {}
 
-    inline OptionCheck& operator=(bool value) {
+    inline Check& operator=(bool value) {
         Value = value;
         return *this;
     }

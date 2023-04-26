@@ -23,6 +23,15 @@ void operator delete(void* ptr) noexcept {
 
 int main() {
 #if 1
+    std::cout << AlgebraicMove{ "e4" } << "\n";
+    std::cout << AlgebraicMove{ "dxe4" } << "\n";
+    std::cout << AlgebraicMove{ "e8=Q" } << "\n";
+    std::cout << AlgebraicMove{ "Nd4" } << "\n";
+    std::cout << AlgebraicMove{ "Nbd4+" } << "\n";
+    std::cout << AlgebraicMove{ "Nb3d4" } << "\n";
+    std::cout << AlgebraicMove{ "Nd4+" } << "\n";
+    std::cout << AlgebraicMove{ "O-O-O#" } << "\n";
+
     Application* app = new Application(1280, 720, "Chess");
     app->Run();
     delete app;
