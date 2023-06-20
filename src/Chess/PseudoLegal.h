@@ -7,6 +7,7 @@ namespace PseudoLegal {
     BitBoard PawnAttack(Square square, Colour colour);
     BitBoard PawnMoves(Square square, Colour colour, BitBoard blockers, Square enPassant);
 
+    // Note: The bitboards returned include the blockers
     BitBoard KnightAttack(Square square);
     BitBoard BishopAttack(Square square, BitBoard blockers);
     BitBoard RookAttack(Square square, BitBoard blockers);

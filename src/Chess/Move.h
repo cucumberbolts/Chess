@@ -106,9 +106,12 @@ inline constexpr Square ToSquare(char file, char rank) {
 }
 
 // Returns the rank number of 's'
-inline constexpr Square RankOf(Square s) { return (s & 0b11111000) >> 3; }
+//TODO: Consider geting rid of &0b00111000?
+inline constexpr Square RankOf(Square s) { return (s & 0b00111000) >> 3; }
 // Returns the file number of 's'
 inline constexpr Square FileOf(Square s) { return s & 0b00000111; }
+
+inline constexpr Square FlipPerspective(Square s, Colour c) { return s ^ (c * 0b00111000); }
 
 struct LongAlgebraicMove {
     Square SourceSquare = 0;
@@ -117,7 +120,8 @@ struct LongAlgebraicMove {
 
     LongAlgebraicMove() = default;
 
-    LongAlgebraicMove(Square a, Square b) : SourceSquare(a), DestinationSquare(b) {}
+    LongAlgebraicMove(Square a, Square b, PieceType promotion = Pawn)
+		: SourceSquare(a), DestinationSquare(b), Promotion(promotion) {}
 
     LongAlgebraicMove(std::string_view longAlgebraic) {
         if (longAlgebraic.size() == 4) {
@@ -166,8 +170,6 @@ enum : uint8_t {
 
     RemoveSpecifierFlag = 0b00111111,
 };
-
-class Board;
 
 struct AlgebraicMove {
     PieceType MovingPiece = Pawn;

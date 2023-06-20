@@ -14,6 +14,16 @@ inline Square GetSquare(BitBoard board) {
     return _BitScanForward64(&index, board) ? (Square)index : 0;
 }
 
+// Returns a BitBoard highlighting the file of the given square
+inline BitBoard BitBoardFile(Square s) {
+    return 0x0101010101010101 << (s & 0b00000111);  // Shifts the 'a' file to the file of the square
+}
+
+// Returns a BitBoard highlighting the rank of the given square
+inline BitBoard BitBoardRank(Square s) {
+    return 0x00000000000000FF << (s & 0b11111000);  // Shifts the first rank to the rank of the square
+}
+
 // For debugging
 inline void PrintBitBoard(BitBoard board) {
     static std::string_view rankNumbers[ColourCount] = { "12345678", "87654321" };

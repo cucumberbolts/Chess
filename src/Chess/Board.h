@@ -27,8 +27,10 @@ public:
     inline Colour GetPlayerTurn() const { return m_PlayerTurn; }
 
     AlgebraicMove Move(LongAlgebraicMove m);
+    LongAlgebraicMove Move(AlgebraicMove m);
 
-    bool IsMoveLegal(LongAlgebraicMove move);
+    inline bool IsMoveLegal(LongAlgebraicMove m) { return GetPieceLegalMoves(m.SourceSquare) & (1ull << m.DestinationSquare); }
+
     BitBoard GetAllLegalMoves(Colour colour);
     BitBoard GetPieceLegalMoves(Square piece);
 
@@ -55,13 +57,18 @@ private:
     // [1] = Black | KingSide
     // [2] = White | QueenSide
     // [3] = Black | QueenSide
+    //
+    // Explanation:
+    // If you AND this with the check mask
+    // and the result is not 0
+    // the the king can't castle
     std::array<BitBoard, 4> m_CastlingPath;
 
     // The target square for en passant
     Square m_EnPassantSquare;
-
+    
     Colour m_PlayerTurn;
-
+    
     int32_t m_HalfMoves = 0;  // Number of half moves since the last pawn move or capture
     int32_t m_FullMoves = 1;  // The number of the full moves; it starts at 1, and is incremented after Black's move
 };

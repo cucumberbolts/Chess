@@ -221,6 +221,13 @@ namespace {
 
         return rankAttacks[FileOf(square)][index] & relevantBits;
     }
+
+    BitBoard VerticalAttack(Square square, BitBoard blockers) {
+        BitBoard relevantBits = File(square);
+        size_t index = (((blockers & relevantBits) >> FileOf(square)) * verticalBitBoardKey) >> 58;
+
+        return aFileAttacks[7 - RankOf(square)][index] << FileOf(square);
+    }
     
     // From top-left to bottom-right
     BitBoard DiagonalAttack(Square square, BitBoard blockers) {
@@ -239,16 +246,6 @@ namespace {
     }
 
 } // anonymous namespace
-
-
-
-// Board.cpp uses this function
-BitBoard VerticalAttack(Square square, BitBoard blockers) {
-    BitBoard relevantBits = File(square);
-    size_t index = (((blockers & relevantBits) >> FileOf(square)) * verticalBitBoardKey) >> 58;
-
-    return aFileAttacks[7 - RankOf(square)][index] << FileOf(square);
-}
 
 
 

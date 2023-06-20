@@ -4,6 +4,8 @@
 
 #include <Graphics/Application.h>
 
+#include <Chess/PseudoLegal.h>
+
 #if 0
 static uint32_t s_Allocations = 0;
 static uint32_t s_BytesAllocated = 0;
@@ -23,6 +25,50 @@ void operator delete(void* ptr) noexcept {
 
 int main() {
 #if 1
+    //Board b("k7/8/8/4Q3/8/4Q1Q1/8/K7 w - - 0 1");
+    //std::cout << b.Move(AlgebraicMove("e4"))  << "\n";
+    //std::cout << b.Move(AlgebraicMove("e5"))  << "\n";
+    //std::cout << b.Move(AlgebraicMove("Nf3")) << "\n";
+    //std::cout << b.Move(AlgebraicMove("Nc6")) << "\n";
+    //std::cout << b.Move(AlgebraicMove("Qh2")) << "\n";
+    //std::cout << b.Move(AlgebraicMove("Qef3")) << "\n";
+    //std::cout << b.Move(AlgebraicMove("Qgf3")) << "\n";
+
+    //std::cout << b << std::endl;
+
+
+
+    //Board board;
+
+    //AlgebraicMove moves[] = {
+    //    "e4",
+    //    "e5",
+    //    "Nf3",
+    //    "Nc6",
+    //    "Bc4",
+    //    "Bc5",
+    //    "O-O",
+    //    "Nf6",
+    //    "d3",
+    //    "O-O",
+    //    "Bg5",
+    //    "d6",
+    //};
+
+    //for (size_t i = 0; i < sizeof(moves) / sizeof(AlgebraicMove); i++)
+    //    std::cout << "Moving... " << board.Move(moves[i]) << "\n";
+
+	//std::cout << board << std::endl;
+
+    //for (auto move : moves)
+    //    std::cout << move << std::endl;
+
+
+
+    Application* app = new Application(1280, 720, "Chess");
+    app->Run();
+    delete app;
+#elif 0
     std::cout << AlgebraicMove{ "e4" } << "\n";
     std::cout << AlgebraicMove{ "dxe4" } << "\n";
     std::cout << AlgebraicMove{ "e8=Q" } << "\n";
@@ -31,11 +77,9 @@ int main() {
     std::cout << AlgebraicMove{ "Nb3d4" } << "\n";
     std::cout << AlgebraicMove{ "Nd4+" } << "\n";
     std::cout << AlgebraicMove{ "O-O-O#" } << "\n";
-
-    Application* app = new Application(1280, 720, "Chess");
-    app->Run();
-    delete app;
-#elif 0
+#elif 0 // Test algebraic move generation in Board::Move()
+    // 8/1b5b/2N3N1/8/4K3/3N1N2/8/8 w - - 0 1  // Pinned knights
+    // k7/8/8/4Q3/8/4Q1Q1/8/K7 w - - 0 1       // Multiple queens can go to the same square
     Board b;
 
     // With a pin
