@@ -2,7 +2,7 @@
 
 static char s_Promotions[] = " NBRQEEE";  // E for error lol
 
-std::string LongAlgebraicMove::ToString() {
+std::string LongAlgebraicMove::ToString() noexcept {
 	char result[5]; // source square + destination square + possible promotion
 	char* ptr = result;
 
@@ -12,7 +12,7 @@ std::string LongAlgebraicMove::ToString() {
 	*(ptr++) = (char)('1' + RankOf(DestinationSquare));
 
 	if (Promotion != Pawn && Promotion != King)
-		*(ptr++) = s_Promotions[(size_t)Promotion];
+		*(ptr++) = s_Promotions[Promotion];
 
 	return { result, ptr };
 }
@@ -85,7 +85,7 @@ AlgebraicMove::AlgebraicMove(const std::string& str) {
 		if (*fromBack == 'x')
 			fromBack--;
 
-		// The only thing left is the specifier
+		// The only thing left is the square specifier
 		// N'b'd4, N'3'd4, or N'b3'd4
 		const uint64_t length = fromBack - fromFront + 1;
 		if (length == 1) {
@@ -111,11 +111,10 @@ AlgebraicMove::AlgebraicMove(const std::string& str) {
 	}
 
 	if (error)
-		//throw std::exception("Invalid algebraic move!");
-		std::cout << "Invalid algebraic move!\n";
+		throw InvalidAlgebraicMoveException(str);
 }
 
-std::string AlgebraicMove::ToString() {
+std::string AlgebraicMove::ToString() noexcept {
 	if (Flags & MoveFlag::CastleKingSide) {
 		if (Flags & MoveFlag::Check)
 			return "O-O+";
@@ -132,8 +131,7 @@ std::string AlgebraicMove::ToString() {
 		return "O-O-O";
 	}
 
-	// Longest possible string:
-	// Qd3xf5+ or hxg8=Q#
+	// Longest possible string is 7 characters
 	char result[7];
 	char* ptr = result;
 	

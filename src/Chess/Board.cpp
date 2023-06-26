@@ -4,7 +4,6 @@
 
 #include "Utility/StringParser.h"
 
-#include <iostream>
 #include <sstream>
 
 static constexpr std::array<Piece, 64> s_StartBoard = {
@@ -79,7 +78,7 @@ void Board::FromFEN(const std::string& fen) {
                 case 'q': p = BlackQueen;  break;
                 case 'k': p = BlackKing;   break;
 
-                default: std::cout << "Invalid FEN!\n"; return;
+                default: throw InvalidFenException("Unexpected character in FEN string!");
             }
 
             PlacePiece(p, square);
@@ -121,7 +120,7 @@ std::string Board::ToFEN() {
 
     for (Square rank = 7; rank < 8; rank--) {
 	    for (Square file = 0; file < 8; file++) {
-            Piece p = m_Board[ToSquare('a' + file, '1' + rank)];
+            Piece p = m_Board[rank * 8 + file];
             if (p == Piece::None) {
                 emptySquares++;
             } else {
@@ -179,10 +178,8 @@ AlgebraicMove Board::Move(LongAlgebraicMove m) {
     Colour colour = GetColour(piece);
     PieceType pieceType = GetPieceType(piece);
 
-    // ASSERT(p != Piece::None)
-
-    if (!IsMoveLegal(m))
-        std::cout << "Illegal move: " << m << "!\n";
+	if (!IsMoveLegal(m))
+        throw IllegalMoveException(m.ToString());
     
     bool pawnMove = false;
     bool capture = m_Board[m.DestinationSquare] != Piece::None;
@@ -229,7 +226,7 @@ AlgebraicMove Board::Move(LongAlgebraicMove m) {
             capture = true;
         } else if ((1ull << m.DestinationSquare) & 0xFF000000000000FF) {  // If pawn is promoting
             if (m.Promotion == Pawn || m.Promotion == King)
-                std::cout << "Must promote to another piece!\n";
+                throw IllegalMoveException("Pawn must promote to another piece!");
 
             piece = TypeAndColour(m.Promotion, colour);
         }
@@ -309,7 +306,6 @@ AlgebraicMove Board::Move(LongAlgebraicMove m) {
 LongAlgebraicMove Board::Move(AlgebraicMove m) {
     Square source;
     PieceType Promotion = Pawn;
-    bool error = false;
 
     Colour opponentColour = OppositeColour(m_PlayerTurn);
 
@@ -339,21 +335,17 @@ LongAlgebraicMove Board::Move(AlgebraicMove m) {
             return { kingStart, kingDestination, Promotion };
         }
 
-		std::cout << "Illegal castling!\n";
+        throw IllegalMoveException(m.ToString());
 	} else if (m.MovingPiece == Pawn) {
         int8_t direction = m_PlayerTurn == White ? 8 : -8;
         if (m.Flags & MoveFlag::Capture) {
             BitBoard possiblePieces = PseudoLegal::PawnAttack(m.Destination, opponentColour);
             Square file = FileOf(m.Specifier);
             source = GetSquare(possiblePieces & BitBoardFile(file));
-
-            //if (m.Destination == m_EnPassantSquare) {  // If taking en passant
-			//	// Remove the en passant-ed pawn
-            //    if (m_PlayerTurn == White)
-            //        RemovePiece(m.Destination - 8);
-            //    else
-            //        RemovePiece(m.Destination + 8);
-            //}
+            
+            // Remove the en passant-ed pawn if taking en passant
+            if (m.Destination == m_EnPassantSquare)
+                RemovePiece(m.Destination - direction);
         } else {  // Pawn push
             source = m.Destination - direction;
 
@@ -362,8 +354,10 @@ LongAlgebraicMove Board::Move(AlgebraicMove m) {
             // it has been pushed two squares
             // which this comment makes clear
             const bool middle = RankOf(m.Destination) == (3 + m_PlayerTurn);  // If it is on the 4th or 5th rank (according to colour)
-            if (middle && GetPieceType(m_Board[source]) != Pawn)
-                source -= direction;  // go back further one square
+            if (middle && GetPieceType(m_Board[source]) != Pawn) {
+                m_EnPassantSquare = source;
+                source -= direction;  // Move 'source' further back one square
+            }
         }
 	} else {  // Normal piece
         // All of the same type of piece that can go to the same square
@@ -391,13 +385,14 @@ LongAlgebraicMove Board::Move(AlgebraicMove m) {
                 possiblePieces &= ~(1ull << GetSquare(b));
         }
 
-        error = __popcnt64(possiblePieces) != 1;
+        if (__popcnt64(possiblePieces) != 1)
+            throw IllegalMoveException("None, or more than two pieces can move to the same square!");
 
         source = GetSquare(possiblePieces);
 	}
-
-    if (error)
-        std::cout << "Error from moving piece: " << m << "\n";
+    
+    if (!IsMoveLegal({ source, m.Destination }))
+        throw IllegalMoveException(m.ToString());
 
     Piece piece = m_Board[source];
     // Move the piece
@@ -422,7 +417,6 @@ BitBoard Board::GetAllLegalMoves(Colour colour) {
 
     return legalMoves;
 }
-
 
 BitBoard Board::GetPieceLegalMoves(Square piece) {
     Colour playerColour = GetColour(m_Board[piece]);

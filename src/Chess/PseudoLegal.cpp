@@ -252,18 +252,25 @@ namespace {
 namespace PseudoLegal {
 
     BitBoard PawnMoves(Square square, Colour colour, BitBoard blockers, Square enPassant) {
-        blockers |= 1ull << enPassant;
+        // Since the 'pawns' bitboard returns the pawn moves
+        // for both colours, a mask is used to get only the
+        // moves according to the colour that is moving
+        BitBoard colourMask = (1ull << square) - 1;
 
-        BitBoard colourMask;
         if (colour == White) {
-            colourMask = ~((1ull << square) - 1);
+            colourMask = ~colourMask;
             blockers |= (blockers << 8) & (1ull << (square + 16));
         } else {
-            colourMask = (1ull << square) - 1;
             blockers |= (blockers >> 8) & (1ull << (square - 16));
         }
 
         BitBoard pawnMoves = pawns[square] & colourMask;
+
+        // Add the en-passant square to the list of moves
+        // The square doesn't actually block the pawn, which is
+        // why it is added after the above if-statement
+        // (Blockers are attacked by pawns)
+        blockers |= 1ull << enPassant;
 
         pawnMoves &= ~(blockers & File(square));
         pawnMoves &= ~(blockers ^ ~File(square));
@@ -272,7 +279,9 @@ namespace PseudoLegal {
     }
 
     BitBoard PawnAttack(Square square, Colour colour) {
-        BitBoard colourMask = (colour == White) ? ~((1ull << square) - 1) : ((1ull << square) - 1);
+        // Same as this
+        //BitBoard colourMask = (colour == White) ? ~((1ull << square) - 1) : ((1ull << square) - 1);
+        BitBoard colourMask = (colour * 0xFFFFFFFFFFFFFFFF) ^ ((1ull << square) - 1);
         BitBoard pawnMoves = pawns[square] & colourMask;
         return pawnMoves & ~File(square);
     }

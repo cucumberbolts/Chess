@@ -1,8 +1,9 @@
 #pragma once
 
+#include <ostream>
 #include <string_view>
 
-#include <iostream>
+#include "ExceptionTypes.h"
 
 enum Colour : uint8_t {
     White, Black,
@@ -79,7 +80,7 @@ inline PieceType CharToPieceType(char piece) {
         case 'r': return Rook;
         case 'q': return Queen;
         case 'k': return King;
-        //default: std::cout << "Invalid 'piece'\n";
+        default: throw InvalidPieceTypeException();
     }
 }
 
@@ -106,7 +107,6 @@ inline constexpr Square ToSquare(char file, char rank) {
 }
 
 // Returns the rank number of 's'
-//TODO: Consider geting rid of &0b00111000?
 inline constexpr Square RankOf(Square s) { return (s & 0b00111000) >> 3; }
 // Returns the file number of 's'
 inline constexpr Square FileOf(Square s) { return s & 0b00000111; }
@@ -132,11 +132,11 @@ struct LongAlgebraicMove {
             DestinationSquare = ToSquare(longAlgebraic[2], longAlgebraic[3]);
             Promotion = CharToPieceType(longAlgebraic[4]);
         } else {
-            std::cout << "invalid long algebraic notation!\n";
+            throw InvalidLongAlgebraicMoveException(std::string{ longAlgebraic });
         }
     }
 
-    std::string ToString();
+    std::string ToString() noexcept;
 };
 
 inline std::ostream& operator<<(std::ostream& os, LongAlgebraicMove m) {
@@ -189,7 +189,7 @@ struct AlgebraicMove {
     
     AlgebraicMove(const std::string& str);
 
-    std::string ToString();
+    std::string ToString() noexcept;
 };
 
 inline std::ostream& operator<<(std::ostream& os, AlgebraicMove m) {

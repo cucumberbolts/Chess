@@ -37,36 +37,45 @@ int main() {
     //std::cout << b << std::endl;
 
 
+    Board board;
 
-    //Board board;
+    AlgebraicMove moves[] = {
+        "e4",
+        "e5",
+        "Nf3",
+        "Nc6",
+        "Bc4",
+        "Bc5",
+        "O-O",
+        "Nf6",
+        "d3",
+        "O-O",
+        "Bg5",
+        "d6",
+        "a4",
+        "a6",
+        "a5",
+        "b5",
+        "axb6",
+    };
 
-    //AlgebraicMove moves[] = {
-    //    "e4",
-    //    "e5",
-    //    "Nf3",
-    //    "Nc6",
-    //    "Bc4",
-    //    "Bc5",
-    //    "O-O",
-    //    "Nf6",
-    //    "d3",
-    //    "O-O",
-    //    "Bg5",
-    //    "d6",
-    //};
+    try {
+        for (size_t i = 0; i < sizeof(moves) / sizeof(AlgebraicMove); i++)
+            std::cout << "Moving... " << board.Move(moves[i]) << "\n";
+    } catch (IllegalMoveException& e) {
+        std::cout << "Illegal move: " << e.move() << "\n";
+    }
 
-    //for (size_t i = 0; i < sizeof(moves) / sizeof(AlgebraicMove); i++)
-    //    std::cout << "Moving... " << board.Move(moves[i]) << "\n";
-
-	//std::cout << board << std::endl;
-
-    //for (auto move : moves)
-    //    std::cout << move << std::endl;
+	std::cout << board << std::endl;
 
 
 
     Application* app = new Application(1280, 720, "Chess");
-    app->Run();
+    try {
+        app->Run();
+    } catch (...) {
+        std::cout << "Unhandled exception!\n";
+    }
     delete app;
 #elif 0
     std::cout << AlgebraicMove{ "e4" } << "\n";

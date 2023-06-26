@@ -10,6 +10,7 @@ set(SOURCES
     "src/Chess/Board.h"
     "src/Chess/Board.cpp"
     "src/Chess/BoardFormat.h"
+    "src/Chess/ExceptionTypes.h"
     "src/Chess/PseudoLegal.h"
     "src/Chess/PseudoLegal.cpp"
     "src/Chess/Move.h"
