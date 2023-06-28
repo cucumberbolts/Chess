@@ -4,7 +4,7 @@ Chess GUI.
 ![](/screenshot.png?raw=true)
 
 ### Requirements
-- Windows (Unix support coming at some point)
+- Windows
 - OpenGL 4.6
 - C++ 17
 - CMake
@@ -25,6 +25,12 @@ Or on MSVC (Visual Studio), to build release:
 ```
 cmake --build build --config Release
 ```
+
+### Things to work on
+- PGN
+- Chess 960
+- Compliling on Linux
+- Unit tests for chess?
 
 ### Dependencies
 - [glfw](https://glfw.org/)

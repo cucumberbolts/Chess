@@ -275,7 +275,7 @@ AlgebraicMove Board::Move(LongAlgebraicMove m) {
         }
 
         // Map everything to the first rank and check if there is more than one piece
-        if (__popcnt64((possiblePieces * 0x0101010101010101) >> 56) > 1)
+        if (SquareCount((possiblePieces * 0x0101010101010101) >> 56) > 1)
             specifier |= SpecifyFile;
 
         // On the same file
@@ -294,7 +294,7 @@ AlgebraicMove Board::Move(LongAlgebraicMove m) {
 
     // If the current move places the opponent in check
     bool isCheck = m_PieceBitBoards[King] & m_ColourBitBoards[m_PlayerTurn] & ControlledSquares(colour);
-    bool isMate = GetAllLegalMoves(m_PlayerTurn) == 0 && isCheck;
+    bool isMate = !HasLegalMoves(m_PlayerTurn) && isCheck;
     
     moveFlags |= MoveFlag::Check * isCheck;
     moveFlags |= MoveFlag::Checkmate * isMate;
@@ -385,7 +385,7 @@ LongAlgebraicMove Board::Move(AlgebraicMove m) {
                 possiblePieces &= ~(1ull << GetSquare(b));
         }
 
-        if (__popcnt64(possiblePieces) != 1)
+        if (SquareCount(possiblePieces) != 1)
             throw IllegalMoveException("None, or more than two pieces can move to the same square!");
 
         source = GetSquare(possiblePieces);
@@ -406,16 +406,13 @@ LongAlgebraicMove Board::Move(AlgebraicMove m) {
     return { source, m.Destination, Promotion };
 }
 
-BitBoard Board::GetAllLegalMoves(Colour colour) {
-    // TODO: Consider rewriting function to be more efficent?
-    // (Calculate checkmask once, rather than every time)
-    BitBoard legalMoves = 0;
-
+bool Board::HasLegalMoves(Colour colour) {
     for (Square s = 0; s < m_Board.size(); s++)
-	    if (GetColour(m_Board[s]) == colour)
-            legalMoves |= GetPieceLegalMoves(s);
+        if (GetColour(m_Board[s]) == colour)
+            if (GetPieceLegalMoves(s) != 0)
+                return false;
 
-    return legalMoves;
+    return true;
 }
 
 BitBoard Board::GetPieceLegalMoves(Square piece) {
@@ -488,7 +485,7 @@ BitBoard Board::GetPieceLegalMoves(Square piece) {
         checkMask = 0xFFFFFFFFFFFFFFFF;
     
     // If it is double check, we can remove all blocking moves (we can only move the king)
-    checkMask *= __popcnt64(checkers) < 2;
+    checkMask *= SquareCount(checkers) < 2;
 
     BitBoard pseudoLegal = GetPseudoLegalMoves(piece);
 

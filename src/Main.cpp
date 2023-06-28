@@ -1,10 +1,16 @@
 #include <iostream>
 
+#if 0
 #include <ChessEngine/Engine.h>
 
 #include <Graphics/Application.h>
 
 #include <Chess/PseudoLegal.h>
+#endif
+
+#include "Chess/BitBoard.h"
+
+#include "Utility/Timer.h"
 
 #if 0
 static uint32_t s_Allocations = 0;
@@ -36,7 +42,7 @@ int main() {
 
     //std::cout << b << std::endl;
 
-
+    /*
     Board board;
 
     AlgebraicMove moves[] = {
@@ -67,16 +73,46 @@ int main() {
     }
 
 	std::cout << board << std::endl;
+	*/
 
+    constexpr BitBoard input = 1ull << 50 | 1ull << 34 | 1ull << 24;
 
+    Square result = GetSquare(input);
+    Square result1 = GetSquare1(input);
 
-    Application* app = new Application(1280, 720, "Chess");
-    try {
-        app->Run();
-    } catch (...) {
-        std::cout << "Unhandled exception!\n";
+    std::cout << result << "\n";
+    std::cout << result1 << "\n";
+
+    /*
+    {
+        Timer timer("GetSquare()");
+        Square result;
+        for (int i = 0; i < 1000000; i++) {
+            result = GetSquare(input);
+        }
+
+        std::cout << "Result: " << (int)result << "\n";
     }
-    delete app;
+
+    {
+        Timer timer("GetSquare1()");
+        Square result;
+        for (int i = 0; i < 1000000; i++) {
+            result = GetSquare1(input);
+        }
+
+        std::cout << "Result: " << (int)result << "\n";
+    }
+    */
+
+
+    //Application* app = new Application(1280, 720, "Chess");
+    //try {
+    //    app->Run();
+    //} catch (...) {
+    //	std::cout << "Unhandled exception!\n";
+    //}
+    //delete app;
 #elif 0
     std::cout << AlgebraicMove{ "e4" } << "\n";
     std::cout << AlgebraicMove{ "dxe4" } << "\n";

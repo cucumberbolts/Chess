@@ -37,6 +37,7 @@ set(SOURCES
     "src/Graphics/VertexArray.cpp"
 
     "src/Utility/StringParser.h"
+    "src/Utility/Timer.h"
 
     "src/Platform/Windows/WindowsEngine.h"
     "src/Platform/Windows/WindowsEngine.cpp"

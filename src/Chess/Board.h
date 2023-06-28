@@ -29,7 +29,7 @@ public:
 
     inline bool IsMoveLegal(LongAlgebraicMove m) { return GetPieceLegalMoves(m.SourceSquare) & (1ull << m.DestinationSquare); }
 
-    BitBoard GetAllLegalMoves(Colour colour);
+    bool HasLegalMoves(Colour colour);
     BitBoard GetPieceLegalMoves(Square piece);
 
     static constexpr std::string_view StartFen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1\0";

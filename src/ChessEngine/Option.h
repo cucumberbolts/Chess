@@ -4,10 +4,6 @@
 #include <string>
 #include <vector>
 
-// TODO: Refactor the chess component of the project into namespaces
-
-// namespace Option?
-
 struct Option {
     enum class OptionType {
         Check,  // boolean value
