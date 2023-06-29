@@ -220,8 +220,8 @@ void Engine::HandleOptionCommand(StringParser& sp) {
         sp.Next(max);
         m_Options.push_back(new Spin(name, value, min, max));
     } else if (type == "combo") {
-        std::string default;
-        sp.Next(default, "var");
+        std::string defaultValue;
+        sp.Next(defaultValue, "var");
 
         size_t defaultValueIndex = 0;
         std::vector<std::string> values;
@@ -229,7 +229,7 @@ void Engine::HandleOptionCommand(StringParser& sp) {
         while (sp.Next(value, "var")) {
             values.push_back(std::move(value));
 
-            if (value == default)
+            if (value == defaultValue)
                 defaultValueIndex = values.size() - 1;
         }
 

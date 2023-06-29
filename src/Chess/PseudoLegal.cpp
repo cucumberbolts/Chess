@@ -96,9 +96,9 @@ namespace {
             const Square distanceRight = (RankOf(s) * 8) + 7 - s;
 
             if ((1ull << s) & 0x0103070F1F3F7FFF)
-                result[s] = 0x0102040810204080 >> (8 * (distanceTop - distanceLeft));
+                result[s] = 0x0102040810204080ull >> (8 * (distanceTop - distanceLeft));
             else
-                result[s] = 0x0102040810204080 << (8 * (distanceBottom - distanceRight));
+                result[s] = 0x0102040810204080ull << (8 * (distanceBottom - distanceRight));
 
             // Get rid of the square the piece is on
             result[s] ^= 1ull << s;
@@ -118,9 +118,9 @@ namespace {
             const Square distanceRight = (RankOf(s) * 8) + 7 - s;
 
             if ((1ull << s) & 0x80C0E0F0F8FCFEFF)
-                result[s] = 0x8040201008040201 >> (8 * (distanceTop - distanceRight));
+                result[s] = 0x8040201008040201ull >> (8 * (distanceTop - distanceRight));
             else
-                result[s] = 0x8040201008040201 << (8 * (distanceBottom - distanceLeft));
+                result[s] = 0x8040201008040201ull << (8 * (distanceBottom - distanceLeft));
 
             // Get rid of the square the piece is on
             result[s] ^= 1ull << s;

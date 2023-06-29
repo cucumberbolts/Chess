@@ -9,7 +9,7 @@ public:
 	IllegalMoveException(const std::string& move, const std::string& message = "Illegal move!")
 		: m_Move(move), m_Message(message) {}
 
-	const char* what() const override {
+	const char* what() const noexcept override {
 		return m_Message.c_str();
 	}
 
@@ -25,7 +25,7 @@ class InvalidAlgebraicMoveException : public std::exception {
 public:
 	InvalidAlgebraicMoveException(const std::string& move) : m_Move(move) {}
 
-	const char* what() const override {
+	const char* what() const noexcept override {
 		return "Invalid algebraic notation!";
 	}
 
@@ -40,7 +40,7 @@ class InvalidLongAlgebraicMoveException : public std::exception {
 public:
 	InvalidLongAlgebraicMoveException(const std::string& move) : m_Move(move) {}
 
-	const char* what() const override {
+	const char* what() const noexcept override {
 		return "Invalid long algebraic notation!";
 	}
 
@@ -56,7 +56,7 @@ public:
 	InvalidFenException() : m_Message("Invalid FEN string!") {}
 	InvalidFenException(const std::string& message) : m_Message(message) {}
 
-	const char* what() const override {
+	const char* what() const noexcept override {
 		return m_Message.c_str();
 	}
 private:
@@ -65,7 +65,7 @@ private:
 
 class InvalidPieceTypeException : public std::exception {
 public:
-	const char* what() const override {
+	const char* what() const noexcept override {
 		return "Invalid piece type!";
 	}
 };
