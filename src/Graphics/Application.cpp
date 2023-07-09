@@ -108,6 +108,8 @@ void Application::Run() {
         for (int y = 0; y < 2; y++)
             chessPieceSprites[y * 6 + x] = std::make_shared<SubTexture>(chessPieces, glm::vec2(x, y), glm::vec2(45.0f, 45.0f));
 
+    std::shared_ptr<Texture> smiley = std::make_shared<Texture>("resources/textures/smiley.png");
+
     glm::vec4 darkColour = HexToColour(0x532A00FF);
     glm::vec4 lightColour = HexToColour(0xFFB160FF);
     glm::vec4 legalMoveColour = { 1.0f, 0.0f, 1.0f, 0.5f };
@@ -176,10 +178,7 @@ void Application::Run() {
             int file = FileOf(square);
             Renderer::DrawRect({ -3.5f + file, -3.5f + rank, 0.0f }, { 1.0f, 1.0f }, legalMoveColour);
         }
-
-        // TODO: Get rid of the white pixels that appear on textures after drawing legal move squares (without having to Flush())
-        //Renderer::Flush();  // Gets rid of white pixels on texture when drawing colours, drawing textures don't make them appear
-
+        
         // Draw pieces
         for (int y = 0; y < 8; y++) {
             for (int x = 0; x < 8; x++) {

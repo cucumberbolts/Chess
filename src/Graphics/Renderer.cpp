@@ -82,10 +82,6 @@ void Renderer::Init(const glm::mat4& projection) {
     s_VertexBuffer = std::make_unique<VertexBuffer>(maxVertexCount * sizeof(Vertex));
     s_VertexArray = std::make_unique<VertexArray>(*s_VertexBuffer, s_VertexLayout);
 
-    constexpr uint32_t whitePixel = 0xFFFFFFFF;
-    m_Textures[0] = std::make_shared<Texture>((uint8_t*)&whitePixel, 1, 1);
-    m_Textures[0]->Bind(0.0f);
-
     s_Vertecies = new Vertex[maxVertexCount];
     s_Indicies = new uint32_t[maxIndexCount];
 
@@ -103,7 +99,7 @@ void Renderer::Init(const glm::mat4& projection) {
     for (int32_t i = 0; i < maxTextureCount; i++)
         textures[i] = i;
 
-    s_Shader->SetUniform("u_Textures", textures, sizeof(textures));
+    s_Shader->SetUniform("u_Textures", textures, sizeof(textures) / sizeof(uint32_t));
 }
 
 Renderer::~Renderer() {
@@ -115,7 +111,7 @@ void Renderer::DrawRect(const glm::vec3& position, const glm::vec2& size, const 
     glm::mat4 transform = glm::translate(glm::mat4(1.0f), position)
 		* glm::scale(glm::mat4(1.0f), { size.x, size.y, 1.0f });
 
-    DrawRect(transform, colour, m_Textures[0], s_TextureCoords.data());
+    DrawRect(transform, colour);
 }
 
 void Renderer::DrawRect(const glm::vec3& position, const glm::vec2& size, const std::shared_ptr<Texture>& texture) {
@@ -130,6 +126,28 @@ void Renderer::DrawRect(const glm::vec3& position, const glm::vec2& size, const 
         * glm::scale(glm::mat4(1.0f), { size.x, size.y, 1.0f });
 
     DrawRect(transform, { 1.0f, 1.0f, 1.0f, 1.0f }, subTexture->GetTexture(), subTexture->GetTextureCoordinates());
+}
+
+void Renderer::DrawRect(const glm::mat4& transform, const glm::vec4& colour) {
+    uint64_t vertexCount = s_NextVertex - s_Vertecies;
+
+    if (vertexCount > maxVertexCount - 4 || m_NextTexture == maxTextureCount) {
+        Flush();
+        vertexCount = s_NextVertex - s_Vertecies;
+    }
+
+    for (size_t i = 0; i < 4; i++) {
+        s_NextVertex->Position = transform * s_RectPositions[i];
+        s_NextVertex->Colour = colour;
+        s_NextVertex->TexCoord = { 0.0f, 0.0f };
+        s_NextVertex->TextureSlot = 0.0f;  // slot 0 corresponds to no texture
+        s_NextVertex++;
+    }
+
+    for (size_t i = 0; i < 6; i++) {
+        *s_NextIndex = vertexCount + s_RectIndicies[i];
+        s_NextIndex++;
+    }
 }
 
 void Renderer::DrawRect(const glm::mat4& transform, const glm::vec4& colour, const std::shared_ptr<Texture>& texture, const glm::vec2* textureCoords) {
