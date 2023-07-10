@@ -9,7 +9,7 @@ Framebuffer::Framebuffer(const FramebufferSpecification& spec) : m_Specification
 
 Framebuffer::~Framebuffer() {
 	glDeleteFramebuffers(1, &m_RendererID);
-	glDeleteFramebuffers(1, &m_ColourAttachment);
+	glDeleteTextures(1, &m_ColourAttachment);
 }
 
 void Framebuffer::Bind() const {
@@ -25,7 +25,7 @@ void Framebuffer::Invalidate() {
 	// If framebuffer exists, delete it and create a new one
 	if (m_RendererID) {
 		glDeleteFramebuffers(1, &m_RendererID);
-		glDeleteFramebuffers(1, &m_ColourAttachment);
+		glDeleteTextures(1, &m_ColourAttachment);
 	}
 
 	glCreateFramebuffers(1, &m_RendererID);
