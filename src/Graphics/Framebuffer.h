@@ -20,6 +20,8 @@ public:
 
 	uint32_t GetColourAttachment() const { return m_ColourAttachment; }
 
+	void Resize(uint32_t width, uint32_t height);
+
 	void Invalidate();  // Recreate framebuffer from specification
 private:
 	FramebufferSpecification m_Specification;

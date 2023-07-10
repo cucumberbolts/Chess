@@ -4,6 +4,8 @@
 
 #include <string>
 
+#include <glm/glm.hpp>
+
 struct GLFWwindow;
 
 class Application {
@@ -41,4 +43,6 @@ private:
     bool m_IsHoldingPiece = false;  // If the selected piece follows the mouse
     BitBoard m_LegalMoves = 0;
     std::string m_BoardFEN;
+
+    glm::vec2 m_ChessViewportSize;
 };

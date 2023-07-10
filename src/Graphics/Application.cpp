@@ -108,8 +108,6 @@ void Application::Run() {
         for (int y = 0; y < 2; y++)
             chessPieceSprites[y * 6 + x] = std::make_shared<SubTexture>(chessPieces, glm::vec2(x, y), glm::vec2(45.0f, 45.0f));
 
-    std::shared_ptr<Texture> smiley = std::make_shared<Texture>("resources/textures/smiley.png");
-
     glm::vec4 darkColour = HexToColour(0x532A00FF);
     glm::vec4 lightColour = HexToColour(0xFFB160FF);
     glm::vec4 legalMoveColour = { 1.0f, 0.0f, 1.0f, 0.5f };
@@ -118,50 +116,16 @@ void Application::Run() {
     strcpy(m_BoardFEN.data(), Board::StartFen.data());
 
     FramebufferSpecification spec;
-    spec.Width = 1280;
-    spec.Height = 720;
+    spec.Width = m_WindowProperties.Width;
+    spec.Height = m_WindowProperties.Height;
     std::shared_ptr<Framebuffer> framebuffer = std::make_shared<Framebuffer>(spec);
 
     while (m_Running) {
+        Renderer::ClearScreen({ 0.0f, 1.0f, 0.0f, 1.0f });
+
+        // Render chessboard to framebuffer
         framebuffer->Bind();
-
         Renderer::ClearScreen({ 0.2f, 0.2f, 0.2f, 1.0f });
-
-        // Start the Dear ImGui frame
-        ImGui_ImplOpenGL3_NewFrame();
-        ImGui_ImplGlfw_NewFrame();
-        ImGui::NewFrame();
-
-        //ImGui::ShowDemoWindow();
-        
-        ImGui::Begin("Square colours");
-        ImGui::ColorPicker4("Dark square colour", &darkColour[0]);
-        ImGui::ColorPicker4("Light square colour", &lightColour[0]);
-        ImGui::End();
-
-        {
-            ImGui::Begin("FEN: ");
-
-            // Last part of FEN not showing...
-            if (ImGui::InputText("FEN", m_BoardFEN.data(), m_BoardFEN.capacity() + 1, ImGuiInputTextFlags_EnterReturnsTrue))
-                m_Board.FromFEN(m_BoardFEN);
-
-            if (ImGui::Button("Copy FEN to clipboard"))
-                glfwSetClipboardString(m_Window, m_BoardFEN.c_str());
-
-            if (ImGui::Button("Reset board")) {
-                m_Board.Reset();  // Reset FEN string
-                m_BoardFEN = Board::StartFen;
-            }
-
-            ImGui::End();
-        }
-
-        {
-            ImGui::Begin("Chessboard");
-            ImGui::Image((void*)framebuffer->GetColourAttachment(), { 1280.0f, 720.0f });
-            ImGui::End();
-        }
 
         // Draw chess board
         for (int y = 0; y < 8; y++) {
@@ -217,7 +181,108 @@ void Application::Run() {
 
         Renderer::Flush();
 
+        // Render ImGui to window
         framebuffer->Unbind();
+
+        // Start the Dear ImGui frame
+        ImGui_ImplOpenGL3_NewFrame();
+        ImGui_ImplGlfw_NewFrame();
+        ImGui::NewFrame();
+
+        {
+            // Fullscreen stuff
+            const ImGuiViewport* viewport = ImGui::GetMainViewport();
+            ImGui::SetNextWindowPos(viewport->WorkPos);
+            ImGui::SetNextWindowSize(viewport->WorkSize);
+            ImGui::SetNextWindowViewport(viewport->ID);
+            ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
+            ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
+
+            // We are using the ImGuiWindowFlags_NoDocking flag to make the parent window not dockable into,
+            // because it would be confusing to have two docking targets within each others.
+            ImGuiWindowFlags window_flags = ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoDocking;
+            window_flags |= ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize;
+            window_flags |= ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus;
+            
+
+            // When using ImGuiDockNodeFlags_PassthruCentralNode, DockSpace() will render our background
+            // and handle the pass-thru hole, so we ask Begin() to not render a background.
+            window_flags |= ImGuiWindowFlags_NoBackground;
+
+            // Important: note that we proceed even if Begin() returns false (aka window is collapsed).
+            // This is because we want to keep our DockSpace() active. If a DockSpace() is inactive,
+            // all active windows docked into it will lose their parent and become undocked.
+            // We cannot preserve the docking relationship between an active window and an inactive docking, otherwise
+            // any change of dockspace/settings would lead to windows being stuck in limbo and never being visible.
+            ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
+            ImGui::Begin("DockSpace Demo", nullptr, window_flags);
+            ImGui::PopStyleVar();
+
+            ImGui::PopStyleVar(2);
+
+            // Submit the DockSpace
+            static ImGuiDockNodeFlags dockspaceFlags = ImGuiDockNodeFlags_PassthruCentralNode;
+        	ImGuiID dockspaceID = ImGui::GetID("MyDockSpace");
+        	ImGui::DockSpace(dockspaceID, ImVec2(0.0f, 0.0f), dockspaceFlags);
+            
+            if (ImGui::BeginMenuBar())
+            {
+                if (ImGui::BeginMenu("File"))
+                {
+                    ImGui::MenuItem("thing");
+                    ImGui::Separator();
+                    
+                    ImGui::EndMenu();
+                }
+               
+                ImGui::EndMenuBar();
+            }
+
+            ImGui::End();
+        }
+        
+        {
+            ImGui::Begin("Square colours");
+            ImGui::ColorPicker4("Dark square colour", &darkColour[0]);
+            ImGui::ColorPicker4("Light square colour", &lightColour[0]);
+            ImGui::End();
+        }
+
+        {
+            ImGui::Begin("FEN: ");
+
+            // Last part of FEN not showing...
+            if (ImGui::InputText("FEN", m_BoardFEN.data(), m_BoardFEN.capacity() + 1, ImGuiInputTextFlags_EnterReturnsTrue))
+                m_Board.FromFEN(m_BoardFEN);
+
+            if (ImGui::Button("Copy FEN to clipboard"))
+                glfwSetClipboardString(m_Window, m_BoardFEN.c_str());
+
+            if (ImGui::Button("Reset board")) {
+                m_Board.Reset();  // Reset FEN string
+                m_BoardFEN = Board::StartFen;
+            }
+
+            ImGui::End();
+        }
+        
+        // TODO: 1. Resizing the chessboard viewport (and maintain aspect ratio)
+        // TODO: 2. Update mouse picking
+        {
+            ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{ 0, 0 });
+            ImGui::Begin("Chessboard");
+
+            ImVec2 viewportSize = ImGui::GetContentRegionAvail();
+            if (m_ChessViewportSize.x != viewportSize.x || m_ChessViewportSize.y != viewportSize.y) {
+                m_ChessViewportSize = { viewportSize.x, viewportSize.y };
+                framebuffer->Resize((uint32_t)m_ChessViewportSize.x, (uint32_t)m_ChessViewportSize.y);
+            }
+
+            ImGui::Image((void*)framebuffer->GetColourAttachment(), viewportSize, { 0, 1 }, { 1, 0 });
+
+            ImGui::End();
+            ImGui::PopStyleVar();
+        }
 
         ImGui::Render();
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());

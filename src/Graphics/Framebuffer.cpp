@@ -9,10 +9,12 @@ Framebuffer::Framebuffer(const FramebufferSpecification& spec) : m_Specification
 
 Framebuffer::~Framebuffer() {
 	glDeleteFramebuffers(1, &m_RendererID);
+	glDeleteFramebuffers(1, &m_ColourAttachment);
 }
 
 void Framebuffer::Bind() const {
 	glBindFramebuffer(GL_FRAMEBUFFER, m_RendererID);
+	glViewport(0, 0, m_Specification.Width, m_Specification.Height);
 }
 
 void Framebuffer::Unbind() const {
@@ -20,6 +22,12 @@ void Framebuffer::Unbind() const {
 }
 
 void Framebuffer::Invalidate() {
+	// If framebuffer exists, delete it and create a new one
+	if (m_RendererID) {
+		glDeleteFramebuffers(1, &m_RendererID);
+		glDeleteFramebuffers(1, &m_ColourAttachment);
+	}
+
 	glCreateFramebuffers(1, &m_RendererID);
 	glBindFramebuffer(GL_FRAMEBUFFER, m_RendererID);
 
@@ -32,7 +40,8 @@ void Framebuffer::Invalidate() {
 	
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, m_ColourAttachment, 0);
 
-#if 1
+	// For depth buffer
+#if 0
 	glCreateTextures(GL_TEXTURE_2D, 1, &m_DepthAttachment);
 	glBindTexture(GL_TEXTURE_2D, m_DepthAttachment);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH24_STENCIL8, m_Specification.Width, m_Specification.Height, 0,
@@ -44,6 +53,14 @@ void Framebuffer::Invalidate() {
 	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
 		std::cout << "Framebuffer is not complete!\n";
 
-	//glBindTexture(GL_TEXTURE_2D, 0);
+	glBindTexture(GL_TEXTURE_2D, 0);
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
+
+void Framebuffer::Resize(uint32_t width, uint32_t height) {
+	m_Specification.Width = width;
+	m_Specification.Height = height;
+
+	Invalidate();
+}
+
