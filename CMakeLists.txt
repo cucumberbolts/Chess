@@ -4,6 +4,8 @@ project(Chess)
 
 set(SOURCES
     "src/Main.cpp"
+    "src/ChessApplication.h"
+    "src/ChessApplication.cpp"
 
     "src/Chess/BitBoard.h"
     "src/Chess/Board.h"

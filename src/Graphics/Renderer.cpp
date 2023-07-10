@@ -102,6 +102,10 @@ void Renderer::Init(const glm::mat4& projection) {
     s_Shader->SetUniform("u_Textures", textures, sizeof(textures) / sizeof(uint32_t));
 }
 
+const char* Renderer::GetOpenGLVersion() {
+    return (const char*)glGetString(GL_VERSION);
+}
+
 Renderer::~Renderer() {
     delete[] s_Vertecies;
     delete[] s_Indicies;

@@ -9,6 +9,8 @@ class Renderer {
 public:
     static void Init(const glm::mat4& projection);
 
+    static const char* GetOpenGLVersion();
+
     Renderer() = delete;
     Renderer(const Renderer&) = delete;
     Renderer(Renderer&&) = delete;

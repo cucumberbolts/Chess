@@ -14,7 +14,7 @@ public:
     Application(const Application&) = delete;
     Application(Application&&) = delete;
 
-    ~Application();
+    virtual ~Application();
 
     Application& operator=(const Application&) = delete;
     Application& operator=(Application&&) = delete;
@@ -22,13 +22,17 @@ public:
     static Application& Get() { return *s_Instance; }
 
     void Run();
+
+    virtual void OnInit() = 0;
+    virtual void OnRender() = 0;
+    virtual void RenderImGui() = 0;
 private:
     static Application* s_Instance;
-private:
-    void OnWindowClose();
-    void OnKeyPressed(int32_t key, int32_t scancode, int32_t action, int32_t mods);
-    void OnMouseButton(int32_t button, int32_t action, int32_t mods);
-private:
+protected:
+    virtual void OnWindowClose() = 0;
+    virtual void OnKeyPressed(int32_t key, int32_t scancode, int32_t action, int32_t mods) = 0;
+    virtual void OnMouseButton(int32_t button, int32_t action, int32_t mods) = 0;
+protected:
     GLFWwindow* m_Window = nullptr;
 
     struct {
@@ -37,12 +41,4 @@ private:
     } m_WindowProperties;
 
     bool m_Running = false;
-
-    Board m_Board;
-    Square m_SelectedPiece = INVALID_SQUARE;
-    bool m_IsHoldingPiece = false;  // If the selected piece follows the mouse
-    BitBoard m_LegalMoves = 0;
-    std::string m_BoardFEN;
-
-    glm::vec2 m_ChessViewportSize;
 };

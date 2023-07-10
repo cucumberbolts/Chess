@@ -1,8 +1,10 @@
 #include <iostream>
 
+#if 0
 #include <ChessEngine/Engine.h>
+#endif
 
-#include <Graphics/Application.h>
+#include "ChessApplication.h"
 
 #if 0
 static uint32_t s_Allocations = 0;
@@ -23,7 +25,7 @@ void operator delete(void* ptr) noexcept {
 
 int main() {
 #if 1
-    Application* app = new Application(1280, 720, "Chess");
+    auto app = new ChessApplication(1280, 720, "Chess");
     app->Run();
     delete app;
 #elif 0
