@@ -1,12 +1,8 @@
 #include "Application.h"
 #include "DebugContext.h"
-#include "Renderer.h"
 
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
-
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
 
 #include <imgui.h>
 #include <backends/imgui_impl_glfw.h>
@@ -46,6 +42,11 @@ Application::Application(uint32_t width, uint32_t height, const std::string& nam
         Get().OnWindowClose();
     });
 
+    glfwSetWindowSizeCallback(m_Window, [](GLFWwindow* window, int width, int height)
+	{
+    	Get().OnWindowResize(width, height);
+    });
+
     glfwSetKeyCallback(m_Window, [](GLFWwindow* window, int key, int scancode, int action, int mods)
     {
         Get().OnKeyPressed(key, scancode, action, mods);
@@ -58,7 +59,9 @@ Application::Application(uint32_t width, uint32_t height, const std::string& nam
 
     gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
 
+#if _DEBUG
     DebugContext::Init();
+#endif
 
     // Setup ImGui context
     IMGUI_CHECKVERSION();
@@ -88,8 +91,6 @@ void Application::Run() {
     OnInit();
 
     while (m_Running) {
-        Renderer::ClearScreen({ 0.0f, 1.0f, 0.0f, 1.0f });
-
         OnRender();
 
         // Start the Dear ImGui frame

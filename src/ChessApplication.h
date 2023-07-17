@@ -23,6 +23,7 @@ public:
 	void RenderImGui() override;
 protected:
 	void OnWindowClose() override;
+	void OnWindowResize(int32_t width, int32_t height) override;
 	void OnKeyPressed(int32_t key, int32_t scancode, int32_t action, int32_t mods) override;
 	void OnMouseButton(int32_t button, int32_t action, int32_t mods) override;
 private:
@@ -31,7 +32,7 @@ private:
 	bool m_IsHoldingPiece = false;  // If the selected piece follows the mouse
 	BitBoard m_LegalMoves = 0;
 	std::string m_BoardFEN;
-
+	
 	glm::vec4 m_LightSquareColour = glm::vec4(0);
 	glm::vec4 m_DarkSquareColour = glm::vec4(0);
 	glm::vec4 m_LegalMoveColour = glm::vec4(0);

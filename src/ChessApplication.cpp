@@ -52,9 +52,26 @@ void ChessApplication::OnInit() {
     m_ChessViewport = std::make_shared<Framebuffer>(spec);
 }
 
-
 void ChessApplication::OnRender() {
-    Renderer::ClearScreen({ 0.0f, 1.0f, 0.0f, 1.0f });
+    Renderer::ClearScreen({ 0.0f, 0.0f, 0.0f, 1.0f });
+    
+    // Resize framebuffer according to viewport size
+    FramebufferSpecification spec = m_ChessViewport->GetSpecification();
+    if ((float)spec.Width != m_ChessViewportSize.x || (float)spec.Height != m_ChessViewportSize.y) {
+        m_ChessViewport->Resize((uint32_t)m_ChessViewportSize.x, (uint32_t)m_ChessViewportSize.y);
+
+        // I don't know what to call this variable
+        constexpr float temp = 4.5f;
+
+        float aspectRatio = m_ChessViewportSize.x / m_ChessViewportSize.y;
+
+        // Resize the coordinates so the chessboard size
+        // is the minimumm of the width and the height
+        if (aspectRatio <= 1.0f)
+            Renderer::UpdateProjectionMatrix(glm::ortho(-temp, temp, -temp / aspectRatio, temp / aspectRatio));
+        else
+            Renderer::UpdateProjectionMatrix(glm::ortho(-temp * aspectRatio, temp * aspectRatio, -temp, temp));
+    }
 
     // Render chessboard to framebuffer
     m_ChessViewport->Bind();
@@ -81,19 +98,19 @@ void ChessApplication::OnRender() {
         for (int x = 0; x < 8; x++) {
             std::shared_ptr<SubTexture> piece;
             switch (m_Board[y * 8 + x]) {
-            case WhitePawn:     piece = m_ChessPieceSprites[11]; break;
-            case WhiteKnight:   piece = m_ChessPieceSprites[9];  break;
-            case WhiteBishop:   piece = m_ChessPieceSprites[8];  break;
-            case WhiteRook:     piece = m_ChessPieceSprites[10]; break;
-            case WhiteQueen:    piece = m_ChessPieceSprites[7];  break;
-            case WhiteKing:     piece = m_ChessPieceSprites[6];  break;
-            case BlackPawn:     piece = m_ChessPieceSprites[5];  break;
-            case BlackKnight:   piece = m_ChessPieceSprites[3];  break;
-            case BlackBishop:   piece = m_ChessPieceSprites[2];  break;
-            case BlackRook:     piece = m_ChessPieceSprites[4];  break;
-            case BlackQueen:    piece = m_ChessPieceSprites[1];  break;
-            case BlackKing:     piece = m_ChessPieceSprites[0];  break;
-            case None: continue;
+                case WhitePawn:     piece = m_ChessPieceSprites[11]; break;
+                case WhiteKnight:   piece = m_ChessPieceSprites[9];  break;
+                case WhiteBishop:   piece = m_ChessPieceSprites[8];  break;
+                case WhiteRook:     piece = m_ChessPieceSprites[10]; break;
+                case WhiteQueen:    piece = m_ChessPieceSprites[7];  break;
+                case WhiteKing:     piece = m_ChessPieceSprites[6];  break;
+                case BlackPawn:     piece = m_ChessPieceSprites[5];  break;
+                case BlackKnight:   piece = m_ChessPieceSprites[3];  break;
+                case BlackBishop:   piece = m_ChessPieceSprites[2];  break;
+                case BlackRook:     piece = m_ChessPieceSprites[4];  break;
+                case BlackQueen:    piece = m_ChessPieceSprites[1];  break;
+                case BlackKing:     piece = m_ChessPieceSprites[0];  break;
+                case None: continue;
             }
 
             if (m_SelectedPiece == y * 8 + x && m_IsHoldingPiece) {
@@ -197,28 +214,31 @@ void ChessApplication::RenderImGui() {
         ImGui::End();
     }
 
-    // TODO: 1. Resizing the chessboard viewport (and maintain aspect ratio)
-    // TODO: 2. Update mouse picking
+    // TODO: 1. Update mouse picking
+    // TODO: 2. Memory leak when resizing viewport/window??
     {
-        ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{ 0, 0 });
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{ 0.0f, 0.0f });
+        //ImGui::PushStyleVar(ImGuiStyleVar_WindowMinSize, { 800.f, 800.f });  // Doesn't work in dockspace
+
         ImGui::Begin("Chessboard");
-
+        
         ImVec2 viewportSize = ImGui::GetContentRegionAvail();
-        if (m_ChessViewportSize.x != viewportSize.x || m_ChessViewportSize.y != viewportSize.y) {
-            m_ChessViewportSize = { viewportSize.x, viewportSize.y };
-            m_ChessViewport->Resize((uint32_t)m_ChessViewportSize.x, (uint32_t)m_ChessViewportSize.y);
-        }
-
+        m_ChessViewportSize = { viewportSize.x, viewportSize.y };
         ImGui::Image((void*)m_ChessViewport->GetColourAttachment(), viewportSize, { 0, 1 }, { 1, 0 });
 
         ImGui::End();
+
         ImGui::PopStyleVar();
     }
 }
 
-
 void ChessApplication::OnWindowClose() {
     m_Running = false;
+}
+
+void ChessApplication::OnWindowResize(int32_t width, int32_t height) {
+    m_WindowProperties.Width = width;
+    m_WindowProperties.Height = height;
 }
 
 void ChessApplication::OnKeyPressed(int32_t key, int32_t scancode, int32_t action, int32_t mods) {

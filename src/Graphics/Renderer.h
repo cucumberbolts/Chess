@@ -19,6 +19,8 @@ public:
     Renderer& operator=(const Renderer&) = delete;
     Renderer& operator=(Renderer&&) = delete;
 
+    static void UpdateProjectionMatrix(const glm::mat4& projection);
+
     static void DrawRect(const glm::vec3& position, const glm::vec2& size, const glm::vec4& colour);
     static void DrawRect(const glm::vec3& position, const glm::vec2& size, const std::shared_ptr<Texture>& texture);
     static void DrawRect(const glm::vec3& position, const glm::vec2& size, const std::shared_ptr<SubTexture>& subTexture);

@@ -88,11 +88,7 @@ void Renderer::Init(const glm::mat4& projection) {
     s_NextVertex = s_Vertecies;
     s_NextIndex = s_Indicies;
 
-    glm::mat4 projectionMatrix = projection;
-    glm::mat4 viewMatrix = glm::translate(glm::mat4(1.f), glm::vec3(0));
-    glm::mat4 modelMatrix = glm::translate(glm::mat4(1.f), glm::vec3(0));
-
-    s_Shader->SetUniform("u_MVP", projectionMatrix * viewMatrix * modelMatrix);
+    UpdateProjectionMatrix(projection);
 
     int32_t textures[maxTextureCount];
 
@@ -109,6 +105,13 @@ const char* Renderer::GetOpenGLVersion() {
 Renderer::~Renderer() {
     delete[] s_Vertecies;
     delete[] s_Indicies;
+}
+
+void Renderer::UpdateProjectionMatrix(const glm::mat4& projection) {
+    glm::mat4 viewMatrix = glm::translate(glm::mat4(1.f), glm::vec3(0));
+    glm::mat4 modelMatrix = glm::translate(glm::mat4(1.f), glm::vec3(0));
+
+    s_Shader->SetUniform("u_MVP", projection * viewMatrix * modelMatrix);
 }
 
 void Renderer::DrawRect(const glm::vec3& position, const glm::vec2& size, const glm::vec4& colour) {

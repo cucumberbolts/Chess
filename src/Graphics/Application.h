@@ -30,6 +30,7 @@ private:
     static Application* s_Instance;
 protected:
     virtual void OnWindowClose() = 0;
+    virtual void OnWindowResize(int32_t width, int32_t height) = 0;
     virtual void OnKeyPressed(int32_t key, int32_t scancode, int32_t action, int32_t mods) = 0;
     virtual void OnMouseButton(int32_t button, int32_t action, int32_t mods) = 0;
 protected:
