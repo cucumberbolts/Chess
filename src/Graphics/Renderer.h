@@ -19,6 +19,7 @@ public:
     Renderer& operator=(const Renderer&) = delete;
     Renderer& operator=(Renderer&&) = delete;
 
+    static const glm::mat4& GetProjectionMatrix();
     static void UpdateProjectionMatrix(const glm::mat4& projection);
 
     static void DrawRect(const glm::vec3& position, const glm::vec2& size, const glm::vec4& colour);

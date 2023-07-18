@@ -18,11 +18,12 @@
 #include <iostream>
 
 static glm::vec4 HexToColour(uint32_t colour) {
+    static constexpr float toFloat = 1.0f / 255.0f;
     uint8_t r = (colour & 0xff000000) >> 24;
     uint8_t g = (colour & 0x00ff0000) >> 16;
     uint8_t b = (colour & 0x0000ff00) >> 8;
     uint8_t a = (colour & 0x000000ff);
-    return { r / 255.f, g / 255.f, b / 255.f, a / 255.f };
+    return glm::vec4{ r, g, b, a } * toFloat;
 }
 
 ChessApplication::ChessApplication(uint32_t width, uint32_t height, const std::string& name)
@@ -42,6 +43,7 @@ void ChessApplication::OnInit() {
     m_DarkSquareColour = HexToColour(0x532A00FF);
     m_LightSquareColour = HexToColour(0xFFB160FF);
     m_LegalMoveColour = { 1.0f, 0.0f, 1.0f, 0.5f };
+    m_BackgroundColour = { 0.2f, 0.2f, 0.2f, 1.0f };
 
     m_BoardFEN = std::string(100, '\0');
     strcpy(m_BoardFEN.data(), Board::StartFen.data());
@@ -75,7 +77,7 @@ void ChessApplication::OnRender() {
 
     // Render chessboard to framebuffer
     m_ChessViewport->Bind();
-    Renderer::ClearScreen({ 0.2f, 0.2f, 0.2f, 1.0f });
+    Renderer::ClearScreen(m_BackgroundColour);
 
     // Draw chess board
     for (int y = 0; y < 8; y++) {
@@ -115,14 +117,12 @@ void ChessApplication::OnRender() {
 
             if (m_SelectedPiece == y * 8 + x && m_IsHoldingPiece) {
                 // Draw selected piece following the mouse
+                glm::mat4 transform = glm::inverse(Renderer::GetProjectionMatrix());
+                transform = glm::scale(transform, { 1 / (m_ChessViewportSize.x * 0.5f), 1 / (m_ChessViewportSize.y * -0.5f), 1.0f });
+                transform = glm::translate(transform, { m_ChessViewportSize.x * -0.5f, m_ChessViewportSize.y * -0.5f, 0.0f });
+                glm::vec4 point = transform * glm::vec4{ m_MousePosition, 1.0f, 1.0f };
 
-                double x, y;
-                glfwGetCursorPos(m_Window, &x, &y);
-
-                x = (x - m_WindowProperties.Width / 2) / (m_WindowProperties.Width / 2) * 8.0;
-                y = (y - m_WindowProperties.Height / 2) / (m_WindowProperties.Height / 2) * -4.5;
-
-                Renderer::DrawRect({ x, y, 0.5f }, { 1, 1 }, piece);
+                Renderer::DrawRect({ point.x, point.y, 0.5f }, { 1, 1 }, piece);
             }
             else {
                 Renderer::DrawRect({ -3.5f + x, -3.5f + y, 0.0f }, { 1.0f, 1.0f }, piece);
@@ -190,9 +190,11 @@ void ChessApplication::RenderImGui() {
     }
 
     {
-        ImGui::Begin("Square colours");
+        ImGui::Begin("Colours");
         ImGui::ColorPicker4("Dark square colour", glm::value_ptr(m_DarkSquareColour));
         ImGui::ColorPicker4("Light square colour", glm::value_ptr(m_LightSquareColour));
+        ImGui::ColorPicker4("Legal move colour", glm::value_ptr(m_LegalMoveColour));
+        ImGui::ColorPicker4("Background colour", glm::value_ptr(m_BackgroundColour));
         ImGui::End();
     }
 
@@ -213,23 +215,42 @@ void ChessApplication::RenderImGui() {
 
         ImGui::End();
     }
-
-    // TODO: 1. Update mouse picking
-    // TODO: 2. Memory leak when resizing viewport/window??
+    
     {
         ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{ 0.0f, 0.0f });
         //ImGui::PushStyleVar(ImGuiStyleVar_WindowMinSize, { 800.f, 800.f });  // Doesn't work in dockspace
 
         ImGui::Begin("Chessboard");
-        
+
+        // Get the position of the viewport relative to the panel position
+        // (The tab bar pushes it down)
+        auto [offsetX, offsetY] = ImGui::GetCursorPos();
+
         ImVec2 viewportSize = ImGui::GetContentRegionAvail();
         m_ChessViewportSize = { viewportSize.x, viewportSize.y };
-        ImGui::Image((void*)m_ChessViewport->GetColourAttachment(), viewportSize, { 0, 1 }, { 1, 0 });
+
+        ImTextureID texture = (void*)m_ChessViewport->GetColourAttachment();
+        int framePadding = 0;
+        ImVec4 backgroundColour = ImVec4(0.0f, 0.0f, 0.0f, 1.0f);
+        ImVec4 tintColour = ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
+        // Using ImageButton allows the viewport to not be dragged when it is floating
+        ImGui::ImageButton(texture, viewportSize, { 0, 1 }, { 1, 0 }, framePadding, backgroundColour, tintColour);
+
+        // Get mouse position on the board
+        auto [mouseX, mouseY] = ImGui::GetMousePos();
+        auto [windowX, windowY] = ImGui::GetWindowPos();
+
+        glm::vec2 mousePosition = { mouseX, mouseY };
+        glm::vec2 viewportPosition = { windowX + offsetX, windowY + offsetY };
+
+        m_MousePosition = mousePosition - viewportPosition;
 
         ImGui::End();
 
         ImGui::PopStyleVar();
     }
+
+    //ImGui::ShowDemoWindow();
 }
 
 void ChessApplication::OnWindowClose() {
@@ -249,18 +270,41 @@ void ChessApplication::OnKeyPressed(int32_t key, int32_t scancode, int32_t actio
 
 void ChessApplication::OnMouseButton(int32_t button, int32_t action, int32_t mods) {
     if (button == GLFW_MOUSE_BUTTON_LEFT) {
-        double x, y;
-        glfwGetCursorPos(m_Window, &x, &y);
+#if 0
+        float x = (m_MousePosition.x - m_ChessViewportSize.x * 0.5f) / (m_ChessViewportSize.x * 0.5f);
+        float y = (m_MousePosition.y - m_ChessViewportSize.y * 0.5f) / (m_ChessViewportSize.y * -0.5f);
+        
+        glm::vec4 point = { x, y, 1.0f, 1.0f };
+        point = glm::inverse(Renderer::GetProjectionMatrix()) * point;
 
-        x = (x - m_WindowProperties.Width / 2) / (m_WindowProperties.Width / 2) * 8.0;
-        y = (y - m_WindowProperties.Height / 2) / (m_WindowProperties.Height / 2) * -4.5;
+        x = point.x;
+        y = point.y;
+#elif 0
+        glm::vec4 point = { m_MousePosition, 1.0f, 1.0f };
+        point = glm::translate(glm::mat4(1.0f), { m_ChessViewportSize.x * -0.5f, m_ChessViewportSize.y * -0.5f, 0.0f }) * point;
+        point = glm::scale(glm::mat4(1.0f), { 1 / (m_ChessViewportSize.x * 0.5f), 1 / (m_ChessViewportSize.y * 0.5f), 1.0f }) * point;
+        point = glm::inverse(Renderer::GetProjectionMatrix()) * point;
+
+        float x = point.x;
+        float y = point.y;
+#else
+        // Convert ImGui viewport coordinates to rendering coordinates
+        // TODO: Construct matrix by hand??
+        glm::mat4 transform = glm::inverse(Renderer::GetProjectionMatrix());
+        transform = glm::scale(transform, { 1 / (m_ChessViewportSize.x * 0.5f), 1 / (m_ChessViewportSize.y * -0.5f), 1.0f });
+        transform = glm::translate(transform, { m_ChessViewportSize.x * -0.5f, m_ChessViewportSize.y * -0.5f, 0.0f });
+        glm::vec4 point = transform * glm::vec4{ m_MousePosition, 1.0f, 1.0f };
+
+        float& x = point.x;
+        float& y = point.y;
+#endif
 
         if (action == GLFW_PRESS) {
             m_IsHoldingPiece = true;
 
             if (x > -4 && x < 4 && y > -4 && y < 4) {
-                Square rank = (Square)(x + 4.0);
-                Square file = (Square)(y + 4.0);
+                Square rank = (Square)(x + 4.0f);
+                Square file = (Square)(y + 4.0f);
 
                 // The square the mouse clicked on
                 Square selectedSquare = ToSquare('a' + rank, '1' + file);
@@ -287,8 +331,8 @@ void ChessApplication::OnMouseButton(int32_t button, int32_t action, int32_t mod
         }
         else if (action == GLFW_RELEASE) {
             if (x > -4 && x < 4 && y > -4 && y < 4) {
-                Square rank = (Square)(x + 4.0);
-                Square file = (Square)(y + 4.0);
+                Square rank = (Square)(x + 4.0f);
+                Square file = (Square)(y + 4.0f);
 
                 // The square the mouse was released on
                 Square selectedSquare = ToSquare('a' + rank, '1' + file);
@@ -312,4 +356,3 @@ void ChessApplication::OnMouseButton(int32_t button, int32_t action, int32_t mod
         m_LegalMoves = 0;
     }
 }
-

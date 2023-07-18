@@ -68,6 +68,8 @@ namespace {
         glm::vec2{ 0.0f, 1.0f },
     };
 
+    glm::mat4 s_ProjectionMatrix(1.0f);
+
 }
 
 void Renderer::Init(const glm::mat4& projection) {
@@ -107,7 +109,13 @@ Renderer::~Renderer() {
     delete[] s_Indicies;
 }
 
+const glm::mat4& Renderer::GetProjectionMatrix() {
+    return s_ProjectionMatrix;
+}
+
+
 void Renderer::UpdateProjectionMatrix(const glm::mat4& projection) {
+    s_ProjectionMatrix = projection;
     glm::mat4 viewMatrix = glm::translate(glm::mat4(1.f), glm::vec3(0));
     glm::mat4 modelMatrix = glm::translate(glm::mat4(1.f), glm::vec3(0));
 

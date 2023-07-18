@@ -33,9 +33,13 @@ private:
 	BitBoard m_LegalMoves = 0;
 	std::string m_BoardFEN;
 	
+	glm::vec2 m_MousePosition = glm::vec2(0.0f);
+
+	// TODO: Make a 'Settings' struct and UI
 	glm::vec4 m_LightSquareColour = glm::vec4(0);
 	glm::vec4 m_DarkSquareColour = glm::vec4(0);
 	glm::vec4 m_LegalMoveColour = glm::vec4(0);
+	glm::vec4 m_BackgroundColour = glm::vec4(0);
 
 	std::shared_ptr<Framebuffer> m_ChessViewport;
 	glm::vec2 m_ChessViewportSize;
