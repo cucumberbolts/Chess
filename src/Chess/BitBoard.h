@@ -4,14 +4,66 @@
 
 #include "BoardFormat.h"
 
-#include <intrin.h>
-
 using BitBoard = uint64_t;
 
+#if defined(_WIN32)
+#include <intrin.h>
+
 // Returns least significant bit on bitboard
+// Returns 0 if board is 0
 inline Square GetSquare(BitBoard board) {
     unsigned long index;
-    return _BitScanForward64(&index, board) ? (Square)index : 0;
+    _BitScanForward64(&index, board);
+    return static_cast<Square>(index) * (board != 0);
+}
+
+// Gets the number of bits set
+inline uint64_t SquareCount(BitBoard board) {
+    return __popcnt64(board);
+}
+#else
+// Returns least significant bit on bitboard
+// Returns 0 if board is 0
+inline Square GetSquare(BitBoard board) {
+    // Isolate the lowest bit in 'board'
+    board = board & (~board + 1);
+
+    Square index = 0;
+    if ((board & 0xffffffff00000000) != 0) index += 32;
+    if ((board & 0xffff0000ffff0000) != 0) index += 16;
+    if ((board & 0xff00ff00ff00ff00) != 0) index += 8;
+    if ((board & 0xf0f0f0f0f0f0f0f0) != 0) index += 4;
+    if ((board & 0xcccccccccccccccc) != 0) index += 2;
+    if ((board & 0xaaaaaaaaaaaaaaaa) != 0) index += 1;
+
+    return index;
+
+    /*
+     *Apparently that's faster than this?????:
+     *
+     *unsigned long index;
+     *_BitScanForward64(&index, board);
+     *return static_cast<Square>(index) * (board != 0);
+    */
+}
+
+// Gets the number of bits set
+inline uint64_t SquareCount(BitBoard board) {
+    size_t count = 0;
+    for (; board != 0; count++)
+        board = board & (board - 1);
+	return count;
+}
+#endif
+
+// Returns a BitBoard highlighting the file of the given square
+inline BitBoard BitBoardFile(Square s) {
+    return 0x0101010101010101 << (s & 0b00000111);  // Shifts the 'a' file to the file of the square
+}
+
+// Returns a BitBoard highlighting the rank of the given square
+inline BitBoard BitBoardRank(Square s) {
+    return 0x00000000000000FF << (s & 0b11111000);  // Shifts the first rank to the rank of the square
 }
 
 // For debugging

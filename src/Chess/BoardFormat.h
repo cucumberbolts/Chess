@@ -10,7 +10,7 @@ namespace BoardFormat {
         bool Coordinates = true;
     };
 
-    static inline BoardFormat s_BoardFormat;
+    inline BoardFormat s_BoardFormat;
 
     template <typename CharT, typename Traits>
     std::basic_ostream<CharT, Traits>& BoardCoordinates(std::basic_ostream<CharT, Traits>& os) {

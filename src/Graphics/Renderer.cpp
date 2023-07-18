@@ -1,12 +1,13 @@
 #include "Buffer.h"
 #include "Renderer.h"
 
+#include <algorithm>
 #include <array>
+#include <memory>
 
 #include "Shader.h"
 #include "VertexArray.h"
 
-#include <memory>
 #include <glad/glad.h>
 
 #include <glm/gtc/matrix_transform.hpp>

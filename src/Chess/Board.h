@@ -8,8 +8,6 @@
 #include "BoardFormat.h"
 #include "Move.h"
 
-// TODO: Error handling with exceptions https://docs.microsoft.com/en-us/cpp/cpp/errors-and-exception-handling-modern-cpp
-
 class Board {
 public:
     Board() { Reset(); }
@@ -24,10 +22,15 @@ public:
 
     inline Piece operator[](Square s) const { return m_Board[s]; }
 
-    AlgebraicMove Move(LongAlgebraicMove m);
+    inline Colour GetPlayerTurn() const { return m_PlayerTurn; }
 
-    bool IsMoveLegal(LongAlgebraicMove move);
-    BitBoard GetLegalMoves(Square piece);
+    AlgebraicMove Move(LongAlgebraicMove m);
+    LongAlgebraicMove Move(AlgebraicMove m);
+
+    inline bool IsMoveLegal(LongAlgebraicMove m) { return GetPieceLegalMoves(m.SourceSquare) & (1ull << m.DestinationSquare); }
+
+    bool HasLegalMoves(Colour colour);
+    BitBoard GetPieceLegalMoves(Square piece);
 
     static constexpr std::string_view StartFen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1\0";
 private:
@@ -52,15 +55,18 @@ private:
     // [1] = Black | KingSide
     // [2] = White | QueenSide
     // [3] = Black | QueenSide
+    //
+    // Explanation:
+    // If you AND this with the check mask
+    // and the result is not 0
+    // the the king can't castle
     std::array<BitBoard, 4> m_CastlingPath;
-
-    constexpr static BitBoard NO_CASTLE = 0xFFFFFFFFFFFFFFFF;
 
     // The target square for en passant
     Square m_EnPassantSquare;
-
+    
     Colour m_PlayerTurn;
-
+    
     int32_t m_HalfMoves = 0;  // Number of half moves since the last pawn move or capture
     int32_t m_FullMoves = 1;  // The number of the full moves; it starts at 1, and is incremented after Black's move
 };

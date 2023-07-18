@@ -7,10 +7,12 @@ set(SOURCES
     "src/ChessApplication.h"
     "src/ChessApplication.cpp"
 
+    "src/Chess/AlgebraicMove.cpp"
     "src/Chess/BitBoard.h"
     "src/Chess/Board.h"
     "src/Chess/Board.cpp"
     "src/Chess/BoardFormat.h"
+    "src/Chess/ExceptionTypes.h"
     "src/Chess/PseudoLegal.h"
     "src/Chess/PseudoLegal.cpp"
     "src/Chess/Move.h"
@@ -39,9 +41,7 @@ set(SOURCES
     "src/Graphics/VertexArray.cpp"
 
     "src/Utility/StringParser.h"
-
-    "src/Platform/Windows/WindowsEngine.h"
-    "src/Platform/Windows/WindowsEngine.cpp"
+    "src/Utility/Timer.h"
 
     "dependencies/imgui/imgui.cpp"
     "dependencies/imgui/imgui_demo.cpp"
@@ -51,6 +51,22 @@ set(SOURCES
     "dependencies/imgui/backends/imgui_impl_glfw.cpp"
     "dependencies/imgui/backends/imgui_impl_opengl3.cpp"
 )
+
+if (WIN32)
+    set(SOURCES
+        ${SOURCES}
+        "src/Platform/Windows/WindowsEngine.h"
+        "src/Platform/Windows/WindowsEngine.cpp"
+    )
+elseif (UNIX)
+    set(SOURCES
+        ${SOURCES}
+        "src/Platform/Unix/UnixEngine.h"
+        "src/Platform/Unix/UnixEngine.cpp"
+    )
+else()
+    message(FATAL_ERROR "Unsupported platform!")
+endif()
 
 if (MSVC)
     set(CMAKE_CXX_STANDARD 17)

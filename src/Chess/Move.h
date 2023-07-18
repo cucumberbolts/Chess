@@ -1,6 +1,9 @@
 #pragma once
 
+#include <ostream>
 #include <string_view>
+
+#include "ExceptionTypes.h"
 
 enum Colour : uint8_t {
     White, Black,
@@ -8,7 +11,6 @@ enum Colour : uint8_t {
     ColourCount = 2
 };
 
-// Mainly used for bitboards
 enum PieceType : uint8_t {
     Pawn,
     Knight,
@@ -39,9 +41,11 @@ enum Piece : uint8_t {
 };
 
 // ORed with Colour enum to get the index to the m_CastlingRights array in the Board class
-enum CastleSide : uint8_t {
+enum CastleSide : uint64_t {
     KingSide = 0b00,
     QueenSide = 0b10,
+
+    NO_CASTLE = 0xFFFFFFFFFFFFFFFF,
 };
 
 // Returns the PieceType of the given Piece
@@ -62,6 +66,12 @@ inline char PieceToChar(Piece p) {
     return s_PieceToChar[p];
 }
 
+inline char PieceTypeToChar(PieceType t) {
+    constexpr static char s_PieceTypeToChar[] = "PNBRQK";
+
+    return s_PieceTypeToChar[t];
+}
+
 inline PieceType CharToPieceType(char piece) {
     switch ((char)std::tolower(piece)) {
         case 'p': return Pawn;
@@ -70,7 +80,7 @@ inline PieceType CharToPieceType(char piece) {
         case 'r': return Rook;
         case 'q': return Queen;
         case 'k': return King;
-        //default: std::cout << "Invalid 'piece'\n";
+        default: throw InvalidPieceTypeException();
     }
 }
 
@@ -96,10 +106,12 @@ inline constexpr Square ToSquare(char file, char rank) {
     return y * 8 + x;
 }
 
-// Returns the left-most square on the same rank as s
-inline constexpr Square RankOf(Square s) { return s & 0b11111000; }
-// Returns the bottom-most square on the same file as s
+// Returns the rank number of 's'
+inline constexpr Square RankOf(Square s) { return (s & 0b00111000) >> 3; }
+// Returns the file number of 's'
 inline constexpr Square FileOf(Square s) { return s & 0b00000111; }
+
+inline constexpr Square FlipPerspective(Square s, Colour c) { return s ^ (c * 0b00111000); }
 
 struct LongAlgebraicMove {
     Square SourceSquare = 0;
@@ -108,7 +120,8 @@ struct LongAlgebraicMove {
 
     LongAlgebraicMove() = default;
 
-    LongAlgebraicMove(Square a, Square b) : SourceSquare(a), DestinationSquare(b) {}
+    LongAlgebraicMove(Square a, Square b, PieceType promotion = Pawn)
+		: SourceSquare(a), DestinationSquare(b), Promotion(promotion) {}
 
     LongAlgebraicMove(std::string_view longAlgebraic) {
         if (longAlgebraic.size() == 4) {
@@ -119,43 +132,67 @@ struct LongAlgebraicMove {
             DestinationSquare = ToSquare(longAlgebraic[2], longAlgebraic[3]);
             Promotion = CharToPieceType(longAlgebraic[4]);
         } else {
-            std::cout << "invalid long algebraic notation!\n";
+            throw InvalidLongAlgebraicMoveException(std::string{ longAlgebraic });
         }
     }
+
+    std::string ToString() noexcept;
 };
 
 inline std::ostream& operator<<(std::ostream& os, LongAlgebraicMove m) {
-    os << (char)('a' + FileOf(m.SourceSquare));  // File
-    os << (char)('1' + RankOf(m.SourceSquare) / 8);  // Rank
-
-    os << (char)('a' + FileOf(m.DestinationSquare));  // File
-    os << (char)('1' + RankOf(m.DestinationSquare) / 8);  // Rank
-
+    os << m.ToString();
     return os;
 }
 
+using MoveFlags = uint8_t;
+
+namespace MoveFlag {
+    enum : uint8_t {
+        // To check for promotion, & with 0b111
+        PromoteKnight = 0b001,
+        PromoteBishop = 0b010,
+        PromoteRook   = 0b011,
+        PromoteQueen  = 0b100,
+
+        CastleKingSide = 1 << 3,
+        CastleQueenSide = 1 << 4,
+
+        Capture = 1 << 5,
+        Check = 1 << 6,
+        Checkmate = 1 << 7,
+    };
+}
+
+enum : uint8_t {
+    SpecifyFile = 1 << 7,
+    SpecifyRank = 1 << 6,
+    SpecifyFileAndRank = 0b11 << 6,
+
+    RemoveSpecifierFlag = 0b00111111,
+};
+
 struct AlgebraicMove {
-    Piece Piece;
-    Square Square;
+    PieceType MovingPiece = Pawn;
+    Square Destination = 0;
+    
+    // The specific rank or file the piece is from (in case there are 2) ex. Nbd7
+    // If the file is needed, | it with 1 << 7
+    // If the rank is needed, | it with 1 << 6
+    // If both are needed (very rare), | it with 0b11 << 6
+    Square Specifier = 0;
 
-    char Specifier;  // the specific rank or file the piece is from (in case there are 2) ex. nbd7
-    bool Capture;
+    // Other information like check(mate), captures, castling, and promotion
+    MoveFlags Flags = 0;
 
-    // Piece Promotion;
+    AlgebraicMove(PieceType movingPiece, Square destination, Square specifier, MoveFlags flags)
+	    : MovingPiece(movingPiece), Destination(destination), Specifier(specifier), Flags(flags) {}
+    
+    AlgebraicMove(const std::string& str);
+
+    std::string ToString() noexcept;
 };
 
 inline std::ostream& operator<<(std::ostream& os, AlgebraicMove m) {
-    if (GetPieceType(m.Piece) != Pawn)
-        os << (char)std::tolower(PieceToChar(m.Piece));
-
-    if (m.Specifier)
-        os << m.Specifier;
-
-    if (m.Capture)
-        os << 'x';
-
-    os << (char)('a' + FileOf(m.Square));  // File
-    os << (char)('1' + RankOf(m.Square) / 8);  // Rank
-
+    os << m.ToString();
     return os;
 }
