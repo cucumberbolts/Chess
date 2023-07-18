@@ -281,7 +281,7 @@ namespace PseudoLegal {
     BitBoard PawnAttack(Square square, Colour colour) {
         // Same as this
         //BitBoard colourMask = (colour == White) ? ~((1ull << square) - 1) : ((1ull << square) - 1);
-        BitBoard colourMask = (colour * 0xFFFFFFFFFFFFFFFF) ^ ((1ull << square) - 1);
+        BitBoard colourMask = ~(colour * 0xFFFFFFFFFFFFFFFF) ^ ((1ull << square) - 1);
         BitBoard pawnMoves = pawns[square] & colourMask;
         return pawnMoves & ~File(square);
     }

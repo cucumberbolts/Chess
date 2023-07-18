@@ -90,7 +90,7 @@ void ChessApplication::OnRender() {
     // Draw legal moves (loop through m_LegalMoves bitboard)
     for (BitBoard legalMoves = m_LegalMoves; legalMoves; legalMoves &= legalMoves - 1) {
         Square square = GetSquare(legalMoves);
-        int rank = RankOf(square) / 8;
+        int rank = RankOf(square);
         int file = FileOf(square);
         Renderer::DrawRect({ -3.5f + file, -3.5f + rank, 0.0f }, { 1.0f, 1.0f }, m_LegalMoveColour);
     }
@@ -249,8 +249,6 @@ void ChessApplication::RenderImGui() {
 
         ImGui::PopStyleVar();
     }
-
-    //ImGui::ShowDemoWindow();
 }
 
 void ChessApplication::OnWindowClose() {
@@ -320,7 +318,7 @@ void ChessApplication::OnMouseButton(int32_t button, int32_t action, int32_t mod
                     m_LegalMoves = 0;
                 }
                 else {  // If no piece already selected, select piece
-                    m_LegalMoves = m_Board.GetLegalMoves(selectedSquare);
+                    m_LegalMoves = m_Board.GetPieceLegalMoves(selectedSquare);
                     m_SelectedPiece = m_LegalMoves == 0 ? INVALID_SQUARE : selectedSquare;
                 }
             }
