@@ -1,7 +1,5 @@
 #pragma once
 
-#include "Chess/Board.h"
-
 #include <string>
 
 #include <glm/glm.hpp>

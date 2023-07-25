@@ -57,13 +57,13 @@ inline uint64_t SquareCount(BitBoard board) {
 #endif
 
 // Returns a BitBoard highlighting the file of the given square
-inline BitBoard BitBoardFile(Square s) {
-    return 0x0101010101010101 << (s & 0b00000111);  // Shifts the 'a' file to the file of the square
+inline BitBoard BitBoardFile(Square square) {
+    return 0x0101010101010101ull << (square & 0b00000111);  // Shifts the 'a' file to the file of the square
 }
 
 // Returns a BitBoard highlighting the rank of the given square
-inline BitBoard BitBoardRank(Square s) {
-    return 0x00000000000000FF << (s & 0b11111000);  // Shifts the first rank to the rank of the square
+inline BitBoard BitBoardRank(Square square) {
+    return 0x00000000000000FFull << (square & 0b11111000);  // Shifts the first rank to the rank of the square
 }
 
 // For debugging

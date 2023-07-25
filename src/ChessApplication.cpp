@@ -16,6 +16,7 @@
 #include <imgui.h>
 
 #include <iostream>
+#include <sstream>
 
 static glm::vec4 HexToColour(uint32_t colour) {
     static constexpr float toFloat = 1.0f / 255.0f;
@@ -52,6 +53,9 @@ void ChessApplication::OnInit() {
     spec.Width = m_WindowProperties.Width;
     spec.Height = m_WindowProperties.Height;
     m_ChessViewport = std::make_shared<Framebuffer>(spec);
+
+    m_Engine = Engine::Create("Engines/stockfish_14_x64_avx2.exe");
+    m_Engine->Init();
 }
 
 void ChessApplication::OnRender() {
@@ -248,6 +252,37 @@ void ChessApplication::RenderImGui() {
         ImGui::End();
 
         ImGui::PopStyleVar();
+    }
+
+    {
+        ImGui::Begin("Engine");
+
+        if (!m_Engine->IsRunning()) {
+            if (ImGui::Button("Start engine")) {
+                m_Engine->Run();
+            }
+        } else {
+	        if (ImGui::Button("Stop engine")) {
+                m_Engine->Stop();
+	        }
+
+            auto bestContination = m_Engine->GetBestContinuation();
+
+            //std::vector<AlgebraicMove> continuationMoves = bestContination.Continuation;
+
+            Board temp;
+
+            std::ostringstream continuationText;
+            for (LongAlgebraicMove m : bestContination.Continuation)
+                continuationText << temp.Move(m) << " ";
+
+            auto continuationTextString = continuationText.str();
+            ImGui::Text("%s", continuationTextString.c_str());
+            if (ImGui::Button("Copy to clipboard"))
+                ImGui::SetClipboardText(continuationTextString.c_str());
+        }
+
+        ImGui::End();
     }
 }
 

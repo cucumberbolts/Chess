@@ -22,6 +22,8 @@ public:
     void Run();  // Sends the "go" command
     void Stop();
 
+    bool IsRunning() const { return m_State == State::Running; }
+
     const std::vector<Option*>& GetOptions() const { return m_Options; }
     bool SetButton(const std::string& name);
     bool SetCheck(const std::string& name, bool value);
@@ -30,20 +32,22 @@ public:
     bool SetCombo(const std::string& name, const std::string& value);
     bool SetCombo(const std::string& name, size_t valueIndex);
 
-    void PrintInfo();
-private:
-    std::string m_Name, m_Author;
-    std::vector<Option*> m_Options;
+    void PrintInfo() const;
 
-    struct {
-        std::vector<AlgebraicMove> Continuation;
+    struct BestContinuation {
+        std::vector<LongAlgebraicMove> Continuation;
         LongAlgebraicMove PonderMove;
         int32_t Depth = 0;
         int32_t Score = 0;  // Could be centipawns or mate
         bool Mate = false;  // If the score is mate or centipawns
-    } m_BestContinuation;
+    };
 
-    Board m_Board;
+    const BestContinuation& GetBestContinuation() const { return m_BestContinuation; }
+private:
+    std::string m_Name, m_Author;
+    std::vector<Option*> m_Options;
+
+    BestContinuation m_BestContinuation;
 
     std::thread m_Thread;
 protected:

@@ -178,7 +178,7 @@ AlgebraicMove Board::Move(LongAlgebraicMove m) {
     Colour colour = GetColour(piece);
     PieceType pieceType = GetPieceType(piece);
 
-	if (!IsMoveLegal(m))
+    if (!IsMoveLegal(m))
         throw IllegalMoveException(m.ToString());
     
     bool pawnMove = false;
@@ -410,9 +410,9 @@ bool Board::HasLegalMoves(Colour colour) {
     for (Square s = 0; s < m_Board.size(); s++)
         if (GetColour(m_Board[s]) == colour)
             if (GetPieceLegalMoves(s) != 0)
-                return false;
+                return true;
 
-    return true;
+    return false;
 }
 
 BitBoard Board::GetPieceLegalMoves(Square piece) {

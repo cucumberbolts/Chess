@@ -3,9 +3,11 @@
 #include <array>
 
 #include "Graphics/Application.h"
-
 #include "Graphics/Framebuffer.h"
 #include "Graphics/SubTexture.h"
+
+#include "Chess/Board.h"
+#include "ChessEngine/Engine.h"
 
 class ChessApplication : public Application {
 public:
@@ -45,4 +47,6 @@ private:
 	glm::vec2 m_ChessViewportSize;
 
 	std::array<std::shared_ptr<SubTexture>, 12> m_ChessPieceSprites;
+
+	std::unique_ptr<Engine> m_Engine;
 };

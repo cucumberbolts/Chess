@@ -7,8 +7,6 @@
 #include <iostream>
 #include <sstream>
 
-using namespace std::chrono_literals;
-
 Engine::~Engine() {
     for (auto option : m_Options)
         delete option;
@@ -22,10 +20,8 @@ bool Engine::Init() {
     while (m_State != State::Ready) {
         Receive(data);
         HandleCommand(data);
-        std::this_thread::sleep_for(1ms);
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
     }
-
-    std::cout << "Engine initialized!\n";
 
     return true;
 }
@@ -41,8 +37,6 @@ void Engine::Run() {
     Send("go\n");
 
     m_Thread = std::thread(&Engine::RunLoop, this);
-
-    // TODO: Debug print()
 }
 
 void Engine::Stop() {
@@ -166,7 +160,7 @@ void Engine::RunLoop() {
     while (m_State == State::Running) {
         Receive(data);
         HandleCommand(data);
-        std::this_thread::sleep_for(1ms);
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
     }
 }
 
@@ -271,35 +265,26 @@ void Engine::HandleInfoCommand(StringParser& sp) {
             return;
         } else if (infoType == "depth") {
             sp.Next(m_BestContinuation.Depth);
-
-            std::cout << "Best continuation depth: " << m_BestContinuation.Depth << "\n";
         } else if (infoType == "pv") {
             m_BestContinuation.Continuation.clear();
-            m_Board.Reset();
-
+            
             std::string_view move;
             while (sp.Next(move))
-                m_BestContinuation.Continuation.push_back(m_Board.Move(LongAlgebraicMove(move)));
+                m_BestContinuation.Continuation.emplace_back(LongAlgebraicMove(move));
 
             return;
         } else if (infoType == "cp") {
             sp.Next(m_BestContinuation.Score);
             m_BestContinuation.Mate = false;
-
-            std::cout << "Best continuation score: " << m_BestContinuation.Score << " centipawns\n";
         } else if (infoType == "mate") {
             sp.Next(m_BestContinuation.Score);
             m_BestContinuation.Mate = true;
-
-            std::cout << "Mate in " << m_BestContinuation.Score << " moves!\n";
         } else if (infoType == "refutation") {
             std::string_view move;
             sp.Next(move);
 
             std::string_view refutation;
             sp.Next(refutation, StringParser::Delimiter::End);
-
-            std::cout << "Move: " << move << " refutation: " << refutation << "\n";
 
             return;
         }
@@ -308,7 +293,7 @@ void Engine::HandleInfoCommand(StringParser& sp) {
     // Ignore undefined commands
 }
 
-void Engine::PrintInfo() {
+void Engine::PrintInfo() const {
     std::cout << "Name: " << m_Name << "\n";
     std::cout << "Author: " << m_Author << "\n";
 

@@ -8,18 +8,29 @@
 
 namespace {
 
-    constexpr BitBoard aFile = 0x0101010101010101;
-    constexpr BitBoard bFile = 0x0202020202020202;
-    constexpr BitBoard hFile = 0x8080808080808080;
-    constexpr BitBoard rank1 = 0x00000000000000FF;
-    constexpr BitBoard rank1ToAFile = 0x8040201008040201;
-    constexpr BitBoard verticalBitBoardKey = 0x0080402010080402;
+    constexpr BitBoard A_FILE = 0x0101010101010101;
+    constexpr BitBoard B_FILE = 0x0202020202020202;
+    constexpr BitBoard RANK_1 = 0x00000000000000FF;
+    constexpr BitBoard RANK_1_TO_A_FILE      = 0x8040201008040201;  // A1-H8 diagonal
+    constexpr BitBoard VERTICAL_BITBOARD_KEY = 0x0080402010080400;  // C2-H7 diagonal
 
-    // Just 10572 bytes of lookup tables...
+    // Just 10752 bytes of lookup tables...
 
     /// <summary>
     /// An array of pawn moves for *both sides*.
     ///
+    /// Example: a pawn on pawns[E2] will return the following BitBoard:
+    /// 8 00000000
+	/// 7 00000000
+    /// 6 00000000
+    /// 5 00000000
+    /// 4 00001000
+    /// 3 00011100  <===== white's pawn moves
+    /// 2 0000X000  <===== pawn is on square 'X'
+    /// 1 00011100  <===== black's pawn moves
+    ///   abcdefgh
+    ///
+    /// To get the squares for the right colour:
     /// BitBoard square = 1 << x;
     /// To get moves for white, & it with ~(square - 1).
     /// To get moves for black, & it with square - 1.
@@ -85,7 +96,8 @@ namespace {
         return result;
     }();
 
-    constexpr std::array<BitBoard, 64> diagonals = []() -> auto
+    // From top-left to bottom-right
+    constexpr std::array<BitBoard, 64> antiDiagonals = []() -> auto
     {
         std::array<BitBoard, 64> result = { 0 };
 
@@ -107,7 +119,8 @@ namespace {
         return result;
     }();
 
-    constexpr std::array<BitBoard, 64> antiDiagonals = []() -> auto
+    // From bottom-left to top-right
+    constexpr std::array<BitBoard, 64> diagonals = []() -> auto
     {
         std::array<BitBoard, 64> result = { 0 };
 
@@ -129,6 +142,10 @@ namespace {
         return result;
     }();
 
+    // 64 combinations of blockers (2^6) (we're only intersted in the inner
+    // 6 blockers since the outer squares will be counted regardless)
+    //
+    // 8 possible squares for the piece to be (across the file from a-h)
     constexpr std::array<std::array<BitBoard, 64>, 8> rankAttacks = []() -> auto
     {
         std::array<std::array<BitBoard, 64>, 8> result = { 0 };
@@ -158,7 +175,7 @@ namespace {
                 // Get rid of the square the piece is on
                 attacks ^= 1ull << s;
 
-                result[s][b >> 1] = attacks * aFile;
+                result[s][b >> 1] = attacks * A_FILE;
             }
         }
 
@@ -173,10 +190,14 @@ namespace {
         for (Square s = 0; s < 8; s++) {
             // loop through the blockers (only the inner 6 bits)
             for (BitBoard b = 0; b < 128; b += 2) {
-                BitBoard attacked = rankAttacks[s][b >> 1] & rank1;
-                result[s][b >> 1] = ((attacked * rank1ToAFile) & hFile) >> 7;
-                // Get rid of the square the piece is on
-                result[s][b >> 1] &= ~(1ull << s);
+                // Since we're mapping the bits to the a-file, we need to mirror the square (a5 becomes a4)
+                Square mirroredSquare = 7 - s;
+
+                // Copies the data from the 'rankAttacks' array
+                BitBoard attacked = rankAttacks[mirroredSquare][b >> 1] & RANK_1;
+
+                // Maps the bits to the a-file where the square h1 corresponds to a1 and a1 corresponds to a8
+                result[s][b >> 1] = ((attacked * RANK_1_TO_A_FILE) >> 7) & A_FILE;
             }
         }
 
@@ -207,40 +228,36 @@ namespace {
         return result;
     }();
 
-    inline BitBoard File(Square square) {
-        return aFile << (square & 0b00000111);
-    }
 
-    inline BitBoard Rank(Square square) {
-        return rank1 << (square & 0b11111000);
-    }
+    //constexpr size_t LOOKUPS_SIZE = sizeof(pawns) + sizeof(knights) + sizeof(antiDiagonals)
+	//    + sizeof(diagonals) + sizeof(rankAttacks) + sizeof(aFileAttacks) + sizeof(kings);
+
 
     BitBoard HorizontalAttack(Square square, BitBoard blockers) {
-        BitBoard relevantBits = Rank(square);
-        size_t index = ((blockers & relevantBits) * bFile) >> 58;
+        BitBoard relevantBits = BitBoardRank(square);
+        size_t blockerIndex = ((blockers & relevantBits) * B_FILE) >> 58;
 
-        return rankAttacks[FileOf(square)][index] & relevantBits;
+        return rankAttacks[FileOf(square)][blockerIndex] & relevantBits;
     }
 
     BitBoard VerticalAttack(Square square, BitBoard blockers) {
-        BitBoard relevantBits = File(square);
-        size_t index = (((blockers & relevantBits) >> FileOf(square)) * verticalBitBoardKey) >> 58;
+        size_t blockerIndex = (((blockers & BitBoardFile(square)) >> FileOf(square)) * VERTICAL_BITBOARD_KEY) >> 58;
 
-        return aFileAttacks[7 - RankOf(square)][index] << FileOf(square);
+        return aFileAttacks[RankOf(square)][blockerIndex] << FileOf(square);
     }
     
-    // From top-left to bottom-right
+    // From bottom-left to top-right
     BitBoard DiagonalAttack(Square square, BitBoard blockers) {
         BitBoard relevantBits = diagonals[square];
-        size_t index = ((blockers & relevantBits) * bFile) >> 58;
-
+        size_t index = ((blockers & relevantBits) * B_FILE) >> 58;
+    
         return rankAttacks[FileOf(square)][index] & relevantBits;
     }
 
-    // From bottom-left to top-right
+    // From top-left to bottom-right
     BitBoard AntiDiagonalAttack(Square square, BitBoard blockers) {
         BitBoard relevantBits = antiDiagonals[square];
-        size_t index = ((blockers & relevantBits) * bFile) >> 58;
+        size_t index = ((blockers & relevantBits) * B_FILE) >> 58;
 
         return rankAttacks[FileOf(square)][index] & relevantBits;
     }
@@ -272,8 +289,8 @@ namespace PseudoLegal {
         // (Blockers are attacked by pawns)
         blockers |= 1ull << enPassant;
 
-        pawnMoves &= ~(blockers & File(square));
-        pawnMoves &= ~(blockers ^ ~File(square));
+        pawnMoves &= ~(blockers & BitBoardFile(square));
+        pawnMoves &= ~(blockers ^ ~BitBoardFile(square));
 
         return pawnMoves;
     }
@@ -283,7 +300,7 @@ namespace PseudoLegal {
         //BitBoard colourMask = (colour == White) ? ~((1ull << square) - 1) : ((1ull << square) - 1);
         BitBoard colourMask = ~(colour * 0xFFFFFFFFFFFFFFFF) ^ ((1ull << square) - 1);
         BitBoard pawnMoves = pawns[square] & colourMask;
-        return pawnMoves & ~File(square);
+        return pawnMoves & ~BitBoardFile(square);
     }
 
     BitBoard KnightAttack(Square square) {
@@ -323,9 +340,9 @@ namespace PseudoLegal {
         Square s2 = GetSquare(square2);
 
         if (FileOf(s1) == FileOf(s2))
-            return inBetween & File(s1);
+            return inBetween & BitBoardFile(s1);
         if (RankOf(s1) == RankOf(s2))
-            return inBetween & Rank(s1);
+            return inBetween & BitBoardRank(s1);
         if (diagonals[s1] & square2)
             return inBetween & diagonals[s1];
         if (antiDiagonals[s1] & square2)
