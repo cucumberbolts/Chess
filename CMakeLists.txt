@@ -40,6 +40,7 @@ set(SOURCES
     "src/Graphics/VertexArray.h"
     "src/Graphics/VertexArray.cpp"
 
+    "src/Utility/FileDialog.h"
     "src/Utility/StringParser.h"
     "src/Utility/Timer.h"
 
@@ -57,6 +58,7 @@ if (WIN32)
         ${SOURCES}
         "src/Platform/Windows/WindowsEngine.h"
         "src/Platform/Windows/WindowsEngine.cpp"
+        "src/Platform/Windows/WindowsFileDialog.cpp"
     )
 elseif (UNIX)
     set(SOURCES

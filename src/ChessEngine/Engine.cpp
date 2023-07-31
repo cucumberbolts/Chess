@@ -8,6 +8,8 @@
 #include <sstream>
 
 Engine::~Engine() {
+    Stop();
+
     for (auto option : m_Options)
         delete option;
 }
@@ -260,7 +262,7 @@ void Engine::HandleInfoCommand(StringParser& sp) {
             std::string_view string;
             sp.Next(string, StringParser::Delimiter::End);
 
-            std::cout << "Engine sent string: " << string << "\n";
+            // TODO: Make callback for this
 
             return;
         } else if (infoType == "depth") {

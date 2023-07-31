@@ -48,5 +48,6 @@ private:
 
 	std::array<std::shared_ptr<SubTexture>, 12> m_ChessPieceSprites;
 
-	std::unique_ptr<Engine> m_Engine;
+	std::vector<std::pair<std::string, std::filesystem::path>> m_Engines;  // Name, path
+	std::unique_ptr<Engine> m_RunningEngine;
 };

@@ -19,6 +19,8 @@ public:
 
     static Application& Get() { return *s_Instance; }
 
+    GLFWwindow* GetWindow() const { return m_Window; };
+
     void Run();
 
     virtual void OnInit() = 0;

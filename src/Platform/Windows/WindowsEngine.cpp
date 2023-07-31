@@ -31,9 +31,7 @@ WindowsEngine::WindowsEngine(const std::string& path) {
     startupInfo.hStdInput = hEngineInputRead;
     startupInfo.dwFlags |= STARTF_USESTDHANDLES;
 
-    BOOL bSuccess = CreateProcess(path.c_str(), NULL, NULL, NULL, TRUE, 0, NULL, NULL, &startupInfo, &processInfo);
-
-    if (!bSuccess)
+    if (!CreateProcess(path.c_str(), NULL, NULL, NULL, TRUE, 0, NULL, NULL, &startupInfo, &processInfo))
         std::cout << "CreateProcess Failed: " << GetLastError() << std::endl;
 
     // Close handles to the child process and its primary thread.
@@ -49,8 +47,7 @@ WindowsEngine::WindowsEngine(const std::string& path) {
 }
 
 WindowsEngine::~WindowsEngine() {
-    if (m_State == State::Running)
-        Stop();
+    Stop();
     
     if (!Send("quit\n"))
         printf("Couldn't send \"quit\"!\n");

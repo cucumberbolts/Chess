@@ -8,6 +8,7 @@
 #include "Graphics/Renderer.h"
 #include "Graphics/SubTexture.h"
 #include "Graphics/Texture.h"
+#include "Utility/FileDialog.h"
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -46,16 +47,13 @@ void ChessApplication::OnInit() {
     m_LegalMoveColour = { 1.0f, 0.0f, 1.0f, 0.5f };
     m_BackgroundColour = { 0.2f, 0.2f, 0.2f, 1.0f };
 
-    m_BoardFEN = std::string(100, '\0');
-    strcpy(m_BoardFEN.data(), Board::StartFen.data());
+    m_BoardFEN = Board::StartFen;
+    m_BoardFEN.resize(100);
 
     FramebufferSpecification spec;
     spec.Width = m_WindowProperties.Width;
     spec.Height = m_WindowProperties.Height;
     m_ChessViewport = std::make_shared<Framebuffer>(spec);
-
-    m_Engine = Engine::Create("Engines/stockfish_14_x64_avx2.exe");
-    m_Engine->Init();
 }
 
 void ChessApplication::OnRender() {
@@ -155,8 +153,6 @@ void ChessApplication::RenderImGui() {
         ImGuiWindowFlags window_flags = ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoDocking;
         window_flags |= ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize;
         window_flags |= ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus;
-
-
         // When using ImGuiDockNodeFlags_PassthruCentralNode, DockSpace() will render our background
         // and handle the pass-thru hole, so we ask Begin() to not render a background.
         window_flags |= ImGuiWindowFlags_NoBackground;
@@ -204,9 +200,8 @@ void ChessApplication::RenderImGui() {
 
     {
         ImGui::Begin("FEN: ");
-
-        // Last part of FEN not showing...
-        if (ImGui::InputText("FEN", m_BoardFEN.data(), m_BoardFEN.capacity() + 1, ImGuiInputTextFlags_EnterReturnsTrue))
+        
+        if (ImGui::InputText("FEN", m_BoardFEN.data(), m_BoardFEN.size(), ImGuiInputTextFlags_EnterReturnsTrue))
             m_Board.FromFEN(m_BoardFEN);
 
         if (ImGui::Button("Copy FEN to clipboard"))
@@ -257,29 +252,97 @@ void ChessApplication::RenderImGui() {
     {
         ImGui::Begin("Engine");
 
-        if (!m_Engine->IsRunning()) {
-            if (ImGui::Button("Start engine")) {
-                m_Engine->Run();
+        static auto s_SelectedEngine = m_Engines.end();
+
+        if (s_SelectedEngine == m_Engines.end()) {
+            if (ImGui::Button("Create engine")) {
+                ImGui::OpenPopup("Create engine");
+            }
+
+#define GetCentre GetCenter
+
+            // Always centre this window when appearing
+            ImVec2 centre = ImGui::GetMainViewport()->GetCentre();
+            ImGui::SetNextWindowPos(centre, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+
+            if (ImGui::BeginPopupModal("Create engine", nullptr, ImGuiPopupFlags_None)) {
+                static char path[255] = { 0 };
+                static char name[64] = { 0 };
+
+                ImGui::InputText("path", path, sizeof(path) / sizeof(char));
+                if (ImGui::Button("Select executable")) {
+                    FileDialog::Open(path, sizeof(path));
+
+                    // If the 'name' field is empty, copy the executable name to it
+                    if (name[0] == '\0')
+                        strcpy_s(name, sizeof(name), std::filesystem::path(path).stem().u8string().c_str());
+                }
+                
+                ImGui::InputText("name", name, sizeof(name) / sizeof(char));
+
+                if (ImGui::Button("OK", ImVec2(120, 0))) {
+                    m_Engines.emplace_back(std::pair{ name, path });
+                    s_SelectedEngine = m_Engines.end();
+
+                    // "Reset" the strings for next time popup is opened
+                    path[0] = '\0';
+                    name[0] = '\0';
+                    ImGui::CloseCurrentPopup();
+                }
+
+                ImGui::SameLine();
+
+                if (ImGui::Button("Cancel", ImVec2(120, 0))) {
+                    // "Reset" the strings for next time popup is opened
+                    path[0] = '\0';
+                    name[0] = '\0';
+                    ImGui::CloseCurrentPopup();
+                }
+
+                ImGui::EndPopup();
+            }
+
+            for (auto it = m_Engines.begin(); it != m_Engines.end(); ++it) {
+                const std::string& name = it->first;
+                const std::filesystem::path& path = it->second;
+
+                ImGui::Separator();
+
+                ImGui::Text("%s", name.c_str());
+
+                ImGui::PushID(std::distance(m_Engines.begin(), it));
+
+                if (ImGui::Button("Start engine")) {
+                    m_RunningEngine = Engine::Create(path);
+                    m_RunningEngine->Init();
+                    m_RunningEngine->Run();
+                    s_SelectedEngine = it;
+                }
+
+                ImGui::PopID();
             }
         } else {
-	        if (ImGui::Button("Stop engine")) {
-                m_Engine->Stop();
-	        }
+            ImGui::Text("%s", s_SelectedEngine->first.c_str());
 
-            auto bestContination = m_Engine->GetBestContinuation();
+            if (ImGui::Button("Stop engine")) {
+                m_RunningEngine->Stop();  // Stop the engine
+                m_RunningEngine.reset();  // Kill the process
+                s_SelectedEngine = m_Engines.end();
+            } else {
+                // TODO: Update only when 'Engine' updates
+                auto bestContination = m_RunningEngine->GetBestContinuation();
 
-            //std::vector<AlgebraicMove> continuationMoves = bestContination.Continuation;
+                Board temp;
 
-            Board temp;
+                std::ostringstream continuationText;
+                for (LongAlgebraicMove m : bestContination.Continuation)
+                    continuationText << temp.Move(m) << " ";
 
-            std::ostringstream continuationText;
-            for (LongAlgebraicMove m : bestContination.Continuation)
-                continuationText << temp.Move(m) << " ";
-
-            auto continuationTextString = continuationText.str();
-            ImGui::Text("%s", continuationTextString.c_str());
-            if (ImGui::Button("Copy to clipboard"))
-                ImGui::SetClipboardText(continuationTextString.c_str());
+                auto continuationTextString = continuationText.str();
+                ImGui::Text("%s", continuationTextString.c_str());
+                if (ImGui::Button("Copy to clipboard"))
+                    ImGui::SetClipboardText(continuationTextString.c_str());
+            }
         }
 
         ImGui::End();
@@ -323,6 +386,7 @@ void ChessApplication::OnMouseButton(int32_t button, int32_t action, int32_t mod
 #else
         // Convert ImGui viewport coordinates to rendering coordinates
         // TODO: Construct matrix by hand??
+        // TODO: Only calculate once
         glm::mat4 transform = glm::inverse(Renderer::GetProjectionMatrix());
         transform = glm::scale(transform, { 1 / (m_ChessViewportSize.x * 0.5f), 1 / (m_ChessViewportSize.y * -0.5f), 1.0f });
         transform = glm::translate(transform, { m_ChessViewportSize.x * -0.5f, m_ChessViewportSize.y * -0.5f, 0.0f });

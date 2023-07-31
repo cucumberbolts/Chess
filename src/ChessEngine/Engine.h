@@ -16,6 +16,12 @@ class Engine {
 public:
     static std::unique_ptr<Engine> Create(const std::filesystem::path& path);
 
+    Engine(const Engine& other) = delete;
+    Engine(Engine&& other) noexcept = delete;
+
+    Engine& operator=(const Engine& other) = delete;
+    Engine& operator=(Engine&& other) noexcept = delete;
+
     virtual ~Engine();
 
     bool Init();
@@ -47,10 +53,13 @@ private:
     std::string m_Name, m_Author;
     std::vector<Option*> m_Options;
 
+    // TODO: Make callback function for when this changes
     BestContinuation m_BestContinuation;
 
     std::thread m_Thread;
 protected:
+    Engine() = default;
+
     enum class State {
         Uninitialized,
         Ready,
