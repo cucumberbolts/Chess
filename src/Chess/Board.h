@@ -16,7 +16,7 @@ public:
     void Reset(); // Set to starting position ("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")
 
     void FromFEN(const std::string& fen);
-    std::string ToFEN();
+    std::string ToFEN() const;
 
     friend std::ostream& operator<<(std::ostream& os, const Board& board);
 

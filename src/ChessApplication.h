@@ -28,6 +28,8 @@ protected:
 	void OnWindowResize(int32_t width, int32_t height) override;
 	void OnKeyPressed(int32_t key, int32_t scancode, int32_t action, int32_t mods) override;
 	void OnMouseButton(int32_t button, int32_t action, int32_t mods) override;
+
+	void OnEngineUpdate(const Engine::BestContinuation& bestContinuation);
 private:
 	Board m_Board;
 	Square m_SelectedPiece = INVALID_SQUARE;
@@ -50,4 +52,6 @@ private:
 
 	std::vector<std::pair<std::string, std::filesystem::path>> m_Engines;  // Name, path
 	std::unique_ptr<Engine> m_RunningEngine;
+	Engine::BestContinuation m_BestContinuation;
+	std::string m_BestContinuationAlgebraicMoves;
 };

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <filesystem>
+#include <functional>
 #include <optional>
 #include <string>
 #include <thread>
@@ -49,12 +50,16 @@ public:
     };
 
     const BestContinuation& GetBestContinuation() const { return m_BestContinuation; }
+
+    void SetPosition(const std::string& fen);
+
+    void SetUpdateCallback(const std::function<void(const BestContinuation&)>& callback) { m_UpdateCallback = callback; }
 private:
     std::string m_Name, m_Author;
     std::vector<Option*> m_Options;
-
-    // TODO: Make callback function for when this changes
+    
     BestContinuation m_BestContinuation;
+    std::function<void(const BestContinuation& continuation)> m_UpdateCallback;
 
     std::thread m_Thread;
 protected:

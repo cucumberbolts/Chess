@@ -4,6 +4,8 @@
 
 #include "Chess/BitBoard.h"
 
+#include <sstream>
+
 #if 0
 static uint32_t s_Allocations = 0;
 static uint32_t s_BytesAllocated = 0;
@@ -23,28 +25,20 @@ void operator delete(void* ptr) noexcept {
 
 int main() {
 #if 1
-    //Board b("k7/8/8/4Q3/8/4Q1Q1/8/K7 w - - 0 1");
-    //std::cout << b.Move(AlgebraicMove("e4"))  << "\n";
-    //std::cout << b.Move(AlgebraicMove("e5"))  << "\n";
-    //std::cout << b.Move(AlgebraicMove("Nf3")) << "\n";
-    //std::cout << b.Move(AlgebraicMove("Nc6")) << "\n";
-    //std::cout << b.Move(AlgebraicMove("Qh2")) << "\n";
-    //std::cout << b.Move(AlgebraicMove("Qef3")) << "\n";
-    //std::cout << b.Move(AlgebraicMove("Qgf3")) << "\n";
 
-    //std::cout << b << std::endl;
-#if 0
-    Board board;
+#if 1
+    auto app = new ChessApplication(1280, 720, "Chess");
+    try {
+        app->Run();
+    }
+    catch (std::exception& e) {
+        std::cout << "Unhandled exception: " << e.what() << "\n";
+    }
+    delete app;
+#else
+    Board board("r1bqk1nr/pppp1ppp/2n5/b7/2BpP3/2P2N2/P4PPP/RNBQK2R/ w KQkq - 0 7");
 
-    std::string inputString = R"(
-e2e4 c7c5 g1f3 b8c6
-d2d4 c5d4 f3d4 e7e6
-b1c3 d8c7 c1e3 a7a6
-d1f3 g8f6 d4c6 b7c6
-e1c1 d7d5 f3g3 c7g3
-h2g3 f8d6 e3g5 d6e5
-e4d5 c6d5 g5f4 e5f4 g3f4
-	)";
+    std::string inputString = "d1b3 d8f6 e1g1 a5b6 e4e5 f6f5 b1d2 g8e7 c3d4 c6d4 f3d4 b6d4 a1b1 d4e5 c1a3 d7d6 d2f3 e8g8 f3e5 f5e5 f1e1";
 
     try {
         std::istringstream input(inputString);
@@ -52,8 +46,9 @@ e4d5 c6d5 g5f4 e5f4 g3f4
         uint32_t iteration = 0;
         while (input >> move) {
             std::cout << "Iteration: " << iteration << "\n";
-            AlgebraicMove m = board.Move(LongAlgebraicMove(move));
-            std::cout << "Moving " << m << "\n";
+            LongAlgebraicMove lm(move);
+            AlgebraicMove am = board.Move(lm);
+            std::cout << "Moving " << am << "\n";
             iteration++;
         }
     } catch (IllegalMoveException& e) {
@@ -62,16 +57,16 @@ e4d5 c6d5 g5f4 e5f4 g3f4
 
 	std::cout << board << std::endl;
 
+    /*
+    Board board2("r1b1k2r/ppp1nppp/3p4/4bq2/2B5/BQ3N2/P4PPP/1R3RK1 b kq - 1 15");
+    try {
+        board2.Move(LongAlgebraicMove("e8g8"));
+    } catch (IllegalMoveException& e) {
+        std::cout << "Hmm\n";
+    }
+    */
 #endif
     
-    auto app = new ChessApplication(1280, 720, "Chess");
-    try {
-        app->Run();
-    } catch (...) {
-    	std::cout << "Unhandled exception!\n";
-    }
-    delete app;
-
 #elif 0 // Test algebraic move generation in Board::Move()
     // 8/1b5b/2N3N1/8/4K3/3N1N2/8/8 w - - 0 1  // Pinned knights
     // k7/8/8/4Q3/8/4Q1Q1/8/K7 w - - 0 1       // Multiple queens can go to the same square

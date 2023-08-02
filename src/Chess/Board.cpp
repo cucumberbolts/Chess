@@ -113,7 +113,7 @@ void Board::FromFEN(const std::string& fen) {
     fenParser.Next(m_FullMoves);
 }
 
-std::string Board::ToFEN() {
+std::string Board::ToFEN() const {
     std::ostringstream fen;
 
     uint32_t emptySquares = 0;
@@ -137,7 +137,10 @@ std::string Board::ToFEN() {
         // Outputs the number of empty squares
         if (emptySquares > 0)
             fen << emptySquares;
-        fen << "/";
+
+        if (rank > 0)
+            fen << "/";
+
         emptySquares = 0;
     }
 
@@ -236,13 +239,13 @@ AlgebraicMove Board::Move(LongAlgebraicMove m) {
 
     // If a rook moves or is captured, remove castling rights accordingly
     if (m.SourceSquare == A1 || m.DestinationSquare == A1)
-        m_CastlingPath[Black | KingSide] = NO_CASTLE;
-    else if (m.SourceSquare == H1 || m.DestinationSquare == H1)
-        m_CastlingPath[Black | QueenSide] = NO_CASTLE;
-    else if (m.SourceSquare == A8 || m.DestinationSquare == A8)
-        m_CastlingPath[White | KingSide] = NO_CASTLE;
-    else if (m.SourceSquare == H8 || m.DestinationSquare == H8)
         m_CastlingPath[White | QueenSide] = NO_CASTLE;
+    else if (m.SourceSquare == H1 || m.DestinationSquare == H1)
+        m_CastlingPath[White | KingSide] = NO_CASTLE;
+    else if (m.SourceSquare == A8 || m.DestinationSquare == A8)
+        m_CastlingPath[Black | QueenSide] = NO_CASTLE;
+    else if (m.SourceSquare == H8 || m.DestinationSquare == H8)
+        m_CastlingPath[Black | KingSide] = NO_CASTLE;
 
     m_HalfMoves = (m_HalfMoves + 1) * !(pawnMove || capture);  // Increments if no pawn move or capture, sets to 0 otherwise
     m_FullMoves += m_PlayerTurn == Black;
@@ -429,11 +432,13 @@ BitBoard Board::GetPieceLegalMoves(Square piece) {
     if (GetPieceType(m_Board[piece]) == King) {
         BitBoard legalMoves = GetPseudoLegalMoves(piece);
         BitBoard controlledSquares = ControlledSquares(enemyColour);
+
         // Deals with castling
         if (!((allPieces & ~king) & m_CastlingPath[playerColour | KingSide]) && !(controlledSquares & m_CastlingPath[playerColour | KingSide]))
             legalMoves |= 0x40ull << (playerColour == White ? 0 : 56);
         if (!((allPieces & ~king) & m_CastlingPath[playerColour | QueenSide]) && !(controlledSquares & m_CastlingPath[playerColour | QueenSide]))
             legalMoves |= 0x04ull << (playerColour == White ? 0 : 56);
+
         return legalMoves & ~controlledSquares;
     }
 

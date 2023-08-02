@@ -19,6 +19,8 @@
 #include <iostream>
 #include <sstream>
 
+#include "ChessEngine/Engine.h"
+
 static glm::vec4 HexToColour(uint32_t colour) {
     static constexpr float toFloat = 1.0f / 255.0f;
     uint8_t r = (colour & 0xff000000) >> 24;
@@ -314,7 +316,9 @@ void ChessApplication::RenderImGui() {
 
                 if (ImGui::Button("Start engine")) {
                     m_RunningEngine = Engine::Create(path);
+                    m_RunningEngine->SetUpdateCallback([this](const Engine::BestContinuation& c) { OnEngineUpdate(c); });
                     m_RunningEngine->Init();
+                    m_RunningEngine->SetPosition(m_BoardFEN);
                     m_RunningEngine->Run();
                     s_SelectedEngine = it;
                 }
@@ -328,20 +332,10 @@ void ChessApplication::RenderImGui() {
                 m_RunningEngine->Stop();  // Stop the engine
                 m_RunningEngine.reset();  // Kill the process
                 s_SelectedEngine = m_Engines.end();
-            } else {
-                // TODO: Update only when 'Engine' updates
-                auto bestContination = m_RunningEngine->GetBestContinuation();
-
-                Board temp;
-
-                std::ostringstream continuationText;
-                for (LongAlgebraicMove m : bestContination.Continuation)
-                    continuationText << temp.Move(m) << " ";
-
-                auto continuationTextString = continuationText.str();
-                ImGui::Text("%s", continuationTextString.c_str());
+            } else {                
+                ImGui::Text("%s", m_BestContinuationAlgebraicMoves.c_str());
                 if (ImGui::Button("Copy to clipboard"))
-                    ImGui::SetClipboardText(continuationTextString.c_str());
+                    ImGui::SetClipboardText(m_BestContinuationAlgebraicMoves.c_str());
             }
         }
 
@@ -411,6 +405,8 @@ void ChessApplication::OnMouseButton(int32_t button, int32_t action, int32_t mod
                     if (m_LegalMoves & (1ull << selectedSquare) || selectedSquare == m_SelectedPiece) {
                         m_Board.Move({ m_SelectedPiece, selectedSquare });
                         m_BoardFEN = m_Board.ToFEN();
+                        if (m_RunningEngine)
+                            m_RunningEngine->SetPosition(m_BoardFEN);
                     }
 
                     m_SelectedPiece = INVALID_SQUARE;
@@ -438,6 +434,8 @@ void ChessApplication::OnMouseButton(int32_t button, int32_t action, int32_t mod
                     if (m_LegalMoves & (1ull << selectedSquare)) {
                         m_Board.Move({ m_SelectedPiece, selectedSquare });
                         m_BoardFEN = m_Board.ToFEN();
+                        if (m_RunningEngine)
+							m_RunningEngine->SetPosition(m_BoardFEN);
                         m_SelectedPiece = INVALID_SQUARE;
                         m_LegalMoves = 0;
                     }
@@ -452,4 +450,16 @@ void ChessApplication::OnMouseButton(int32_t button, int32_t action, int32_t mod
         m_IsHoldingPiece = false;
         m_LegalMoves = 0;
     }
+}
+
+void ChessApplication::OnEngineUpdate(const Engine::BestContinuation& bestContinuation) {
+    m_BestContinuation = bestContinuation;
+    
+    Board moveTranslator(m_Board);
+
+    std::ostringstream continuationText;
+    for (LongAlgebraicMove m : m_BestContinuation.Continuation)
+        continuationText << moveTranslator.Move(m) << " ";
+
+    m_BestContinuationAlgebraicMoves = continuationText.str();
 }

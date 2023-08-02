@@ -194,6 +194,11 @@ void Engine::HandleCommand(const std::string& text) {
         //}
 
         // Ignore undefined commands
+#if _DEBUG
+    	else {
+            std::cout << "Engine sent unknown command: " << command << "\n";
+        }
+#endif
     }
 }
 
@@ -274,6 +279,8 @@ void Engine::HandleInfoCommand(StringParser& sp) {
             while (sp.Next(move))
                 m_BestContinuation.Continuation.emplace_back(LongAlgebraicMove(move));
 
+            m_UpdateCallback(m_BestContinuation);
+
             return;
         } else if (infoType == "cp") {
             sp.Next(m_BestContinuation.Score);
@@ -336,6 +343,24 @@ void Engine::PrintInfo() const {
         }
 
         std::cout << "\n";
+    }
+}
+
+void Engine::SetPosition(const std::string& fen) {
+    if (m_State == State::Running) {
+        // TODO: Can this be improved (better thread synchronization)? 
+        Stop();
+        //Send("stop\n");
+
+        // Clear the pipe
+        std::string message;
+        Receive(message);
+
+        Send("position fen " + fen + "\n");
+        Run();
+		//Send("go infinite\n");
+    } else {
+        Send("position fen " + fen + "\n");
     }
 }
 
