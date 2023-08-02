@@ -26,10 +26,13 @@ Or on MSVC (Visual Studio), to build release:
 cmake --build build --config Release
 ```
 
-### Things to work on
+Note: If you modified the resources in the resources/ directory,
+run `python embed_resources.py` to regenerate the resource file.
+
+### Future features
+- Linux support
 - PGN
 - Chess 960
-- Compliling on Linux
 - Unit tests for chess?
 
 ### Dependencies

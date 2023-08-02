@@ -53,7 +53,7 @@ static void APIENTRY GlErrorCallback(GLenum source,
     std::cout << message << "\n";
 
     //TODO: Handle errors in a good way
-    //__debugbreak();
+    __debugbreak();
 }
 
 namespace DebugContext {

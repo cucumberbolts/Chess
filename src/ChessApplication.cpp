@@ -4,11 +4,14 @@
 #include <GLFW/glfw3.h>
 
 #include "Chess/Board.h"
+#include "ChessEngine/Engine.h"
 #include "Graphics/Framebuffer.h"
 #include "Graphics/Renderer.h"
 #include "Graphics/SubTexture.h"
 #include "Graphics/Texture.h"
 #include "Utility/FileDialog.h"
+
+#include "Resources.h"
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -18,8 +21,6 @@
 
 #include <iostream>
 #include <sstream>
-
-#include "ChessEngine/Engine.h"
 
 static glm::vec4 HexToColour(uint32_t colour) {
     static constexpr float toFloat = 1.0f / 255.0f;
@@ -38,11 +39,13 @@ void ChessApplication::OnInit() {
     Renderer::Init(glm::ortho(-8.f, 8.f, -4.5f, 4.5f));
 
     std::cout << "OpenGL Version: " << Renderer::GetOpenGLVersion() << "\n";
+    
+    std::shared_ptr<Texture> chessPieces = std::make_shared<Texture>(Resources::Textures::CHESS_PIECES, sizeof(Resources::Textures::CHESS_PIECES));
 
-    std::shared_ptr<Texture> chessPieces = std::make_shared<Texture>("resources/textures/Chess_Pieces_Sprite.png");
-    for (int x = 0; x < 6; x++)
-        for (int y = 0; y < 2; y++)
-            m_ChessPieceSprites[y * 6 + x] = std::make_shared<SubTexture>(chessPieces, glm::vec2(x, y), glm::vec2(45.0f, 45.0f));
+    const float tileSize = (float)chessPieces->GetWidth() / 6.0f;
+    for (int y = 0; y < 2; y++)
+		for (int x = 0; x < 6; x++)
+            m_ChessPieceSprites[y * 6 + x] = std::make_shared<SubTexture>(chessPieces, glm::vec2(x, y), glm::vec2(tileSize));
 
     m_DarkSquareColour = HexToColour(0x532A00FF);
     m_LightSquareColour = HexToColour(0xFFB160FF);

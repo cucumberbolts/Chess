@@ -7,8 +7,9 @@
 class Texture {
 public:
     Texture(int32_t width, int32_t height);
-    Texture(uint8_t* data, int32_t width, int32_t height);
+    Texture(const uint8_t* data, int32_t width, int32_t height);
     Texture(const std::filesystem::path& image);
+    Texture(const uint8_t* pngData, size_t size);
     Texture(const Texture&) = delete;
     ~Texture();
 

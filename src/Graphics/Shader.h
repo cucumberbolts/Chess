@@ -8,6 +8,7 @@
 class Shader {
 public:
     Shader(const std::filesystem::path& vertexShader, const std::filesystem::path& fragmentShader);
+    Shader(const char* vertexShader, const char* fragmentShader);
     Shader(const Shader&) = delete;
     ~Shader();
 

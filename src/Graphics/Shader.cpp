@@ -40,6 +40,23 @@ Shader::Shader(const std::filesystem::path& vertexShader, const std::filesystem:
     glUseProgram(m_ShaderID);
 }
 
+Shader::Shader(const char* vertexShader, const char* fragmentShader) {
+    m_ShaderID = glCreateProgram();
+
+    uint32_t vs = CompileShader(GL_VERTEX_SHADER, vertexShader);
+    uint32_t fs = CompileShader(GL_FRAGMENT_SHADER, fragmentShader);
+
+    glAttachShader(m_ShaderID, vs);
+    glAttachShader(m_ShaderID, fs);
+    glLinkProgram(m_ShaderID);
+    glValidateProgram(m_ShaderID);
+
+    glDetachShader(m_ShaderID, vs);
+    glDetachShader(m_ShaderID, fs);
+
+    glUseProgram(m_ShaderID);
+}
+
 Shader::~Shader() {
     glDeleteProgram(m_ShaderID);
 }

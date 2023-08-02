@@ -8,6 +8,8 @@
 #include "Shader.h"
 #include "VertexArray.h"
 
+#include "Resources.h"
+
 #include <glad/glad.h>
 
 #include <glm/gtc/matrix_transform.hpp>
@@ -81,7 +83,7 @@ void Renderer::Init(const glm::mat4& projection) {
     glDepthFunc(GL_LESS);
 
     s_IndexBuffer = std::make_unique<IndexBuffer>(maxIndexCount * sizeof(uint32_t));
-    s_Shader = std::make_unique<Shader>("resources/shaders/VertexShader.glsl", "resources/shaders/FragmentShader.glsl");
+    s_Shader = std::make_unique<Shader>((const char*)Resources::Shaders::VERTEX_SHADER, (const char*)Resources::Shaders::FRAGMENT_SHADER);
     s_VertexBuffer = std::make_unique<VertexBuffer>(maxVertexCount * sizeof(Vertex));
     s_VertexArray = std::make_unique<VertexArray>(*s_VertexBuffer, s_VertexLayout);
 
