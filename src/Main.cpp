@@ -100,41 +100,5 @@ int main() {
 
     b.FromFEN("1k6/8/8/2N5/8/2N3N1/8/1K6 w - - 0 1");
     std::cout << b.Move({ C3, E4 }) << std::endl;
-#elif 0  // Testing Engine class
-    std::cout << "Current working directory: " << std::filesystem::current_path() << std::endl;
-
-    std::string_view stockfish14 = "Engines/stockfish_14_x64_avx2.exe";
-    std::string_view leelaChess0 = "Engines/lc0.exe";
-
-    auto engine = Engine::Create(leelaChess0);
-
-    engine->Init();
-
-    std::cout << "Printing info...\n";
-    engine->PrintInfo();
-    std::cout << "Done printing info...\n";
-
-    std::cout << "Press enter to start engine:\n";
-    std::cin.get();
-
-    engine->Run();
-    std::cin.get();
-
-    std::cout << "Stopping engine...\n";
-    engine->Stop();
-
-    std::cout << "Best continuation: ";
-    for (AlgebraicMove m : engine->m_BestContinuation.Continuation)
-        std::cout << m << " ";
-
-    std::cout << "\nDepth: " << engine->m_BestContinuation.Depth << "\n\n";
-
-    std::cout << "Board: \n" << engine->m_Board << "\n";
-
-    std::cout << s_Allocations << " allocations!\n";
-    std::cout << s_BytesAllocated << " bytes allocated!\n";
-    std::cout << s_Frees << " frees!\n";
-
-    std::cin.get();
 #endif
 }

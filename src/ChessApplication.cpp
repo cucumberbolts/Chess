@@ -40,6 +40,16 @@ void ChessApplication::OnInit() {
 
     std::cout << "OpenGL Version: " << Renderer::GetOpenGLVersion() << "\n";
     
+    ImGuiIO& io = ImGui::GetIO(); (void)io;
+    io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+
+    if (!std::filesystem::exists("imgui.ini"))
+		ImGui::LoadIniSettingsFromMemory(Resources::DEFAULT_IMGUI_INI);
+
+    // ImGui style
+    ImGui::StyleColorsDark();
+    
     std::shared_ptr<Texture> chessPieces = std::make_shared<Texture>(Resources::Textures::CHESS_PIECES, sizeof(Resources::Textures::CHESS_PIECES));
 
     const float tileSize = (float)chessPieces->GetWidth() / 6.0f;
@@ -363,24 +373,6 @@ void ChessApplication::OnKeyPressed(int32_t key, int32_t scancode, int32_t actio
 
 void ChessApplication::OnMouseButton(int32_t button, int32_t action, int32_t mods) {
     if (button == GLFW_MOUSE_BUTTON_LEFT) {
-#if 0
-        float x = (m_MousePosition.x - m_ChessViewportSize.x * 0.5f) / (m_ChessViewportSize.x * 0.5f);
-        float y = (m_MousePosition.y - m_ChessViewportSize.y * 0.5f) / (m_ChessViewportSize.y * -0.5f);
-        
-        glm::vec4 point = { x, y, 1.0f, 1.0f };
-        point = glm::inverse(Renderer::GetProjectionMatrix()) * point;
-
-        x = point.x;
-        y = point.y;
-#elif 0
-        glm::vec4 point = { m_MousePosition, 1.0f, 1.0f };
-        point = glm::translate(glm::mat4(1.0f), { m_ChessViewportSize.x * -0.5f, m_ChessViewportSize.y * -0.5f, 0.0f }) * point;
-        point = glm::scale(glm::mat4(1.0f), { 1 / (m_ChessViewportSize.x * 0.5f), 1 / (m_ChessViewportSize.y * 0.5f), 1.0f }) * point;
-        point = glm::inverse(Renderer::GetProjectionMatrix()) * point;
-
-        float x = point.x;
-        float y = point.y;
-#else
         // Convert ImGui viewport coordinates to rendering coordinates
         // TODO: Construct matrix by hand??
         // TODO: Only calculate once
@@ -389,16 +381,12 @@ void ChessApplication::OnMouseButton(int32_t button, int32_t action, int32_t mod
         transform = glm::translate(transform, { m_ChessViewportSize.x * -0.5f, m_ChessViewportSize.y * -0.5f, 0.0f });
         glm::vec4 point = transform * glm::vec4{ m_MousePosition, 1.0f, 1.0f };
 
-        float& x = point.x;
-        float& y = point.y;
-#endif
-
         if (action == GLFW_PRESS) {
             m_IsHoldingPiece = true;
 
-            if (x > -4 && x < 4 && y > -4 && y < 4) {
-                Square rank = (Square)(x + 4.0f);
-                Square file = (Square)(y + 4.0f);
+            if (point.x > -4 && point.x < 4 && point.y > -4 && point.y < 4) {
+                Square rank = (Square)(point.x + 4.0f);
+                Square file = (Square)(point.y + 4.0f);
 
                 // The square the mouse clicked on
                 Square selectedSquare = ToSquare('a' + rank, '1' + file);
@@ -426,9 +414,9 @@ void ChessApplication::OnMouseButton(int32_t button, int32_t action, int32_t mod
             }
         }
         else if (action == GLFW_RELEASE) {
-            if (x > -4 && x < 4 && y > -4 && y < 4) {
-                Square rank = (Square)(x + 4.0f);
-                Square file = (Square)(y + 4.0f);
+            if (point.x > -4 && point.x < 4 && point.y > -4 && point.y < 4) {
+                Square rank = (Square)(point.x + 4.0f);
+                Square file = (Square)(point.y + 4.0f);
 
                 // The square the mouse was released on
                 Square selectedSquare = ToSquare('a' + rank, '1' + file);

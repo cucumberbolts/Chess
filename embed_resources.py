@@ -6,7 +6,8 @@ A script that embeds resouces to resources.cpp
 
 import os
 
-TEXT_FILES = [".glsl"]
+# Embed text files as const char* strings
+TEXT_FILES = [".glsl", ".ini"]
 
 RESOURCE_DIR = "resources"
 RESOURCE_EMBED_FILE = "src/Resources.h"
