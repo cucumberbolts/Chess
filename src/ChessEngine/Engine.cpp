@@ -158,11 +158,15 @@ bool Engine::SetCombo(const std::string& name, size_t valueIndex) {
 }
 
 void Engine::RunLoop() {
-    std::string data;
-    while (m_State == State::Running) {
-        Receive(data);
-        HandleCommand(data);
-        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    try {
+        std::string data;
+        while (m_State == State::Running) {
+            Receive(data);
+            HandleCommand(data);
+            std::this_thread::sleep_for(std::chrono::milliseconds(1));
+        }
+    } catch (std::exception& e) {
+        m_ThreadException = std::current_exception();
     }
 }
 

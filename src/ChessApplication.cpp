@@ -339,6 +339,10 @@ void ChessApplication::RenderImGui() {
                 ImGui::PopID();
             }
         } else {
+            if (m_RunningEngine->GetThreadException() != nullptr) {
+                std::rethrow_exception(m_RunningEngine->GetThreadException());
+            }
+
             ImGui::Text("%s", s_SelectedEngine->first.c_str());
 
             if (ImGui::Button("Stop engine")) {

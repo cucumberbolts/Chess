@@ -1,10 +1,45 @@
-#include <iostream>
-
 #include "ChessApplication.h"
 
-#include "Chess/BitBoard.h"
+#if 1
 
-#include <sstream>
+#include <GLFW/glfw3.h>
+#define GLFW_EXPOSE_NATIVE_WIN32
+#include <GLFW/glfw3native.h>
+
+#include <Windows.h>
+
+int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
+    LPSTR lpCmdLine, int nCmdShow)
+{
+    auto app = new ChessApplication(1280, 720, "Chess");
+    try {
+        app->Run();
+    }
+    catch (std::exception& e) {
+        MessageBox(glfwGetWin32Window(app->GetGLFWWindow()), e.what(), NULL, MB_OK | MB_ICONERROR);
+    }
+    delete app;
+
+    return 0;
+}
+
+#else
+
+#include <iostream>
+
+int main() {
+    auto app = new ChessApplication(1280, 720, "Chess");
+    try {
+        app->Run();
+    }
+    catch (std::exception& e) {
+        std::cout << "Unhandled exception: " << e.what() << "\n";
+        std::cin.get();
+    }
+    delete app;
+}
+
+#endif
 
 #if 0
 static uint32_t s_Allocations = 0;
@@ -21,21 +56,9 @@ void operator delete(void* ptr) noexcept {
     s_Frees++;
     free(ptr);
 }
-#endif
 
 int main() {
-#if 1
-
-#if 1
-    auto app = new ChessApplication(1280, 720, "Chess");
-    try {
-        app->Run();
-    }
-    catch (std::exception& e) {
-        std::cout << "Unhandled exception: " << e.what() << "\n";
-    }
-    delete app;
-#else
+#if 0
     Board board("r1bqk1nr/pppp1ppp/2n5/b7/2BpP3/2P2N2/P4PPP/RNBQK2R/ w KQkq - 0 7");
 
     std::string inputString = "d1b3 d8f6 e1g1 a5b6 e4e5 f6f5 b1d2 g8e7 c3d4 c6d4 f3d4 b6d4 a1b1 d4e5 c1a3 d7d6 d2f3 e8g8 f3e5 f5e5 f1e1";
@@ -65,8 +88,6 @@ int main() {
         std::cout << "Hmm\n";
     }
     */
-#endif
-    
 #elif 0 // Test algebraic move generation in Board::Move()
     // 8/1b5b/2N3N1/8/4K3/3N1N2/8/8 w - - 0 1  // Pinned knights
     // k7/8/8/4Q3/8/4Q1Q1/8/K7 w - - 0 1       // Multiple queens can go to the same square
@@ -102,3 +123,4 @@ int main() {
     std::cout << b.Move({ C3, E4 }) << std::endl;
 #endif
 }
+#endif

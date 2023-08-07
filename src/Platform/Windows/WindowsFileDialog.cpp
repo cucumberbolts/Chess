@@ -15,7 +15,7 @@ namespace FileDialog {
 		CHAR szFile[255] = { 0 };
 		ZeroMemory(&ofn, sizeof(OPENFILENAME));
 		ofn.lStructSize = sizeof(OPENFILENAME);
-		ofn.hwndOwner = glfwGetWin32Window(Application::Get().GetWindow());
+		ofn.hwndOwner = glfwGetWin32Window(Application::Get().GetGLFWWindow());
 		ofn.lpstrFile = szFile;
 		ofn.nMaxFile = sizeof(szFile);
 		ofn.lpstrFilter = "All Files (*.*)\0*.*\0";
@@ -37,7 +37,7 @@ namespace FileDialog {
 		OPENFILENAMEA ofn;
 		ZeroMemory(&ofn, sizeof(OPENFILENAME));
 		ofn.lStructSize = sizeof(OPENFILENAME);
-		ofn.hwndOwner = glfwGetWin32Window(Application::Get().GetWindow());
+		ofn.hwndOwner = glfwGetWin32Window(Application::Get().GetGLFWWindow());
 		ofn.lpstrFile = buffer;
 		ofn.nMaxFile = size;
 		ofn.lpstrFilter = "All Files (*.*)\0*.*\0";
@@ -60,7 +60,7 @@ namespace FileDialog {
 		CHAR szFile[255] = { 0 };
 		ZeroMemory(&ofn, sizeof(OPENFILENAME));
 		ofn.lStructSize = sizeof(OPENFILENAME);
-		ofn.hwndOwner = glfwGetWin32Window(Application::Get().GetWindow());
+		ofn.hwndOwner = glfwGetWin32Window(Application::Get().GetGLFWWindow());
 		ofn.lpstrFile = szFile;
 		ofn.nMaxFile = sizeof(szFile);
 		ofn.lpstrFilter = "All Files (*.*)\0*.*\0";

@@ -54,6 +54,8 @@ public:
     void SetPosition(const std::string& fen);
 
     void SetUpdateCallback(const std::function<void(const BestContinuation&)>& callback) { m_UpdateCallback = callback; }
+
+    std::exception_ptr GetThreadException() const { return m_ThreadException; }
 private:
     std::string m_Name, m_Author;
     std::vector<Option*> m_Options;
@@ -62,6 +64,7 @@ private:
     std::function<void(const BestContinuation& continuation)> m_UpdateCallback;
 
     std::thread m_Thread;
+    std::exception_ptr m_ThreadException;
 protected:
     Engine() = default;
 

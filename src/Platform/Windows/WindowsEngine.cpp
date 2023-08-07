@@ -31,7 +31,7 @@ WindowsEngine::WindowsEngine(const std::string& path) {
     startupInfo.hStdInput = hEngineInputRead;
     startupInfo.dwFlags |= STARTF_USESTDHANDLES;
 
-    if (!CreateProcess(path.c_str(), NULL, NULL, NULL, TRUE, 0, NULL, NULL, &startupInfo, &processInfo))
+    if (!CreateProcess(path.c_str(), NULL, NULL, NULL, TRUE, CREATE_NO_WINDOW, NULL, NULL, &startupInfo, &processInfo))
         std::cout << "CreateProcess Failed: " << GetLastError() << std::endl;
 
     // Close handles to the child process and its primary thread.

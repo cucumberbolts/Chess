@@ -62,22 +62,24 @@ if (WIN32)
         "src/Platform/Windows/WindowsEngine.cpp"
         "src/Platform/Windows/WindowsFileDialog.cpp"
     )
+
+    if (MSVC)
+        set(CMAKE_CXX_STANDARD 17)
+        set(CMAKE_CXX_STANDARD_REQUIRED ON)
+    endif ()
+
+    add_executable(${PROJECT_NAME} WIN32 ${SOURCES})
 elseif (UNIX)
     set(SOURCES
         ${SOURCES}
         "src/Platform/Unix/UnixEngine.h"
         "src/Platform/Unix/UnixEngine.cpp"
     )
+
+    add_executable(${PROJECT_NAME} ${SOURCES})
 else()
     message(FATAL_ERROR "Unsupported platform!")
 endif()
-
-if (MSVC)
-    set(CMAKE_CXX_STANDARD 17)
-    set(CMAKE_CXX_STANDARD_REQUIRED ON)
-endif ()
-
-add_executable(${PROJECT_NAME} ${SOURCES})
 
 set_target_properties(${PROJECT_NAME} PROPERTIES CXX_STANDARD 17)
 set_target_properties(${PROJECT_NAME} PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}")

@@ -19,7 +19,7 @@ public:
 
     static Application& Get() { return *s_Instance; }
 
-    GLFWwindow* GetWindow() const { return m_Window; };
+    GLFWwindow* GetGLFWWindow() const { return m_Window; };
 
     void Run();
 
