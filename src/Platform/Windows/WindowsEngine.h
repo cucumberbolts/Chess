@@ -10,7 +10,7 @@ public:
 
     ~WindowsEngine() override;
 
-    bool Send(const std::string& message) override;
+    void Send(const std::string& message) override;
     bool Receive(std::string& message) override;
 private:
     HANDLE m_EngineInputWrite = NULL;

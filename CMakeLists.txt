@@ -14,13 +14,14 @@ set(SOURCES
     "src/Chess/Board.h"
     "src/Chess/Board.cpp"
     "src/Chess/BoardFormat.h"
-    "src/Chess/ExceptionTypes.h"
+    "src/Chess/ChessException.h"
     "src/Chess/PseudoLegal.h"
     "src/Chess/PseudoLegal.cpp"
     "src/Chess/Move.h"
 
     "src/ChessEngine/Engine.h"
     "src/ChessEngine/Engine.cpp"
+    "src/ChessEngine/EngineException.h"
     "src/ChessEngine/Option.h"
 
     "src/Graphics/Application.h"
@@ -62,11 +63,6 @@ if (WIN32)
         "src/Platform/Windows/WindowsEngine.cpp"
         "src/Platform/Windows/WindowsFileDialog.cpp"
     )
-
-    if (MSVC)
-        set(CMAKE_CXX_STANDARD 17)
-        set(CMAKE_CXX_STANDARD_REQUIRED ON)
-    endif ()
 
     add_executable(${PROJECT_NAME} WIN32 ${SOURCES})
 elseif (UNIX)

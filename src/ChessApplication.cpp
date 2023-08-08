@@ -19,7 +19,6 @@
 
 #include <imgui.h>
 
-#include <iostream>
 #include <sstream>
 
 static glm::vec4 HexToColour(uint32_t colour) {
@@ -37,8 +36,6 @@ ChessApplication::ChessApplication(uint32_t width, uint32_t height, const std::s
 
 void ChessApplication::OnInit() {
     Renderer::Init(glm::ortho(-8.f, 8.f, -4.5f, 4.5f));
-
-    std::cout << "OpenGL Version: " << Renderer::GetOpenGLVersion() << "\n";
     
     ImGuiIO& io = ImGui::GetIO(); (void)io;
     io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
@@ -188,12 +185,18 @@ void ChessApplication::RenderImGui() {
         ImGuiID dockspaceID = ImGui::GetID("MyDockSpace");
         ImGui::DockSpace(dockspaceID, ImVec2(0.0f, 0.0f), dockspaceFlags);
 
-        if (ImGui::BeginMenuBar())
-        {
-            if (ImGui::BeginMenu("File"))
-            {
-                ImGui::MenuItem("thing");
+        if (ImGui::BeginMenuBar()) {
+            if (ImGui::BeginMenu("File")) {
+                ImGui::MenuItem("New");
+
                 ImGui::Separator();
+
+                if (ImGui::MenuItem("Quit"))
+                    m_Running = false;
+
+                ImGui::EndMenu();
+            } else if (ImGui::BeginMenu("About")) {
+                ImGui::Text("OpenGL Version: %s", Renderer::GetOpenGLVersion());
 
                 ImGui::EndMenu();
             }
@@ -225,6 +228,8 @@ void ChessApplication::RenderImGui() {
         if (ImGui::Button("Reset board")) {
             m_Board.Reset();  // Reset FEN string
             m_BoardFEN = Board::StartFen;
+            if (m_RunningEngine)
+                m_RunningEngine->SetPosition(m_BoardFEN);
         }
 
         ImGui::End();
@@ -243,7 +248,7 @@ void ChessApplication::RenderImGui() {
         ImVec2 viewportSize = ImGui::GetContentRegionAvail();
         m_ChessViewportSize = { viewportSize.x, viewportSize.y };
 
-        ImTextureID texture = (void*)m_ChessViewport->GetColourAttachment();
+        ImTextureID texture = (void*)(intptr_t)m_ChessViewport->GetColourAttachment();
         int framePadding = 0;
         ImVec4 backgroundColour = ImVec4(0.0f, 0.0f, 0.0f, 1.0f);
         ImVec4 tintColour = ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
@@ -284,7 +289,7 @@ void ChessApplication::RenderImGui() {
                 static char path[255] = { 0 };
                 static char name[64] = { 0 };
 
-                ImGui::InputText("path", path, sizeof(path) / sizeof(char));
+                ImGui::InputText("path", path, sizeof(path));
                 if (ImGui::Button("Select executable")) {
                     FileDialog::Open(path, sizeof(path));
 
@@ -293,7 +298,7 @@ void ChessApplication::RenderImGui() {
                         strcpy_s(name, sizeof(name), std::filesystem::path(path).stem().u8string().c_str());
                 }
                 
-                ImGui::InputText("name", name, sizeof(name) / sizeof(char));
+                ImGui::InputText("name", name, sizeof(name));
 
                 if (ImGui::Button("OK", ImVec2(120, 0))) {
                     m_Engines.emplace_back(std::pair{ name, path });
@@ -317,7 +322,7 @@ void ChessApplication::RenderImGui() {
                 ImGui::EndPopup();
             }
 
-            for (auto it = m_Engines.begin(); it != m_Engines.end(); ++it) {
+            for (auto it = m_Engines.begin(); it != m_Engines.end();) {
                 const std::string& name = it->first;
                 const std::filesystem::path& path = it->second;
 
@@ -325,18 +330,34 @@ void ChessApplication::RenderImGui() {
 
                 ImGui::Text("%s", name.c_str());
 
-                ImGui::PushID(std::distance(m_Engines.begin(), it));
+                ImGui::PushID((int)std::distance(m_Engines.begin(), it));
 
                 if (ImGui::Button("Start engine")) {
-                    m_RunningEngine = Engine::Create(path);
-                    m_RunningEngine->SetUpdateCallback([this](const Engine::BestContinuation& c) { OnEngineUpdate(c); });
-                    m_RunningEngine->Init();
-                    m_RunningEngine->SetPosition(m_BoardFEN);
-                    m_RunningEngine->Run();
-                    s_SelectedEngine = it;
+                    ImGui::PopID();
+
+                    try {
+                        m_RunningEngine = Engine::Create(path);
+                        m_RunningEngine->SetUpdateCallback([this](const Engine::BestContinuation& c) { OnEngineUpdate(c); });
+                        m_RunningEngine->Init();
+                        m_RunningEngine->SetPosition(m_BoardFEN);
+                        m_RunningEngine->Run();
+
+                        s_SelectedEngine = it;
+                    } catch (EngineCreationFailure&) {
+                        ImGui::OpenPopup("Failed to create engine");
+                    } catch (EngineNotReady&) {
+                        ImGui::OpenPopup("Engine not ready");
+                    }
+                } else {
+                    ImGui::PopID();
                 }
 
-                ImGui::PopID();
+                if (ImGui::Button("Delete engine")) {
+                    it = m_Engines.erase(it);
+                    s_SelectedEngine = m_Engines.end();
+                } else {
+                    ++it;
+                }
             }
         } else {
             if (m_RunningEngine->GetThreadException() != nullptr) {
@@ -347,7 +368,7 @@ void ChessApplication::RenderImGui() {
 
             if (ImGui::Button("Stop engine")) {
                 m_RunningEngine->Stop();  // Stop the engine
-                m_RunningEngine.reset();  // Kill the process
+                m_RunningEngine.reset();  // Stop the process
                 s_SelectedEngine = m_Engines.end();
             } else {                
                 ImGui::Text("%s", m_BestContinuationAlgebraicMoves.c_str());
@@ -356,6 +377,25 @@ void ChessApplication::RenderImGui() {
             }
         }
 
+        // TODO: ImGui Error message wrapper?
+        ImVec2 centre = ImGui::GetMainViewport()->GetCentre();
+        ImGui::SetNextWindowPos(centre, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+
+        if (ImGui::BeginPopupModal("Failed to create engine")) {
+            if (ImGui::Button("OK"))
+                ImGui::CloseCurrentPopup();
+            ImGui::EndPopup();
+        }
+
+        centre = ImGui::GetMainViewport()->GetCentre();
+        ImGui::SetNextWindowPos(centre, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+
+    	if (ImGui::BeginPopupModal("Engine not ready")) {
+            if (ImGui::Button("OK"))
+                ImGui::CloseCurrentPopup();
+            ImGui::EndPopup();
+        }
+        
         ImGui::End();
     }
 }

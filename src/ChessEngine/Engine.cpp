@@ -20,8 +20,8 @@ bool Engine::Init() {
     //loop till "uciok" is received
     std::string data;
     while (m_State != State::Ready) {
-        Receive(data);
-        HandleCommand(data);
+        if (Receive(data))
+			HandleCommand(data);
         std::this_thread::sleep_for(std::chrono::milliseconds(1));
     }
 
@@ -30,8 +30,7 @@ bool Engine::Init() {
 
 void Engine::Run() {
     if (m_State != State::Ready) {
-        std::cout << "Engine is not ready!\n";
-        return;
+        throw EngineNotReady();
     }
 
     m_State = State::Running;
@@ -161,11 +160,11 @@ void Engine::RunLoop() {
     try {
         std::string data;
         while (m_State == State::Running) {
-            Receive(data);
-            HandleCommand(data);
+            if (Receive(data))
+				HandleCommand(data);
             std::this_thread::sleep_for(std::chrono::milliseconds(1));
         }
-    } catch (std::exception& e) {
+    } catch (std::exception&) {
         m_ThreadException = std::current_exception();
     }
 }
@@ -354,15 +353,14 @@ void Engine::SetPosition(const std::string& fen) {
     if (m_State == State::Running) {
         // TODO: Can this be improved (better thread synchronization)? 
         Stop();
-        //Send("stop\n");
 
         // Clear the pipe
         std::string message;
         Receive(message);
 
         Send("position fen " + fen + "\n");
+
         Run();
-		//Send("go infinite\n");
     } else {
         Send("position fen " + fen + "\n");
     }

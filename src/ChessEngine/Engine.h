@@ -7,9 +7,10 @@
 #include <thread>
 #include <vector>
 
-#include "Chess/Board.h"
-
+#include "EngineException.h"
 #include "Option.h"
+
+#include "Chess/Move.h"
 
 #include "Utility/StringParser.h"
 
@@ -76,8 +77,8 @@ protected:
 
     State m_State = State::Uninitialized;
 private:
-    virtual bool Send(const std::string& message) = 0;
-    virtual bool Receive(std::string& message) = 0;
+    virtual void Send(const std::string& message) = 0;
+    virtual bool Receive(std::string& message) = 0;  // Returns false if no data received
 
     void RunLoop();
 

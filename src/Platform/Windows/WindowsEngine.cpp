@@ -1,7 +1,5 @@
 #include "WindowsEngine.h"
 
-#include <iostream>
-
 std::unique_ptr<Engine> Engine::Create(const std::filesystem::path& path) {
     return std::make_unique<WindowsEngine>(path.string());
 }
@@ -31,8 +29,14 @@ WindowsEngine::WindowsEngine(const std::string& path) {
     startupInfo.hStdInput = hEngineInputRead;
     startupInfo.dwFlags |= STARTF_USESTDHANDLES;
 
-    if (!CreateProcess(path.c_str(), NULL, NULL, NULL, TRUE, CREATE_NO_WINDOW, NULL, NULL, &startupInfo, &processInfo))
-        std::cout << "CreateProcess Failed: " << GetLastError() << std::endl;
+    if (!CreateProcess(path.c_str(), NULL, NULL, NULL, TRUE, CREATE_NO_WINDOW, NULL, NULL, &startupInfo, &processInfo)) {
+        CloseHandle(hEngineOutputWrite);
+        CloseHandle(hEngineInputRead);
+        CloseHandle(m_EngineInputWrite);
+        CloseHandle(m_EngineOutputRead);
+
+        throw EngineCreationFailure("CreateProcess() failed: " + std::to_string(GetLastError()));
+    }
 
     // Close handles to the child process and its primary thread.
     // Some applications might keep these handles to monitor the status
@@ -48,9 +52,12 @@ WindowsEngine::WindowsEngine(const std::string& path) {
 
 WindowsEngine::~WindowsEngine() {
     Stop();
-    
-    if (!Send("quit\n"))
-        printf("Couldn't send \"quit\"!\n");
+
+    try {
+        Send("quit\n");
+    } catch (EnginePipeError&) {
+        TerminateProcess(m_ProcessHandle, 1);  // Force termination
+    }
 
     WaitForSingleObject(m_ProcessHandle, INFINITE);
 
@@ -59,29 +66,27 @@ WindowsEngine::~WindowsEngine() {
     CloseHandle(m_ProcessHandle);
 }
 
-bool WindowsEngine::Send(const std::string& message) {
+void WindowsEngine::Send(const std::string& message) {
     DWORD dwWritten;
-
-    return WriteFile(m_EngineInputWrite, message.c_str(), (DWORD)message.size(), &dwWritten, NULL);
+    if (!WriteFile(m_EngineInputWrite, message.c_str(), (DWORD)message.size(), &dwWritten, NULL))
+        throw EnginePipeError("Failed to write to pipe! Win32 error code: " + std::to_string(GetLastError()));
 }
 
 bool WindowsEngine::Receive(std::string& message) {
     DWORD dwRead;
     DWORD dwBytesAvail;
-    BOOL bSuccess = PeekNamedPipe(m_EngineOutputRead, NULL, 0, &dwRead, &dwBytesAvail, NULL);
+    if (!PeekNamedPipe(m_EngineOutputRead, NULL, 0, &dwRead, &dwBytesAvail, NULL))
+        throw EnginePipeError("Failed to peek pipe! Win32 error code: " + std::to_string(GetLastError()));
+
     if (dwBytesAvail == 0) {
         message.clear();
-        return true;
+        return false;
     }
 
     message.resize(dwBytesAvail);
-    bSuccess = ReadFile(m_EngineOutputRead, message.data(), dwBytesAvail, &dwRead, NULL);
-    //message[dwRead] = '\0';
 
-    if (!bSuccess) {
-        std::cout << "Failed to read file: " << GetLastError() << std::endl;
-        return false;
-    }
+    if (!ReadFile(m_EngineOutputRead, message.data(), dwBytesAvail, &dwRead, NULL))
+        throw EnginePipeError("Failed to read pipe! Win32 error code: " + std::to_string(GetLastError()));
 
     return true;
 }

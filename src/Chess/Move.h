@@ -3,7 +3,7 @@
 #include <ostream>
 #include <string_view>
 
-#include "ExceptionTypes.h"
+#include "ChessException.h"
 
 enum Colour : uint8_t {
     White, Black,
