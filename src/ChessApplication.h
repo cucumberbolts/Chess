@@ -21,7 +21,6 @@ public:
 
 	void OnInit() override;
 	void OnRender() override;
-
 	void RenderImGui() override;
 protected:
 	void OnWindowClose() override;
@@ -36,19 +35,19 @@ private:
 	bool m_IsHoldingPiece = false;  // If the selected piece follows the mouse
 	BitBoard m_LegalMoves = 0;
 	std::string m_BoardFEN;
-	
-	glm::vec2 m_MousePosition = glm::vec2(0.0f);
 
-	// TODO: Make a 'Settings' struct and UI
-	glm::vec4 m_LightSquareColour = glm::vec4(0);
-	glm::vec4 m_DarkSquareColour = glm::vec4(0);
-	glm::vec4 m_LegalMoveColour = glm::vec4(0);
-	glm::vec4 m_BackgroundColour = glm::vec4(0);
+	std::array<std::shared_ptr<SubTexture>, 12> m_ChessPieceSprites;
 
 	std::shared_ptr<Framebuffer> m_ChessViewport;
 	glm::vec2 m_ChessViewportSize;
+	glm::vec2 m_BoardMousePosition;
+	glm::mat4 m_CoordinateTransform;
 
-	std::array<std::shared_ptr<SubTexture>, 12> m_ChessPieceSprites;
+	// TODO: Make a 'Settings' struct and UI
+	glm::vec4 m_LightSquareColour;
+	glm::vec4 m_DarkSquareColour;
+	glm::vec4 m_LegalMoveColour;
+	glm::vec4 m_BackgroundColour;
 
 	std::vector<std::pair<std::string, std::filesystem::path>> m_Engines;  // Name, path
 	std::unique_ptr<Engine> m_RunningEngine;

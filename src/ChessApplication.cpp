@@ -22,12 +22,12 @@
 #include <sstream>
 
 static glm::vec4 HexToColour(uint32_t colour) {
-    static constexpr float toFloat = 1.0f / 255.0f;
+    static constexpr float normalise = 1.0f / 255.0f;
     uint8_t r = (colour & 0xff000000) >> 24;
     uint8_t g = (colour & 0x00ff0000) >> 16;
     uint8_t b = (colour & 0x0000ff00) >> 8;
     uint8_t a = (colour & 0x000000ff);
-    return glm::vec4{ r, g, b, a } * toFloat;
+    return glm::vec4{ r, g, b, a } * normalise;
 }
 
 ChessApplication::ChessApplication(uint32_t width, uint32_t height, const std::string& name)
@@ -35,17 +35,37 @@ ChessApplication::ChessApplication(uint32_t width, uint32_t height, const std::s
 }
 
 void ChessApplication::OnInit() {
-    Renderer::Init(glm::ortho(-8.f, 8.f, -4.5f, 4.5f));
+    Renderer::Init(glm::ortho(-8.0f, 8.0f, -4.5f, 4.5f));
     
     ImGuiIO& io = ImGui::GetIO(); (void)io;
     io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
 
+    ImFontConfig fontConfig;
+    fontConfig.FontDataOwnedByAtlas = false;
+
+    void* font = (void*)Resources::Fonts::Roboto::ROBOTO_REGULAR;
+    int32_t fontSize = sizeof(Resources::Fonts::Roboto::ROBOTO_REGULAR);
+    io.FontDefault = io.Fonts->AddFontFromMemoryTTF(font, fontSize, 20.0f, &fontConfig);
+
+    font = (void*)Resources::Fonts::Roboto::ROBOTO_BOLD;
+    fontSize = sizeof(Resources::Fonts::Roboto::ROBOTO_BOLD);
+    io.Fonts->AddFontFromMemoryTTF(font, fontSize, 20.0f, &fontConfig);
+
     if (!std::filesystem::exists("imgui.ini"))
 		ImGui::LoadIniSettingsFromMemory(Resources::DEFAULT_IMGUI_INI);
 
-    // ImGui style
     ImGui::StyleColorsDark();
+
+    ImGuiStyle& style = ImGui::GetStyle();
+    style.WindowMenuButtonPosition = ImGuiDir_None;
+    style.GrabRounding = 4.0f;
+    style.WindowRounding = 4.0f;
+    style.FrameRounding = 4.0f;
+    style.WindowBorderSize = 0.0f;
+    style.PopupBorderSize = 0.0f;
+    style.ChildBorderSize = 0.0f;
+    style.WindowMinSize = { 200.0f, 200.0f };
     
     std::shared_ptr<Texture> chessPieces = std::make_shared<Texture>(Resources::Textures::CHESS_PIECES, sizeof(Resources::Textures::CHESS_PIECES));
 
@@ -87,6 +107,11 @@ void ChessApplication::OnRender() {
             Renderer::UpdateProjectionMatrix(glm::ortho(-temp, temp, -temp / aspectRatio, temp / aspectRatio));
         else
             Renderer::UpdateProjectionMatrix(glm::ortho(-temp * aspectRatio, temp * aspectRatio, -temp, temp));
+
+        // Transform the ImGui mouse coordinates to OpenGL coordinates
+        m_CoordinateTransform = glm::inverse(Renderer::GetProjectionMatrix());
+        m_CoordinateTransform = glm::scale(m_CoordinateTransform, { 1 / (m_ChessViewportSize.x * 0.5f), 1 / (m_ChessViewportSize.y * -0.5f), 1.0f });
+        m_CoordinateTransform = glm::translate(m_CoordinateTransform, { m_ChessViewportSize.x * -0.5f, m_ChessViewportSize.y * -0.5f, 0.0f });
     }
 
     // Render chessboard to framebuffer
@@ -131,12 +156,7 @@ void ChessApplication::OnRender() {
 
             if (m_SelectedPiece == y * 8 + x && m_IsHoldingPiece) {
                 // Draw selected piece following the mouse
-                glm::mat4 transform = glm::inverse(Renderer::GetProjectionMatrix());
-                transform = glm::scale(transform, { 1 / (m_ChessViewportSize.x * 0.5f), 1 / (m_ChessViewportSize.y * -0.5f), 1.0f });
-                transform = glm::translate(transform, { m_ChessViewportSize.x * -0.5f, m_ChessViewportSize.y * -0.5f, 0.0f });
-                glm::vec4 point = transform * glm::vec4{ m_MousePosition, 1.0f, 1.0f };
-
-                Renderer::DrawRect({ point.x, point.y, 0.5f }, { 1, 1 }, piece);
+                Renderer::DrawRect({ m_BoardMousePosition.x, m_BoardMousePosition.y, 0.5f }, { 1, 1 }, piece);
             }
             else {
                 Renderer::DrawRect({ -3.5f + x, -3.5f + y, 0.0f }, { 1.0f, 1.0f }, piece);
@@ -151,6 +171,8 @@ void ChessApplication::OnRender() {
 }
 
 void ChessApplication::RenderImGui() {
+    static bool s_ShowColoursWindow = true, s_ShowFENWindow = true, s_ShowEngineWindow = true;
+
     {
         // Fullscreen stuff
         const ImGuiViewport* viewport = ImGui::GetMainViewport();
@@ -195,7 +217,15 @@ void ChessApplication::RenderImGui() {
                     m_Running = false;
 
                 ImGui::EndMenu();
-            } else if (ImGui::BeginMenu("About")) {
+            }
+            else if (ImGui::BeginMenu("View")) {
+                if (ImGui::MenuItem("Colours")) { s_ShowColoursWindow = true; }
+                if (ImGui::MenuItem("FEN"))     { s_ShowFENWindow = true; }
+                if (ImGui::MenuItem("Engine"))  { s_ShowEngineWindow = true; }
+
+                ImGui::EndMenu();
+            }
+            else if (ImGui::BeginMenu("About")) {
                 ImGui::Text("OpenGL Version: %s", Renderer::GetOpenGLVersion());
 
                 ImGui::EndMenu();
@@ -207,19 +237,60 @@ void ChessApplication::RenderImGui() {
         ImGui::End();
     }
 
-    {
-        ImGui::Begin("Colours");
-        ImGui::ColorPicker4("Dark square colour", glm::value_ptr(m_DarkSquareColour));
-        ImGui::ColorPicker4("Light square colour", glm::value_ptr(m_LightSquareColour));
-        ImGui::ColorPicker4("Legal move colour", glm::value_ptr(m_LegalMoveColour));
-        ImGui::ColorPicker4("Background colour", glm::value_ptr(m_BackgroundColour));
+    if (s_ShowColoursWindow) {
+        ImGuiColorEditFlags colourEditFlags = ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoLabel | ImGuiColorEditFlags_AlphaBar;
+
+        ImGui::Begin("Colours", &s_ShowColoursWindow);
+
+        static int currentTheme;
+        static const char* themes[] = { "Dark", "Light" };
+
+        if (ImGui::BeginTable("ColoursTable", 2, ImGuiTableFlags_SizingFixedSame)) {
+            ImGui::TableNextRow();
+            ImGui::TableNextColumn();
+            ImGui::Text("Theme");
+            ImGui::TableNextColumn();
+            if (ImGui::Combo("##Theme", &currentTheme, themes, sizeof(themes) / sizeof(const char*))) {
+                if (currentTheme == 0)
+                    ImGui::StyleColorsDark();
+                else
+                    ImGui::StyleColorsLight();
+            }
+
+            ImGui::TableNextRow();
+            ImGui::TableNextColumn();
+            ImGui::Text("Background colour");
+            ImGui::TableNextColumn();
+            ImGui::ColorEdit4("##Background colour", glm::value_ptr(m_BackgroundColour), colourEditFlags);
+            
+            ImGui::TableNextRow();
+            ImGui::TableNextColumn();
+            ImGui::Text("Dark square colour");
+            ImGui::TableNextColumn();
+            ImGui::ColorEdit4("##Dark square colour", glm::value_ptr(m_DarkSquareColour), colourEditFlags);
+            
+            ImGui::TableNextRow();
+            ImGui::TableNextColumn();
+            ImGui::Text("Light square colour");
+            ImGui::TableNextColumn();
+            ImGui::ColorEdit4("##Light square colour", glm::value_ptr(m_LightSquareColour), colourEditFlags);
+            
+            ImGui::TableNextRow();
+            ImGui::TableNextColumn();
+            ImGui::Text("Legal move colour");
+            ImGui::TableNextColumn();
+            ImGui::ColorEdit4("##Legal move colour", glm::value_ptr(m_LegalMoveColour), colourEditFlags);
+            
+            ImGui::EndTable();
+		}
+
         ImGui::End();
     }
 
-    {
-        ImGui::Begin("FEN: ");
+    if (s_ShowFENWindow) {
+        ImGui::Begin("FEN", &s_ShowFENWindow);
         
-        if (ImGui::InputText("FEN", m_BoardFEN.data(), m_BoardFEN.size(), ImGuiInputTextFlags_EnterReturnsTrue))
+        if (ImGui::InputText("##FEN", m_BoardFEN.data(), m_BoardFEN.size(), ImGuiInputTextFlags_EnterReturnsTrue))
             m_Board.FromFEN(m_BoardFEN);
 
         if (ImGui::Button("Copy FEN to clipboard"))
@@ -237,7 +308,7 @@ void ChessApplication::RenderImGui() {
     
     {
         ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{ 0.0f, 0.0f });
-        //ImGui::PushStyleVar(ImGuiStyleVar_WindowMinSize, { 800.f, 800.f });  // Doesn't work in dockspace
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowMinSize, { 400.f, 400.f });  // For when window is floating
 
         ImGui::Begin("Chessboard");
 
@@ -252,25 +323,27 @@ void ChessApplication::RenderImGui() {
         int framePadding = 0;
         ImVec4 backgroundColour = ImVec4(0.0f, 0.0f, 0.0f, 1.0f);
         ImVec4 tintColour = ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
-        // Using ImageButton allows the viewport to not be dragged when it is floating
+        // Using ImageButton instead of Image allows the viewport to
+        // not be dragged when it is floating when dragging the pieces
         ImGui::ImageButton(texture, viewportSize, { 0, 1 }, { 1, 0 }, framePadding, backgroundColour, tintColour);
 
         // Get mouse position on the board
-        auto [mouseX, mouseY] = ImGui::GetMousePos();
-        auto [windowX, windowY] = ImGui::GetWindowPos();
+        auto [mouseX, mouseY] = ImGui::GetMousePos();     // Absolute mouse position
+        auto [windowX, windowY] = ImGui::GetWindowPos();  // Top-Left corner of window
 
         glm::vec2 mousePosition = { mouseX, mouseY };
         glm::vec2 viewportPosition = { windowX + offsetX, windowY + offsetY };
+        glm::vec2 relativeMousePos = mousePosition - viewportPosition;
 
-        m_MousePosition = mousePosition - viewportPosition;
+        m_BoardMousePosition = m_CoordinateTransform * glm::vec4{ relativeMousePos.x, relativeMousePos.y, 1.0f, 1.0f };
 
         ImGui::End();
 
-        ImGui::PopStyleVar();
+        ImGui::PopStyleVar(2);
     }
 
-    {
-        ImGui::Begin("Engine");
+    if (s_ShowEngineWindow) {
+        ImGui::Begin("Engine", &s_ShowEngineWindow);
 
         static auto s_SelectedEngine = m_Engines.end();
 
@@ -285,7 +358,7 @@ void ChessApplication::RenderImGui() {
             ImVec2 centre = ImGui::GetMainViewport()->GetCentre();
             ImGui::SetNextWindowPos(centre, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
 
-            if (ImGui::BeginPopupModal("Create engine", nullptr, ImGuiPopupFlags_None)) {
+            if (ImGui::BeginPopupModal("Create engine", nullptr, ImGuiWindowFlags_None)) {
                 static char path[255] = { 0 };
                 static char name[64] = { 0 };
 
@@ -359,6 +432,8 @@ void ChessApplication::RenderImGui() {
                     ++it;
                 }
             }
+
+            ImGui::Separator();
         } else {
             if (m_RunningEngine->GetThreadException() != nullptr) {
                 std::rethrow_exception(m_RunningEngine->GetThreadException());
@@ -370,7 +445,19 @@ void ChessApplication::RenderImGui() {
                 m_RunningEngine->Stop();  // Stop the engine
                 m_RunningEngine.reset();  // Stop the process
                 s_SelectedEngine = m_Engines.end();
-            } else {                
+            } else {
+                ImGui::Text("Depth: %i", m_BestContinuation.Depth);
+
+                if (!m_BestContinuation.Mate) {
+                    float score = (float)m_BestContinuation.Score * 0.01f;
+                    if (m_Board.GetPlayerTurn() == Black) score *= -1.0f;
+                    
+                    ImGui::Text("Score: %.2f", score);
+                } else {
+                    const char* text = (m_Board.GetPlayerTurn() == White) ? "Score: M%i" : "Score: -M%i";
+                    ImGui::Text(text, m_BestContinuation.Score);
+                }
+
                 ImGui::Text("%s", m_BestContinuationAlgebraicMoves.c_str());
                 if (ImGui::Button("Copy to clipboard"))
                     ImGui::SetClipboardText(m_BestContinuationAlgebraicMoves.c_str());
@@ -418,12 +505,7 @@ void ChessApplication::OnKeyPressed(int32_t key, int32_t scancode, int32_t actio
 void ChessApplication::OnMouseButton(int32_t button, int32_t action, int32_t mods) {
     if (button == GLFW_MOUSE_BUTTON_LEFT) {
         // Convert ImGui viewport coordinates to rendering coordinates
-        // TODO: Construct matrix by hand??
-        // TODO: Only calculate once
-        glm::mat4 transform = glm::inverse(Renderer::GetProjectionMatrix());
-        transform = glm::scale(transform, { 1 / (m_ChessViewportSize.x * 0.5f), 1 / (m_ChessViewportSize.y * -0.5f), 1.0f });
-        transform = glm::translate(transform, { m_ChessViewportSize.x * -0.5f, m_ChessViewportSize.y * -0.5f, 0.0f });
-        glm::vec4 point = transform * glm::vec4{ m_MousePosition, 1.0f, 1.0f };
+        glm::vec2& point = m_BoardMousePosition;
 
         if (action == GLFW_PRESS) {
             m_IsHoldingPiece = true;

@@ -11,7 +11,7 @@
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
     LPSTR lpCmdLine, int nCmdShow)
 {
-    auto app = new ChessApplication(1280, 720, "Chess");
+    auto app = new ChessApplication(1600, 900, "Chess");
     try {
         app->Run();
     }

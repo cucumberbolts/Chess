@@ -12,6 +12,19 @@ TEXT_FILES = [".glsl", ".ini"]
 RESOURCE_DIR = "resources"
 RESOURCE_EMBED_FILE = "src/Resources.h"
 
+# Files that are not included in the resource file
+IGNORE = ["fonts/Roboto/LICENSE.txt"]
+
+
+def should_ignore(path: str) -> bool:
+    """ Checks if path is in IGNORE """
+
+    for file in IGNORE:
+        if os.path.samefile(path, os.path.join(RESOURCE_DIR, file)):
+            return True
+
+    return False
+
 
 def main():
     """ Main function """
@@ -31,7 +44,11 @@ def main():
         for file in file_names:
             resource_path = os.path.join(folder, file)
 
-            print(f"Embedding {resource_path}...")
+            if should_ignore(resource_path):
+                print(f"Ignoring {resource_path}")
+                continue
+
+            print(f"Embedding {resource_path}")
 
             # Gets the name for the variable
             variable = os.path.splitext(file)[0].upper()
