@@ -79,11 +79,8 @@ void Renderer::Init(const glm::mat4& projection) {
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-    glEnable(GL_DEPTH_TEST);
-    glDepthFunc(GL_LESS);
-
     s_IndexBuffer = std::make_unique<IndexBuffer>(maxIndexCount * sizeof(uint32_t));
-    s_Shader = std::make_unique<Shader>((const char*)Resources::Shaders::VERTEX_SHADER, (const char*)Resources::Shaders::FRAGMENT_SHADER);
+    s_Shader = std::make_unique<Shader>(Resources::Shaders::VERTEX_SHADER, Resources::Shaders::FRAGMENT_SHADER);
     s_VertexBuffer = std::make_unique<VertexBuffer>(maxVertexCount * sizeof(Vertex));
     s_VertexArray = std::make_unique<VertexArray>(*s_VertexBuffer, s_VertexLayout);
 
@@ -115,7 +112,6 @@ Renderer::~Renderer() {
 const glm::mat4& Renderer::GetProjectionMatrix() {
     return s_ProjectionMatrix;
 }
-
 
 void Renderer::UpdateProjectionMatrix(const glm::mat4& projection) {
     s_ProjectionMatrix = projection;
@@ -226,5 +222,5 @@ void Renderer::Flush() {
 
 void Renderer::ClearScreen(glm::vec4 colour) {
     glClearColor(colour.r, colour.g, colour.b, colour.a);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glClear(GL_COLOR_BUFFER_BIT);
 }

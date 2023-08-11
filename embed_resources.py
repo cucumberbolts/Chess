@@ -29,6 +29,7 @@ def should_ignore(path: str) -> bool:
 def main():
     """ Main function """
 
+    resource_size = 0
     output_str = "#pragma once\n\n"
 
     for folder, _, file_names in os.walk(RESOURCE_DIR):
@@ -61,6 +62,8 @@ def main():
                 with open(resource_path, "r") as reader:
                     data = reader.read()
 
+                resource_size += len(data)
+
                 output_str += f"inline const char* {variable} = R\"(\n"
                 output_str += data
                 output_str += ")\";\n\n"
@@ -69,6 +72,8 @@ def main():
                 data = None
                 with open(resource_path, "rb") as reader:
                     data = reader.read()
+
+                resource_size += len(data)
 
                 output_str += f"inline constexpr uint8_t {variable}[{len(data)}] = {{"
 
@@ -82,6 +87,8 @@ def main():
 
         # Close the namespace
         output_str += "}\n\n"
+
+    print(f"Size of resources: {resource_size} bytes ({(resource_size / 1024):.2f} kilobytes)")
 
     with open(RESOURCE_EMBED_FILE, "w") as writer:
         writer.write(output_str)

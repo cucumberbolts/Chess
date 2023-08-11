@@ -28,6 +28,8 @@ protected:
 	void OnKeyPressed(int32_t key, int32_t scancode, int32_t action, int32_t mods) override;
 	void OnMouseButton(int32_t button, int32_t action, int32_t mods) override;
 
+	std::shared_ptr<SubTexture> GetChessSprite(Piece piece);
+
 	void OnEngineUpdate(const Engine::BestContinuation& bestContinuation);
 private:
 	Board m_Board;

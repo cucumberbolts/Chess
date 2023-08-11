@@ -48,9 +48,9 @@ void ChessApplication::OnInit() {
     int32_t fontSize = sizeof(Resources::Fonts::Roboto::ROBOTO_REGULAR);
     io.FontDefault = io.Fonts->AddFontFromMemoryTTF(font, fontSize, 20.0f, &fontConfig);
 
-    font = (void*)Resources::Fonts::Roboto::ROBOTO_BOLD;
-    fontSize = sizeof(Resources::Fonts::Roboto::ROBOTO_BOLD);
-    io.Fonts->AddFontFromMemoryTTF(font, fontSize, 20.0f, &fontConfig);
+    //font = (void*)Resources::Fonts::Roboto::ROBOTO_BOLD;
+    //fontSize = sizeof(Resources::Fonts::Roboto::ROBOTO_BOLD);
+    //io.Fonts->AddFontFromMemoryTTF(font, fontSize, 20.0f, &fontConfig);
 
     if (!std::filesystem::exists("imgui.ini"))
 		ImGui::LoadIniSettingsFromMemory(Resources::DEFAULT_IMGUI_INI);
@@ -88,6 +88,24 @@ void ChessApplication::OnInit() {
     m_ChessViewport = std::make_shared<Framebuffer>(spec);
 }
 
+std::shared_ptr<SubTexture> ChessApplication::GetChessSprite(Piece p) {
+	switch (p) {
+		case WhitePawn:   return m_ChessPieceSprites[11];
+        case WhiteKnight: return m_ChessPieceSprites[9];
+        case WhiteBishop: return m_ChessPieceSprites[8];
+        case WhiteRook:   return m_ChessPieceSprites[10];
+        case WhiteQueen:  return m_ChessPieceSprites[7];
+        case WhiteKing:   return m_ChessPieceSprites[6];
+        case BlackPawn:   return m_ChessPieceSprites[5];
+        case BlackKnight: return m_ChessPieceSprites[3];
+        case BlackBishop: return m_ChessPieceSprites[2];
+        case BlackRook:   return m_ChessPieceSprites[4];
+        case BlackQueen:  return m_ChessPieceSprites[1];
+        case BlackKing:   return m_ChessPieceSprites[0];
+        case None:        return nullptr;
+	}
+}
+
 void ChessApplication::OnRender() {
     Renderer::ClearScreen({ 0.0f, 0.0f, 0.0f, 1.0f });
     
@@ -122,7 +140,7 @@ void ChessApplication::OnRender() {
     for (int y = 0; y < 8; y++) {
         for (int x = 0; x < 8; x++) {
             const glm::vec4 colour = (x + y) % 2 == 0 ? m_LightSquareColour : m_DarkSquareColour;
-            Renderer::DrawRect({ -3.5f + x, 3.5f - y, -0.5f }, { 1.0f, 1.0f }, colour);
+            Renderer::DrawRect({ -3.5f + x, 3.5f - y, 0.0f }, { 1.0f, 1.0f }, colour);
         }
     }
 
@@ -137,32 +155,16 @@ void ChessApplication::OnRender() {
     // Draw pieces
     for (int y = 0; y < 8; y++) {
         for (int x = 0; x < 8; x++) {
-            std::shared_ptr<SubTexture> piece;
-            switch (m_Board[y * 8 + x]) {
-                case WhitePawn:     piece = m_ChessPieceSprites[11]; break;
-                case WhiteKnight:   piece = m_ChessPieceSprites[9];  break;
-                case WhiteBishop:   piece = m_ChessPieceSprites[8];  break;
-                case WhiteRook:     piece = m_ChessPieceSprites[10]; break;
-                case WhiteQueen:    piece = m_ChessPieceSprites[7];  break;
-                case WhiteKing:     piece = m_ChessPieceSprites[6];  break;
-                case BlackPawn:     piece = m_ChessPieceSprites[5];  break;
-                case BlackKnight:   piece = m_ChessPieceSprites[3];  break;
-                case BlackBishop:   piece = m_ChessPieceSprites[2];  break;
-                case BlackRook:     piece = m_ChessPieceSprites[4];  break;
-                case BlackQueen:    piece = m_ChessPieceSprites[1];  break;
-                case BlackKing:     piece = m_ChessPieceSprites[0];  break;
-                case None: continue;
-            }
+            std::shared_ptr<SubTexture> piece = GetChessSprite(m_Board[y * 8 + x]);
 
-            if (m_SelectedPiece == y * 8 + x && m_IsHoldingPiece) {
-                // Draw selected piece following the mouse
-                Renderer::DrawRect({ m_BoardMousePosition.x, m_BoardMousePosition.y, 0.5f }, { 1, 1 }, piece);
-            }
-            else {
-                Renderer::DrawRect({ -3.5f + x, -3.5f + y, 0.0f }, { 1.0f, 1.0f }, piece);
-            }
+            if (piece && (y * 8 + x) != m_SelectedPiece)
+        		Renderer::DrawRect({ -3.5f + x, -3.5f + y, 0.0f }, { 1.0f, 1.0f }, piece);
         }
     }
+
+    // Draw selected piece following the mouse
+    if (m_SelectedPiece != INVALID_SQUARE)
+        Renderer::DrawRect({ m_BoardMousePosition.x, m_BoardMousePosition.y, 0.5f }, { 1, 1 }, GetChessSprite(m_Board[m_SelectedPiece]));
 
     Renderer::Flush();
 
@@ -553,13 +555,13 @@ void ChessApplication::OnMouseButton(int32_t button, int32_t action, int32_t mod
                         m_BoardFEN = m_Board.ToFEN();
                         if (m_RunningEngine)
 							m_RunningEngine->SetPosition(m_BoardFEN);
-                        m_SelectedPiece = INVALID_SQUARE;
                         m_LegalMoves = 0;
                     }
                 }
             }
 
             m_IsHoldingPiece = false;
+            m_SelectedPiece = INVALID_SQUARE;
         }
     }
     else if (button == GLFW_MOUSE_BUTTON_RIGHT) {

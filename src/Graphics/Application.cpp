@@ -86,13 +86,12 @@ void Application::Run() {
     OnInit();
 
     while (m_Running) {
-        OnRender();
-
         // Start the Dear ImGui frame
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
 
+        OnRender();
         RenderImGui();
 
         ImGui::Render();

@@ -7,7 +7,7 @@
 class IllegalMoveException : public std::exception {
 public:
 	IllegalMoveException(const std::string& move, const std::string& message = "Illegal move!")
-		: m_Move(move), m_Message(message) {}
+		: m_Move(move), m_Message(message + " " + move) {}
 
 	const char* what() const noexcept override {
 		return m_Message.c_str();
