@@ -4,6 +4,14 @@
 
 #include <glad/glad.h>
 
+#if defined (OS_LINUX)
+#include <signal.h>
+void __debugbreak()
+{
+    raise (SIGTRAP);
+}
+#endif
+
 static void APIENTRY GlErrorCallback(GLenum source,
     GLenum type,
     GLuint id,
