@@ -76,6 +76,7 @@ elseif (UNIX)
         ${SOURCES}
         "src/Platform/Unix/UnixEngine.h"
         "src/Platform/Unix/UnixEngine.cpp"
+        "src/Platform/Unix/UnixFileDialog.cpp"
     )
 
     add_executable(${PROJECT_NAME} ${SOURCES})
@@ -100,7 +101,9 @@ set(GLFW_BUILD_TESTS OFF)
 set(GLFW_BUILD_DOCS OFF)
 set(GLFW_INSTALL OFF)
 
-add_subdirectory(dependencies/glfw)
+#add_subdirectory(dependencies/glfw)
+find_package(glfw3 3.3 REQUIRED)
+
 
 # OpenGL
 find_package(OpenGL REQUIRED)
