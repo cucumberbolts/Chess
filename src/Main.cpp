@@ -1,8 +1,9 @@
 #include "ChessApplication.h"
 
-#if 1
-
 #include <GLFW/glfw3.h>
+
+#if defined(OS_WINDOWS)
+
 #define GLFW_EXPOSE_NATIVE_WIN32
 #include <GLFW/glfw3native.h>
 
@@ -23,7 +24,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
     return 0;
 }
 
-#else
+#elif defined(OS_LINUX)
+
+#define GLFW_EXPOSE_NATIVE_X11
+#include <GLFW/glfw3native.h>
 
 #include <iostream>
 

@@ -57,6 +57,12 @@ set(SOURCES
 )
 
 if (WIN32)
+    add_compile_definitions(OS_WINDOWS)
+elseif (UNIX)
+    add_compile_definitions(OS_LINUX)
+endif()
+
+if (WIN32)
     set(SOURCES
         ${SOURCES}
         "src/Platform/Windows/WindowsEngine.h"
