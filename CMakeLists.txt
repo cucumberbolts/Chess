@@ -70,12 +70,15 @@ elseif (UNIX)
         ${SOURCES}
         "src/Platform/Unix/UnixEngine.h"
         "src/Platform/Unix/UnixEngine.cpp"
+        "src/Platform/Unix/UnixFileDialog.cpp"
     )
 
     add_executable(${PROJECT_NAME} ${SOURCES})
 else()
     message(FATAL_ERROR "Unsupported platform!")
 endif()
+
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 set_target_properties(${PROJECT_NAME} PROPERTIES CXX_STANDARD 17)
 set_target_properties(${PROJECT_NAME} PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}")

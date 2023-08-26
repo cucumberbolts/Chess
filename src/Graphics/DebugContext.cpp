@@ -53,7 +53,7 @@ static void APIENTRY GlErrorCallback(GLenum source,
     std::cout << message << "\n";
 
     //TODO: Handle errors in a good way
-    __debugbreak();
+    throw std::runtime_error("OpenGL error");
 }
 
 namespace DebugContext {

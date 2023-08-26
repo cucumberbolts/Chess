@@ -1,6 +1,6 @@
 #include "ChessApplication.h"
 
-#if 1
+#ifdef WIN32
 
 #include <GLFW/glfw3.h>
 #define GLFW_EXPOSE_NATIVE_WIN32
