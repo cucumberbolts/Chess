@@ -164,7 +164,7 @@ void Engine::RunLoop() {
                 HandleCommand(data);
             std::this_thread::sleep_for(std::chrono::milliseconds(1));
         }
-    } catch (std::exception& e) {
+    } catch (std::exception&) {
         m_ThreadException = std::current_exception();
     }
 }

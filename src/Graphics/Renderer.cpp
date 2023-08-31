@@ -159,7 +159,7 @@ void Renderer::DrawRect(const glm::mat4& transform, const glm::vec4& colour) {
     }
 
     for (size_t i = 0; i < 6; i++) {
-        *s_NextIndex = vertexCount + s_RectIndicies[i];
+        *s_NextIndex = (uint32_t)vertexCount + s_RectIndicies[i];
         s_NextIndex++;
     }
 }
@@ -197,7 +197,7 @@ void Renderer::DrawRect(const glm::mat4& transform, const glm::vec4& colour, con
     }
 
     for (size_t i = 0; i < 6; i++) {
-        *s_NextIndex = vertexCount + s_RectIndicies[i];
+        *s_NextIndex = (uint32_t)vertexCount + s_RectIndicies[i];
         s_NextIndex++;
     }
 }
@@ -207,13 +207,13 @@ void Renderer::Flush() {
     s_IndexBuffer->Bind();
     s_Shader->Bind();
 
-    uint32_t vertexCount = s_NextVertex - s_Vertecies;
-    uint32_t indexCount = s_NextIndex - s_Indicies;
+    uint64_t vertexCount = s_NextVertex - s_Vertecies;
+    uint64_t indexCount = s_NextIndex - s_Indicies;
     
     s_VertexBuffer->SetData(s_Vertecies, vertexCount * sizeof(Vertex));
-    s_IndexBuffer->SetData(s_Indicies, indexCount);
+    s_IndexBuffer->SetData(s_Indicies, (uint32_t)indexCount);
 
-    glDrawElements(GL_TRIANGLES, indexCount, GL_UNSIGNED_INT, nullptr);
+    glDrawElements(GL_TRIANGLES, (int32_t)indexCount, GL_UNSIGNED_INT, nullptr);
 
     s_NextVertex = s_Vertecies;
     s_NextIndex = s_Indicies;

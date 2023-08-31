@@ -39,7 +39,7 @@ namespace FileDialog {
 		ofn.lStructSize = sizeof(OPENFILENAME);
 		ofn.hwndOwner = glfwGetWin32Window(Application::Get().GetGLFWWindow());
 		ofn.lpstrFile = buffer;
-		ofn.nMaxFile = size;
+		ofn.nMaxFile = (DWORD)size;
 		ofn.lpstrFilter = "All Files (*.*)\0*.*\0";
 		ofn.nFilterIndex = 1;
 		ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST | OFN_NOCHANGEDIR;

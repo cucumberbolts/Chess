@@ -1,6 +1,7 @@
 #pragma once
 
 #include <limits>
+#include <stdexcept>
 #include <string>
 #include <vector>
 
@@ -21,6 +22,8 @@ struct Option {
             case OptionType::Button:  return "Button";
             case OptionType::String:  return "String";
         }
+
+        throw std::runtime_error("Invalid OptionType enum!");
     }
 
     Option(std::string_view name, OptionType type) : Name(name), Type(type) {}

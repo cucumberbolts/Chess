@@ -104,6 +104,8 @@ std::shared_ptr<SubTexture> ChessApplication::GetChessSprite(Piece p) {
         case BlackKing:   return m_ChessPieceSprites[0];
         case None:        return nullptr;
 	}
+
+    throw std::runtime_error("Invalid Piece enum!");
 }
 
 void ChessApplication::OnRender() {

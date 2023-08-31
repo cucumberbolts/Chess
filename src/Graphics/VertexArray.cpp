@@ -22,7 +22,7 @@ VertexArray::VertexArray(const VertexBuffer& vertexBuffer, const std::initialize
         switch (attribute.DataType) {
             case VertexAttribute::Type::Float:
             {
-                glVertexAttribPointer(index, attribute.Count, GL_FLOAT, false, stride, (const void*)offset);
+                glVertexAttribPointer(index, attribute.Count, GL_FLOAT, false, stride, (const void*)(intptr_t)offset);
                 offset += attribute.Count * sizeof(float);
             }
         }

@@ -65,6 +65,8 @@ if (WIN32)
     )
 
     add_executable(${PROJECT_NAME} WIN32 ${SOURCES})
+
+    target_compile_definitions(${PROJECT_NAME} PRIVATE _CRT_SECURE_NO_WARNINGS)
 elseif (UNIX)
     set(SOURCES
         ${SOURCES}
@@ -78,10 +80,9 @@ else()
     message(FATAL_ERROR "Unsupported platform!")
 endif()
 
-set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-
 set_target_properties(${PROJECT_NAME} PROPERTIES CXX_STANDARD 17)
-set_target_properties(${PROJECT_NAME} PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}")
+
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 target_include_directories(${PROJECT_NAME}
     PRIVATE
