@@ -161,10 +161,10 @@ void Engine::RunLoop() {
         std::string data;
         while (m_State == State::Running) {
             if (Receive(data))
-				HandleCommand(data);
+                HandleCommand(data);
             std::this_thread::sleep_for(std::chrono::milliseconds(1));
         }
-    } catch (std::exception&) {
+    } catch (std::exception& e) {
         m_ThreadException = std::current_exception();
     }
 }
