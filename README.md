@@ -1,13 +1,13 @@
 # Chess
-A chess GUI.
+
+## Overview
+A chess GUI written in C++ using ImGui and OpenGL. It supports Windows and Linux and requires OpenGL 4.6.
 
 ![](/screenshot.png?raw=true)
 
 ## Compiling
 
 ### Requirements
-- Windows
-- OpenGL 4.6
 - C++ 17
 - CMake
 
@@ -18,7 +18,6 @@ cd Chess
 ```
 Build using CMake:
 ``` bash
-mkdir build
 cmake -B build
 cmake --build build
 ```
@@ -27,25 +26,30 @@ Or on MSVC (Visual Studio), to build release:
 cmake --build build --config Release
 ```
 
-Note: If you modified the resources in the resources/ directory,
+Note: If you modify the resources in the resources/ directory,
 run `python embed_resources.py` to regenerate the resource file.
 
 ## Future features
-- Linux support
+- Better UCI engine integration with evaluation bar and engine settings
 - PGN
+- Chessboard annotations with arrows, highlighted squares
+- Board editor
+- Opening explorer, game database
 - Chess 960, and potentially other variants
-- Unit tests for chess?
 
 ## Credits
 
-### Dependencies
-- [glfw](https://glfw.org/)
-- [glad](https://glad.dav1d.de/)
-- [stb_image](https://github.com/nothings/stb/)
-- [glm](https://github.com/https://github.com/g-truc/glm)
-- [imgui](https://github.com/ocornut/imgui)
+Much of the OpenGL rendering code was inspired by [The Cherno's Game Engine Series](https://youtube.com/playlist?list=PLlrATfBNZ98dC-V-N3m0Go4deliWHPFwT).
+The bitboard logic for chess move generation is from the [Chess Programming wiki](https://www.chessprogramming.org/Kindergarten_Bitboards).
 
-### Assets used
+### Dependencies
+- Windowing: [glfw](https://glfw.org/)
+- OpenGL bindings: [glad](https://glad.dav1d.de/)
+- Texture loading: [stb_image](https://github.com/nothings/stb/)
+- Math: [glm](https://github.com/https://github.com/g-truc/glm)
+- GUI: [imgui](https://github.com/ocornut/imgui)
+
+### Assets
 
  - **Chess pieces**:
 By jurgenwesterhof (adapted from work of Cburnett) - http://commons.wikimedia.org/wiki/Template:SVG_chess_pieces, CC BY-SA 3.0, https://commons.wikimedia.org/w/index.php?curid=35634436
