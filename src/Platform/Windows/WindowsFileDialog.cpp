@@ -7,6 +7,7 @@
 #include <GLFW/glfw3native.h>
 
 #include "Graphics/Application.h"
+#include <stdexcept>
 
 namespace FileDialog {
 
@@ -30,7 +31,7 @@ namespace FileDialog {
 			return "";
 
 		// Error
-		throw std::exception("Error with open file dialog!");
+		throw std::runtime_error("Error with open file dialog!");
 	}
 
 	std::string Open(char* buffer, size_t size) {
@@ -52,7 +53,7 @@ namespace FileDialog {
 			return "";
 
 		// Error
-		throw std::exception("Error with open file dialog!");
+		throw std::runtime_error("Error with open file dialog!");
 	}
 
 	std::string Save() {
@@ -75,7 +76,7 @@ namespace FileDialog {
 			return "";
 
 		// Error
-		throw std::exception("Error with open file dialog!");
+		throw std::runtime_error("Error with open file dialog!");
 	}
 
 }
