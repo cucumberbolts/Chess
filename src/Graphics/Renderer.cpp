@@ -8,8 +8,6 @@
 #include "Shader.h"
 #include "VertexArray.h"
 
-#include "Resources.h"
-
 #include <glad/glad.h>
 
 #include <glm/gtc/matrix_transform.hpp>
@@ -75,12 +73,12 @@ namespace {
 
 }
 
-void Renderer::Init(const glm::mat4& projection) {
+void Renderer::Init(const glm::mat4& projection, std::string_view vert, std::string_view frag) {
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     s_IndexBuffer = std::make_unique<IndexBuffer>(maxIndexCount * sizeof(uint32_t));
-    s_Shader = std::make_unique<Shader>(Resources::Shaders::VERTEX_SHADER, Resources::Shaders::FRAGMENT_SHADER);
+    s_Shader = std::make_unique<Shader>(vert.data(), frag.data());
     s_VertexBuffer = std::make_unique<VertexBuffer>(maxVertexCount * sizeof(Vertex));
     s_VertexArray = std::make_unique<VertexArray>(*s_VertexBuffer, s_VertexLayout);
 

@@ -1,4 +1,4 @@
-#include "ChessApplication.h"
+#include "Application.h"
 
 #ifdef _WIN32
 
@@ -11,7 +11,7 @@
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
     LPSTR lpCmdLine, int nCmdShow)
 {
-    auto app = new ChessApplication(1600, 900, "Chess");
+    auto app = new Application(1600, 900, "Chess");
     try {
         app->Run();
     }

@@ -3,11 +3,13 @@ cmake_minimum_required(VERSION 3.2)
 project(Chess)
 
 set(SOURCES
-    "src/Main.cpp"
-    "src/ChessApplication.h"
-    "src/ChessApplication.cpp"
-
-    "src/Resources.h"
+    "src/Application/Main.cpp"
+    "src/Application/Application.h"
+    "src/Application/Application.cpp"
+    "src/Application/ChessPanel.cpp"
+    "src/Application/EnginePanel.cpp"
+    "src/Application/SettingsPanel.cpp"
+    "src/Application/Resources.h"
 
     "src/Chess/AlgebraicMove.cpp"
     "src/Chess/BitBoard.h"
@@ -19,13 +21,11 @@ set(SOURCES
     "src/Chess/PseudoLegal.cpp"
     "src/Chess/Move.h"
 
-    "src/ChessEngine/Engine.h"
-    "src/ChessEngine/Engine.cpp"
-    "src/ChessEngine/EngineException.h"
-    "src/ChessEngine/Option.h"
+    "src/Engine/Engine.h"
+    "src/Engine/Engine.cpp"
+    "src/Engine/EngineException.h"
+    "src/Engine/Option.h"
 
-    "src/Graphics/Application.h"
-    "src/Graphics/Application.cpp"
     "src/Graphics/Buffer.h"
     "src/Graphics/Buffer.cpp"
     "src/Graphics/DebugContext.h"

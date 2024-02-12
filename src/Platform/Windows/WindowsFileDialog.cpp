@@ -6,7 +6,7 @@
 #define GLFW_EXPOSE_NATIVE_WIN32
 #include <GLFW/glfw3native.h>
 
-#include "Graphics/Application.h"
+#include "Application/Application.h"
 
 namespace FileDialog {
 

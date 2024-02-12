@@ -7,7 +7,7 @@
 
 class Renderer {
 public:
-    static void Init(const glm::mat4& projection);
+    static void Init(const glm::mat4& projection, std::string_view vert, std::string_view frag);
 
     static const char* GetOpenGLVersion();
 
