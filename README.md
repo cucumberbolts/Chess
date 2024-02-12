@@ -46,7 +46,7 @@ The bitboard logic for chess move generation is from the [Chess Programming wiki
 - Windowing: [glfw](https://glfw.org/)
 - OpenGL bindings: [glad](https://glad.dav1d.de/)
 - Texture loading: [stb_image](https://github.com/nothings/stb/)
-- Math: [glm](https://github.com/https://github.com/g-truc/glm)
+- Math: [glm](https://github.com/g-truc/glm)
 - GUI: [imgui](https://github.com/ocornut/imgui)
 
 ### Assets
@@ -59,3 +59,15 @@ Roboto-Regular.ttf and Roboto-Bold.ttf by Christian Robetson
 Apache License 2.0
 https://fonts.google.com/specimen/Roboto
 Note: Changed file names to roboto_regular.ttf and roboto_bold.ttf
+
+### Preparing for build
+
+You can fetch the entire source with git clone `--recurse-submodules https://...`
+To avoid downloading the full repos you could do instead:
+
+```
+cd .\dependencies\
+git clone --depth 1 https://github.com/glfw/glfw.git
+git clone --depth 1 https://github.com/g-truc/glm.git
+git clone --depth 1 --branch docking https://github.com/ocornut/imgui.git
+```
