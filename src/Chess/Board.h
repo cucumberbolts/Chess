@@ -8,7 +8,11 @@
 #include "BoardFormat.h"
 #include "Move.h"
 
+struct Branch;
+
 class Board {
+    friend class Game;
+    friend std::ostream& PrintBranch(std::ostream&, Board&, const Game&, const Branch&);
 public:
     Board() { Reset(); }
     Board(const std::string& fen) { FromFEN(fen); }

@@ -115,7 +115,7 @@ static glm::vec4 HexToColour(uint32_t colour) {
     uint8_t g = (colour & 0x00ff0000) >> 16;
     uint8_t b = (colour & 0x0000ff00) >> 8;
     uint8_t a = (colour & 0x000000ff);
-    return glm::vec4{ r, g, b, a } *normalise;
+    return glm::vec4{ r, g, b, a } * normalise;
 }
 
 std::shared_ptr<SubTexture> Application::GetChessSprite(Piece p) {

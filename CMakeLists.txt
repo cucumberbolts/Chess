@@ -2,6 +2,8 @@ cmake_minimum_required(VERSION 3.5)
 
 project(Chess)
 
+set_property(GLOBAL PROPERTY USE_FOLDERS ON)
+
 set(SOURCES
     "src/Application/Main.cpp"
     "src/Application/Application.h"
@@ -17,6 +19,8 @@ set(SOURCES
     "src/Chess/Board.cpp"
     "src/Chess/BoardFormat.h"
     "src/Chess/ChessException.h"
+    "src/Chess/Game.h"
+    "src/Chess/Game.cpp"
     "src/Chess/PseudoLegal.h"
     "src/Chess/PseudoLegal.cpp"
     "src/Chess/Move.h"
@@ -80,7 +84,10 @@ else()
     message(FATAL_ERROR "Unsupported platform!")
 endif()
 
-set_target_properties(${PROJECT_NAME} PROPERTIES CXX_STANDARD 17)
+set_target_properties(${PROJECT_NAME} PROPERTIES
+    CXX_STANDARD 17
+    FOLDER "THINGS/"
+)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
@@ -88,6 +95,10 @@ target_include_directories(${PROJECT_NAME}
     PRIVATE
     "src/"
 )
+
+# ------------- TESTS -------------
+add_subdirectory(tests)
+
 
 # ---------- DEPENDENCIES ----------
 
@@ -111,6 +122,8 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
     ${OPENGL_LIBRARY}
     glad
 )
+
+set_target_properties(glfw update_mappings glad PROPERTIES FOLDER "DEPENDENCIES/")
 
 target_include_directories(${PROJECT_NAME}
     PRIVATE
