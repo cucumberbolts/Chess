@@ -94,7 +94,7 @@ AlgebraicMove::AlgebraicMove(const std::string& str) {
 			if (std::isalpha(*fromFront)) {
 				Specifier = ToSquare(*fromFront, '1');
 				Specifier |= SpecifyFile;
-			} else if (std::isalpha(*fromFront)) {
+			} else if (std::isdigit(*fromFront)) {
 				Specifier = ToSquare('a', *fromFront);
 				Specifier |= SpecifyRank;
 			} else {

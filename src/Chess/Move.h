@@ -150,6 +150,8 @@ using MoveFlags = uint8_t;
 namespace MoveFlag {
     enum : uint8_t {
         // To check for promotion, & with 0b111
+        IsPromoting   = 0b111,
+        // These numbers match the PieceType enum
         PromoteKnight = 0b001,
         PromoteBishop = 0b010,
         PromoteRook   = 0b011,

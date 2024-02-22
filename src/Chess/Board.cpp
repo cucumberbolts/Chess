@@ -308,7 +308,6 @@ AlgebraicMove Board::Move(LongAlgebraicMove m) {
 
 LongAlgebraicMove Board::Move(AlgebraicMove m) {
     Square source;
-    PieceType Promotion = Pawn;
 
     Colour opponentColour = OppositeColour(m_PlayerTurn);
 
@@ -335,7 +334,7 @@ LongAlgebraicMove Board::Move(AlgebraicMove m) {
             PlacePiece(TypeAndColour(Rook, m_PlayerTurn), rookDestination);
 
             m_PlayerTurn = opponentColour;
-            return { kingStart, kingDestination, Promotion };
+            return { kingStart, kingDestination };
         }
 
         throw IllegalMoveException(m.ToString());
@@ -361,6 +360,26 @@ LongAlgebraicMove Board::Move(AlgebraicMove m) {
                 m_EnPassantSquare = source;
                 source -= direction;  // Move 'source' further back one square
             }
+
+            if ((1ull << m.Destination) & 0xFF000000000000FFull) {
+                PieceType type = (PieceType)(m.Flags & MoveFlag::IsPromoting);
+
+                if (!type)
+                    throw IllegalMoveException(m.ToString(), "Must promote pawn");
+
+                if (!IsMoveLegal({ source, m.Destination }))
+                    throw IllegalMoveException(m.ToString());
+                
+                // Move the piece
+                RemovePiece(source);
+                // We have to erase the piece from the bit boards before we capture it
+                RemovePiece(m.Destination);
+                PlacePiece(TypeAndColour(type, m_PlayerTurn), m.Destination);
+
+                m_PlayerTurn = opponentColour;
+
+                return { source, m.Destination, type };
+            }
         }
 	} else {  // Normal piece
         // All of the same type of piece that can go to the same square
@@ -372,15 +391,16 @@ LongAlgebraicMove Board::Move(AlgebraicMove m) {
             case Bishop: possiblePieces &= PseudoLegal::BishopAttack(m.Destination, allPieces); break;
             case Rook:   possiblePieces &= PseudoLegal::RookAttack(m.Destination, allPieces); break;
             case Queen:  possiblePieces &= PseudoLegal::QueenAttack(m.Destination, allPieces); break;
+            case King:   possiblePieces &= PseudoLegal::KingAttack(m.Destination); break;
             default: possiblePieces = 0;
         }
         
         // Prune the pieces that are not specified
         if (m.Specifier & SpecifyFile)
-            possiblePieces &= BitBoardFile(FileOf(m.Specifier));
+            possiblePieces &= BitBoardFile(m.Specifier);
 
         if (m.Specifier & SpecifyRank)
-            possiblePieces &= BitBoardFile(RankOf(m.Specifier));
+            possiblePieces &= BitBoardRank(m.Specifier);
 
         // Prune the pinned pieces
         for (BitBoard b = possiblePieces; b != 0; b &= b - 1) {
@@ -388,8 +408,12 @@ LongAlgebraicMove Board::Move(AlgebraicMove m) {
                 possiblePieces &= ~(1ull << GetSquare(b));
         }
 
-        if (SquareCount(possiblePieces) != 1)
-            throw IllegalMoveException("None, or more than two pieces can move to the same square!");
+        if (SquareCount(possiblePieces) != 1) {
+            if (SquareCount(possiblePieces) == 0)
+                throw IllegalMoveException("No piece can more to specified square!");
+            else
+                throw IllegalMoveException("More than one piece can move to the same square!");
+        }
 
         source = GetSquare(possiblePieces);
 	}
@@ -406,7 +430,7 @@ LongAlgebraicMove Board::Move(AlgebraicMove m) {
 
     m_PlayerTurn = opponentColour;
 
-    return { source, m.Destination, Promotion };
+    return { source, m.Destination };
 }
 
 bool Board::HasLegalMoves(Colour colour) {
