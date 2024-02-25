@@ -171,17 +171,16 @@ void Engine::RunLoop() {
 
 void Engine::HandleCommand(const std::string& text) {
     StringParser sp(text);
+    
+    while (auto c = sp.NextLine()) {
+        std::string_view command = c.value();
 
-    std::string_view command;
-
-    while (sp.Next(command, StringParser::Delimiter::Newline)) {
         // Parse command
         if (command.empty())
             continue;
 
         StringParser commandParser{ std::string(command) };
-        std::string_view commandType;
-        commandParser.Next(commandType);
+        std::string_view commandType = commandParser.Next<std::string_view>().value_or("no command name given");
 
         if (commandType == "uciok") {
             m_State = State::Ready;
@@ -206,43 +205,42 @@ void Engine::HandleCommand(const std::string& text) {
 }
 
 void Engine::HandleOptionCommand(StringParser& sp) {
-    std::string name;
-    sp.Next(name);
-    sp.Next(name, "type");
+    sp.JumpPast("name");
+    std::string_view name = sp.Next("type").value_or("no name");
 
-    std::string type;
-    sp.Next(type, "default");
+    auto t = sp.Next<std::string_view>();
+    if (!t)
+        throw EngineInvalidOption("Invalid 'option' command");
+    std::string_view type = t.value();
+    sp.JumpPast("default");
 
     if (type == "check") {
-        bool value;
-        sp.Next(value);
+        bool value = sp.Next<bool>().value_or(false);
         m_Options.push_back(new Check(name, value));
     } else if (type == "spin") {
-        int32_t value, min, max;
-        sp.Next(value, "min");
-        sp.Next(min, "max");
-        sp.Next(max);
+        int32_t value = sp.Next<int32_t>().value_or(0);
+        sp.JumpPast("min");
+        int32_t min = sp.Next<int32_t>().value_or(value);
+        sp.JumpPast("max");
+        int32_t max = sp.Next<int32_t>().value_or(value);
         m_Options.push_back(new Spin(name, value, min, max));
     } else if (type == "combo") {
-        std::string defaultValue;
-        sp.Next(defaultValue, "var");
+        std::string_view defaultValue = sp.Next("var").value();
 
         size_t defaultValueIndex = 0;
         std::vector<std::string> values;
-        std::string value;
-        while (sp.Next(value, "var")) {
-            values.push_back(std::move(value));
+        while (auto value = sp.Next("var")) {
+            if (value.value() == defaultValue)
+                defaultValueIndex = values.size();
 
-            if (value == defaultValue)
-                defaultValueIndex = values.size() - 1;
+            values.push_back(std::string(value.value()));
         }
 
         m_Options.push_back(new Combo(name, defaultValueIndex, std::move(values)));
     } else if (type == "button") {
         m_Options.push_back(new Button(name));
     } else if (type == "string") {
-        std::string value;
-        sp.Next(value, StringParser::Delimiter::End);
+        std::string_view value = sp.ToEnd();
         m_Options.push_back(new String(name, value));
     }
 
@@ -250,57 +248,54 @@ void Engine::HandleOptionCommand(StringParser& sp) {
 }
 
 void Engine::HandleIdCommand(StringParser& sp) {
-    std::string_view id;
-    sp.Next(id);
+    auto id = sp.Next<std::string_view>();
 
-    if (id == "name")
-        sp.Next(m_Name, StringParser::Delimiter::End);
-    else if (id == "author")
-        sp.Next(m_Author, StringParser::Delimiter::End);
+    if (!id)
+        throw EngineInvalidOption("Invalid 'id' command");
+
+    if (id.value() == "name")
+        m_Name = sp.ToEnd();
+    else if (id.value() == "author")
+        m_Author = sp.ToEnd();
 
     // Ignore undefined commands
 }
 
 void Engine::HandleInfoCommand(StringParser& sp) {
-    std::string_view infoType;
-    sp.Next(infoType);
+    while (auto result = sp.Next<std::string_view>()) {
+        std::string_view infoType = result.value();
 
-    do {
         if (infoType == "string") {
-            std::string_view string;
-            sp.Next(string, StringParser::Delimiter::End);
+            std::string_view string = sp.ToEnd();
 
             // TODO: Make callback for this
 
             return;
         } else if (infoType == "depth") {
-            sp.Next(m_BestContinuation.Depth);
+            m_BestContinuation.Depth = sp.Next<int32_t>().value();
         } else if (infoType == "pv") {
             m_BestContinuation.Continuation.clear();
             
-            std::string_view move;
-            while (sp.Next(move))
-                m_BestContinuation.Continuation.emplace_back(LongAlgebraicMove(move));
+            while (auto move = sp.Next<std::string_view>())
+                m_BestContinuation.Continuation.emplace_back(move.value());
 
             m_UpdateCallback(m_BestContinuation);
 
             return;
         } else if (infoType == "cp") {
-            sp.Next(m_BestContinuation.Score);
+            m_BestContinuation.Score = sp.Next<int32_t>().value_or(0);
             m_BestContinuation.Mate = false;
         } else if (infoType == "mate") {
-            sp.Next(m_BestContinuation.Score);
+            m_BestContinuation.Score = sp.Next<int32_t>().value_or(0);
             m_BestContinuation.Mate = true;
         } else if (infoType == "refutation") {
-            std::string_view move;
-            sp.Next(move);
+            std::string_view move = sp.Next<std::string_view>().value_or("");
 
-            std::string_view refutation;
-            sp.Next(refutation, StringParser::Delimiter::End);
+            std::string_view refutation = sp.ToEnd();
 
             return;
         }
-    } while (sp.Next(infoType));
+    }
 
     // Ignore undefined commands
 }
@@ -313,7 +308,7 @@ void Engine::PrintInfo() const {
     std::cout << "Number of options: " << m_Options.size() << "\n";
 
     for (Option* option : m_Options) {
-        std::cout << "Option name: " << option->Name << " type: " << Option::TypeToString(option->Type);
+        std::cout << "Option Name: " << option->Name << " Type: " << Option::TypeToString(option->Type);
 
         switch (option->Type) {
             case Option::OptionType::Check: {

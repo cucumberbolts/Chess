@@ -52,12 +52,11 @@ void Board::FromFEN(const std::string& fen) {
     m_Board.fill(Piece::None);
     m_PieceBitBoards.fill(0);
     m_ColourBitBoards.fill(0);
-    m_CastlingPath.fill(0xFFFFFFFFFFFFFFFF);
+    m_CastlingPath.fill(CastleSide::NO_CASTLE);
 
     StringParser fenParser(fen);
 
-    std::string_view board;
-    fenParser.Next(board);
+    std::string_view board = fenParser.Next<std::string_view>().value_or("");
 
     Square square = 56;
     for (const char c : board) {
@@ -90,27 +89,24 @@ void Board::FromFEN(const std::string& fen) {
         }
     }
 
-    std::string_view playerTurn;
-    fenParser.Next(playerTurn);
+    auto playerTurn = fenParser.Next<std::string_view>().value_or("w");
     m_PlayerTurn = playerTurn == "w" ? White : Black;
 
-    std::string_view castlingRights;
-    fenParser.Next(castlingRights);
+    auto castlingRights = fenParser.Next<std::string_view>().value_or("-");
     for (char c : castlingRights) {
         if (c == '-') break;
-        if (c == 'K') m_CastlingPath[White | KingSide] =  s_CastlingPaths[White | KingSide];
+        if (c == 'K') m_CastlingPath[White | KingSide]  = s_CastlingPaths[White | KingSide];
         if (c == 'Q') m_CastlingPath[White | QueenSide] = s_CastlingPaths[White | QueenSide];
-        if (c == 'k') m_CastlingPath[Black | KingSide] = s_CastlingPaths[Black | KingSide];
+        if (c == 'k') m_CastlingPath[Black | KingSide]  = s_CastlingPaths[Black | KingSide];
         if (c == 'q') m_CastlingPath[Black | QueenSide] = s_CastlingPaths[Black | QueenSide];
     }
 
-    std::string_view enPassantSquare;
-    fenParser.Next(enPassantSquare);
+    auto enPassantSquare = fenParser.Next<std::string_view>().value_or("-");
     if (enPassantSquare != "-")
         m_EnPassantSquare = ToSquare(enPassantSquare[0], enPassantSquare[1]);
 
-    fenParser.Next(m_HalfMoves);
-    fenParser.Next(m_FullMoves);
+    m_HalfMoves = fenParser.Next<int32_t>().value_or(1);
+    m_FullMoves = fenParser.Next<int32_t>().value_or(0);
 }
 
 std::string Board::ToFEN() const {
