@@ -225,7 +225,7 @@ AlgebraicMove Board::Move(LongAlgebraicMove m) {
             capture = true;
         } else if ((1ull << m.DestinationSquare) & 0xFF000000000000FF) {  // If pawn is promoting
             if (m.Promotion == Pawn || m.Promotion == King)
-                throw IllegalMoveException("Pawn must promote to another piece!");
+                throw IllegalMoveException(m.ToString(), "Pawn must promote to another piece!");
 
             piece = TypeAndColour(m.Promotion, colour);
         }
@@ -403,7 +403,7 @@ LongAlgebraicMove Board::Move(AlgebraicMove m) {
             if (!GetPieceLegalMoves(GetSquare(b)))
                 possiblePieces &= ~(1ull << GetSquare(b));
         }
-
+        
         if (SquareCount(possiblePieces) != 1) {
             if (SquareCount(possiblePieces) == 0)
                 throw IllegalMoveException("No piece can more to specified square!");

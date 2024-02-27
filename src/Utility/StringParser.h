@@ -11,11 +11,22 @@ public:
 
     size_t Position() const { return m_TokenBegin; }
 
-    bool JumpPast(std::string_view str, size_t offset = 0) {
-        size_t position = m_Data.find(str, offset);
+    bool JumpPast(std::string_view str) {
+        size_t position = m_Data.find(str, m_TokenEnd);
 	    if (position == std::string::npos) {
             return false;
 	    }
+
+        m_TokenBegin = position;
+        m_TokenEnd = position + str.size();
+        return true;
+    }
+
+    bool JumpPast(std::string_view str, size_t offset) {
+        size_t position = m_Data.find(str, offset);
+        if (position == std::string::npos) {
+            return false;
+        }
 
         m_TokenBegin = position;
         m_TokenEnd = position + str.size();
@@ -32,6 +43,17 @@ public:
             return std::nullopt;
         }
 
+        uint64_t delimBegin = std::min(m_Data.find(delim, m_TokenBegin), m_Data.size());
+        m_TokenEnd = delimBegin + delim.size();
+        // Remove whitespace from the end
+        delimBegin = m_Data.find_last_not_of(" \t", delimBegin - 1) + 1;
+
+        return std::string_view(m_Data.data() + m_TokenBegin, delimBegin - m_TokenBegin);
+    }
+
+    // Same as Next(), but doesn't advance position before reading
+    // It returns a string starting from the same position as the last returned string
+    std::optional<std::string_view> Reread(std::string_view delim) {
         uint64_t delimBegin = std::min(m_Data.find(delim, m_TokenBegin), m_Data.size());
         m_TokenEnd = delimBegin + delim.size();
         // Remove whitespace from the end
@@ -102,7 +124,7 @@ public:
         
         return std::string_view(m_Data.data() + m_TokenBegin, newlineBegin - m_TokenBegin);
     }
-
+    
     std::string_view ToEnd() {
         m_TokenBegin = std::min(m_Data.find_first_not_of(" \t\n", m_TokenBegin), m_Data.size());
         m_TokenEnd = m_Data.size();

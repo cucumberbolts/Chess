@@ -190,7 +190,7 @@ struct AlgebraicMove {
     AlgebraicMove(PieceType movingPiece, Square destination, Square specifier, MoveFlags flags)
 	    : MovingPiece(movingPiece), Destination(destination), Specifier(specifier), Flags(flags) {}
     
-    AlgebraicMove(const std::string& str);
+    AlgebraicMove(std::string_view str);
 
     std::string ToString() noexcept;
 };

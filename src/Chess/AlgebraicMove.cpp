@@ -17,7 +17,7 @@ std::string LongAlgebraicMove::ToString() noexcept {
 	return { result, ptr };
 }
 
-AlgebraicMove::AlgebraicMove(const std::string& str) {
+AlgebraicMove::AlgebraicMove(std::string_view str) {
 	bool error = false;
 	
 	char* fromFront = (char*)&str.front();

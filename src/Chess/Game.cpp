@@ -1,9 +1,15 @@
 #include "Game.h"
 
+#include <fstream>
 #include <sstream>
 
-Game::Game() {
-	m_Branches.emplace_back(0, 1);
+Game::Game(const std::filesystem::path& pgn) {
+	std::fstream input(pgn);
+	std::string data(std::filesystem::file_size(pgn), ' ');
+	input.read(data.data(), std::filesystem::file_size(pgn));
+	input.close();
+
+	FromPGN(data);
 }
 
 std::string Game::ToPGN() const {
@@ -93,11 +99,9 @@ void Game::Forward() {
 }
 
 void Game::Seek(uint32_t ply, uint32_t variation) {
-
 }
 
 void Game::Delete(uint32_t ply, uint32_t variation) {
-	// Make it memory efficient--invalidate branches and reuse them
 }
 
 void Game::Move(GameMove move) {
@@ -106,6 +110,7 @@ void Game::Move(GameMove move) {
 	const uint32_t maxPly = (uint32_t)m_Branches[m_Variation].Moves.size() + m_Branches[m_Variation].StartingPly - 1;
 
 	// If variations exist and index is on the last move of the list
+	// Or if the current branch is the top node
 	if (!m_Branches[m_Variation].Variations.empty() && m_Ply == maxPly) {
 		// check if the move is one of them
 		for (const uint32_t var : m_Branches[m_Variation].Variations) {
@@ -116,8 +121,7 @@ void Game::Move(GameMove move) {
 			}
 		}
 
-		// If it doesn't exist
-		// Create new branch for new move
+		// If it doesn't exist create new branch for new move
 		currentBranch = &m_Branches.emplace_back(m_Variation, m_Ply + 1);
 		// Add variation to old branch
 		m_Branches[m_Variation].Variations.push_back((uint32_t)m_Branches.size() - 1);
@@ -125,12 +129,13 @@ void Game::Move(GameMove move) {
 		m_Variation = (uint32_t)m_Branches.size() - 1;
 	}
 	else if (m_Ply < maxPly) {
-		// If the next move is already in the tree,
-		// advance the index and return the move
-		// Otherwise, split the tree
-		if (m_Branches[m_Variation].Moves[m_Ply - m_Branches[m_Variation].StartingPly] == move) {
-			m_Ply++;
-			return;
+		// If the next move is already in the tree, advance
+		// the index and return. Otherwise, split the tree
+		if (m_Ply != 0) {
+			if (m_Branches[m_Variation].Moves[m_Ply - m_Branches[m_Variation].StartingPly] == move) {
+				m_Ply++;
+				return;
+			}
 		}
 
 		// Reserve space
@@ -138,13 +143,15 @@ void Game::Move(GameMove move) {
 
 		// Create new branch for old moves
 		Branch& old = m_Branches.emplace_back(m_Variation, m_Ply + 1);
+		// The index of the first move to copy
+		size_t offset = m_Ply - m_Branches[m_Variation].StartingPly + 1;
 		// Copy the old moves into the new branch
-		std::copy(m_Branches[m_Variation].Moves.begin() + m_Ply, m_Branches[m_Variation].Moves.end(), std::back_inserter(old.Moves));
+		std::copy(m_Branches[m_Variation].Moves.begin() + offset, m_Branches[m_Variation].Moves.end(), std::back_inserter(old.Moves));
 		// Move old variations to new branch
 		if (!m_Branches[m_Variation].Variations.empty())
 			old.Variations = std::move(m_Branches[m_Variation].Variations);
 		// Delete old moves from old branch
-		m_Branches[m_Variation].Moves.erase(m_Branches[m_Variation].Moves.begin() + m_Ply, m_Branches[m_Variation].Moves.end());
+		m_Branches[m_Variation].Moves.erase(m_Branches[m_Variation].Moves.begin() + offset, m_Branches[m_Variation].Moves.end());
 		// Add variation to old branch
 		m_Branches[m_Variation].Variations.push_back((uint32_t)m_Branches.size() - 1);
 
@@ -165,12 +172,122 @@ void Game::Move(GameMove move) {
 	m_Ply++;
 }
 
+void Game::AddComment(const std::string& comment) {
+	if (m_Branches.empty())
+		return;
+
+	Branch& branch = m_Branches[m_Variation];
+	branch.Moves[m_Ply - branch.StartingPly].Comment = comment;
+}
+
+void Game::AddComment(std::string&& comment) {
+	if (m_Branches.empty())
+		return;
+
+	Branch& branch = m_Branches[m_Variation];
+	branch.Moves[m_Ply - branch.StartingPly].Comment = std::move(comment);
+}
+
+void Game::FromPGN(const std::string& pgn) {
+	StringParser sp(pgn);
+	while (sp.JumpPast("[")) {
+		auto key = sp.Next<std::string_view>();
+		sp.JumpPast("\"");
+		auto value = sp.Next("\"");
+		
+		if (!(key || value))
+			throw InvalidPgnException("Invalid tag in PGN header!");
+
+		if (key == "FEN") {
+			m_Position.FromFEN(std::string(value.value()));
+			bool shouldZero = (m_Position.GetFullMoves() != 1);
+			m_Ply = m_Position.GetFullMoves() * shouldZero + (m_Position.GetPlayerTurn() == Black);
+		}
+
+		m_Header[std::string(key.value())] = value.value();
+	}
+	sp.JumpPast("]");
+
+	const bool checkResult = m_Header.count("Result");
+
+	// Parse the moves
+	while (auto m = sp.Next<std::string_view>()) {
+		std::string_view move = m.value();
+		
+		if (checkResult)
+			if (move == m_Header.at("Result"))
+				break;
+
+		if (move.front() == '(') {
+			Back();
+			ParseVariation(sp);
+			Forward();
+		}
+		else {
+			if (move.back() == '.')
+				continue;
+
+			if (move.front() == '{') {
+				std::string_view comment = sp.Reread("}").value_or("");
+				comment.remove_prefix(1); // Remove the '{' from the beginning
+				AddComment(std::string(comment));
+				continue;
+			}
+
+			Move(AlgebraicMove(move));
+		}
+	}
+}
+
+void Game::ParseVariation(StringParser& sp) {
+	uint32_t moveCount = 0;
+
+	while (auto m = sp.Next<std::string_view>()) {
+		std::string_view move = m.value();
+
+		if (move.front() == '(') {
+			Back();
+			ParseVariation(sp);
+			Forward();
+		}
+		else {
+			if (move.back() == '.')
+				continue;
+
+			if (move.front() == '{') {
+				std::string_view comment = sp.Reread("}").value_or("");
+				comment.remove_prefix(1); // Remove the '{' from the beginning
+				AddComment(std::string(comment));
+				continue;
+			}
+
+			if (move.back() == ')') {
+				move.remove_suffix(1); // Remove the ')' from the end
+
+				Move(AlgebraicMove(move));
+				moveCount++;
+
+				for (uint32_t i = 0; i < moveCount; i++)
+					Back();
+
+				break;
+			}
+
+			Move(AlgebraicMove(move));
+			moveCount++;
+		}
+	}
+}
+
+
 std::ostream& PrintBranch(std::ostream& os, Board& board, const Game& game, const Branch& branch) {
 	os << "Ply: " << branch.StartingPly << ": ";
 	
 	uint32_t index = 0;
 	for (; index < branch.Moves.size(); index++) {
 		os << board.Move(LongAlgebraicMove(branch.Moves[index].Start, branch.Moves[index].Destination)) << " ";
+		if (!branch.Moves[index].Comment.empty())
+			os << "{" << branch.Moves[index].Comment << "} ";
 	}
 
 	os << "\n";
@@ -194,13 +311,19 @@ std::ostream& PrintBranch(std::ostream& os, Board& board, const Game& game, cons
 }
 
 std::ostream& operator<<(std::ostream& os, const Game& game) {
-#if 0
-	Board board;
+	// Output the header
+	for (const auto& [key, value] : game.m_Header)
+		os << "[" << key << " \"" << value << "\"]\n";
 
-	os << "Variation: 0\n";
-	PrintBranch(os, board, game, game.m_Branches[0]);
-#else
-	// Mostly for debugging
+#if 1
+	if (!game.m_Branches.empty()) {
+		os << "Variation: 0\n";
+		Board board;
+		if (game.m_Header.count("FEN"))
+			board.FromFEN(game.m_Header.at("FEN"));
+		PrintBranch(os, board, game, game.m_Branches[0]);
+	}
+#else // For debugging
 	for (uint32_t b = 0; b < game.m_Branches.size(); b++) {
 		os << "Variation #" << b << ":\n";
 		os << "Ply: " << game.m_Branches[b].StartingPly << " ";

@@ -27,6 +27,8 @@ public:
     inline Piece operator[](Square s) const { return m_Board[s]; }
 
     inline Colour GetPlayerTurn() const { return m_PlayerTurn; }
+    inline int32_t GetHalfMoves() const { return m_HalfMoves; }
+    inline int32_t GetFullMoves() const { return m_FullMoves; }
 
     AlgebraicMove Move(LongAlgebraicMove m);
     LongAlgebraicMove Move(AlgebraicMove m);

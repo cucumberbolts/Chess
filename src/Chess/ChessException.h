@@ -24,6 +24,7 @@ private:
 class InvalidAlgebraicMoveException : public std::exception {
 public:
 	InvalidAlgebraicMoveException(const std::string& move) : m_Move(move) {}
+	InvalidAlgebraicMoveException(std::string_view move) : m_Move(move) {}
 
 	const char* what() const noexcept override {
 		return "Invalid algebraic notation!";
@@ -68,4 +69,15 @@ public:
 	const char* what() const noexcept override {
 		return "Invalid piece type!";
 	}
+};
+
+class InvalidPgnException : public std::exception {
+public:
+	InvalidPgnException(const std::string& message) : m_Message(message) {}
+
+	const char* what() const noexcept override {
+		return m_Message.c_str();
+	}
+private:
+	std::string m_Message;
 };
