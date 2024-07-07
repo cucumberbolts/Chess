@@ -1,5 +1,5 @@
 #include "Board.h"
-
+#include "Game.h"
 #include "PseudoLegal.h"
 
 #include "Utility/StringParser.h"
@@ -427,6 +427,14 @@ LongAlgebraicMove Board::Move(AlgebraicMove m) {
     m_PlayerTurn = opponentColour;
 
     return { source, m.Destination };
+}
+
+void Board::UndoMove(const GameMove& move) {
+    RemovePiece(move.Destination);
+    PlacePiece(move.MovingPiece, move.Start);
+    if (move.DestinationPiece != None)
+        PlacePiece(move.DestinationPiece, move.Destination);
+    m_PlayerTurn = OppositeColour(m_PlayerTurn);
 }
 
 bool Board::HasLegalMoves(Colour colour) {

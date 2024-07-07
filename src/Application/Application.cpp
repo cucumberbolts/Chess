@@ -183,7 +183,7 @@ void Application::Init() {
     m_LegalMoveColour = { 1.0f, 0.0f, 1.0f, 0.5f };
     m_BackgroundColour = { 0.2f, 0.2f, 0.2f, 1.0f };
 
-    m_BoardFEN = Board::StartFen;
+    m_BoardFEN = Board::START_FEN;
     m_BoardFEN.resize(100);
 
     FramebufferSpecification spec;
@@ -270,7 +270,7 @@ void Application::RenderImGui() {
 
         if (ImGui::Button("Reset board")) {
             m_Board.Reset();  // Reset FEN string
-            m_BoardFEN = Board::StartFen;
+            m_BoardFEN = Board::START_FEN;
             if (m_RunningEngine)
                 m_RunningEngine->SetPosition(m_BoardFEN);
         }

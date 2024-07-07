@@ -8,11 +8,9 @@
 #include "BoardFormat.h"
 #include "Move.h"
 
-struct Branch;
+struct GameMove;
 
 class Board {
-    friend class Game;
-    friend std::ostream& PrintBranch(std::ostream&, Board&, const Game&, const Branch&);
 public:
     Board() { Reset(); }
     Board(const std::string& fen) { FromFEN(fen); }
@@ -21,9 +19,7 @@ public:
 
     void FromFEN(const std::string& fen);
     std::string ToFEN() const;
-
-    friend std::ostream& operator<<(std::ostream& os, const Board& board);
-
+    
     inline Piece operator[](Square s) const { return m_Board[s]; }
 
     inline Colour GetPlayerTurn() const { return m_PlayerTurn; }
@@ -32,13 +28,14 @@ public:
 
     AlgebraicMove Move(LongAlgebraicMove m);
     LongAlgebraicMove Move(AlgebraicMove m);
+    void UndoMove(const GameMove& m);
 
     inline bool IsMoveLegal(LongAlgebraicMove m) { return GetPieceLegalMoves(m.SourceSquare) & (1ull << m.DestinationSquare); }
 
     bool HasLegalMoves(Colour colour);
     BitBoard GetPieceLegalMoves(Square piece);
 
-    static constexpr std::string_view StartFen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1\0";
+    inline static const char* START_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1\0";
 private:
     BitBoard GetPseudoLegalMoves(Square piece) const;
 
@@ -101,10 +98,10 @@ inline std::ostream& operator<<(std::ostream& os, const Board& board) {
 
         for (Square file = 0; file < 8; file++) {
             Square square = (BoardFormat::s_BoardFormat.Orientation == White) ? (rank * 8 + file) : (63 - (rank * 8 + file));
-            if (board.m_Board[square] == Piece::None)
+            if (board[square] == Piece::None)
                 os << '.';
             else
-                os << PieceToChar(board.m_Board[square]);
+                os << PieceToChar(board[square]);
         }
 
         os << '\n';

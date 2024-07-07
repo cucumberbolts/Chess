@@ -158,12 +158,7 @@ Nf2 42. g4 Bd3 43. Re6 1/2-1/2
 }
 
 void Test4() {
-	std::string startingPos = R"([FEN "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"]
-1. e4 e5
-2. Nf3 Nc6
-)";
-
-	Game startingPosTest(startingPos);
+	Game startingPosTest;
 	std::cout << "Game:\n";
 	std::cout << startingPosTest << "\n";
 
@@ -178,11 +173,22 @@ void Test4() {
 
 	std::cout << "Game:\n";
 	std::cout << game << "\n";
+
+	std::cout << "----------------------------------------------\n";
+
+	pgn = R"([FEN "r1bqkbnr/pppp1ppp/2n5/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R w KQkq - 2 3"]
+3. Bc4 Bc5 4. b4
+)";
+
+	Game game2(pgn);
+
+	std::cout << "Game 2:\n";
+	std::cout << game2 << "\n";
 }
 
 int main() {
-	//Test1();	
+	Test1();
 	//Test2();
-	//Test3();
+	Test3();
 	Test4();
 }
