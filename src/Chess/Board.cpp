@@ -183,7 +183,7 @@ AlgebraicMove Board::Move(LongAlgebraicMove m) {
     bool pawnMove = false;
     bool capture = m_Board[m.DestinationSquare] != Piece::None;
     Square newEnPassantSquare = 0;
-    uint8_t moveFlags = 0;
+    MoveFlags moveFlags = 0;
 
     if (pieceType == King) {
         int direction = m.DestinationSquare - m.SourceSquare;  // Kingside or queenside
@@ -204,7 +204,7 @@ AlgebraicMove Board::Move(LongAlgebraicMove m) {
 
             // Only move the rook because the king will be moved below
             RemovePiece(rookSquare);
-            PlacePiece(TypeAndColour(Rook, colour), newRookSquare);
+            PlacePiece(PieceTypeAndColour(Rook, colour), newRookSquare);
         }
 
         m_CastlingPath[colour | KingSide] = NO_CASTLE;
@@ -227,7 +227,7 @@ AlgebraicMove Board::Move(LongAlgebraicMove m) {
             if (m.Promotion == Pawn || m.Promotion == King)
                 throw IllegalMoveException(m.ToString(), "Pawn must promote to another piece!");
 
-            piece = TypeAndColour(m.Promotion, colour);
+            piece = PieceTypeAndColour(m.Promotion, colour);
         }
     }
 
@@ -294,7 +294,8 @@ AlgebraicMove Board::Move(LongAlgebraicMove m) {
     // If the current move places the opponent in check
     bool isCheck = m_PieceBitBoards[King] & m_ColourBitBoards[m_PlayerTurn] & ControlledSquares(colour);
     bool isMate = !HasLegalMoves(m_PlayerTurn) && isCheck;
-    
+
+    moveFlags |= m.Promotion;
     moveFlags |= MoveFlag::Check * isCheck;
     moveFlags |= MoveFlag::Checkmate * isMate;
     moveFlags |= MoveFlag::Capture * capture;
@@ -307,27 +308,35 @@ LongAlgebraicMove Board::Move(AlgebraicMove m) {
 
     Colour opponentColour = OppositeColour(m_PlayerTurn);
 
-	if (m.Flags & (MoveFlag::CastleKingSide | MoveFlag::CastleQueenSide)) {
+    Square newEnPassantSquare = 0;
+
+	if (m.Flags & MoveFlag::CastlingFlags) {
         Square kingStart = E1 ^ (m_PlayerTurn * 0b00111000);
         Square rookStart = H1 ^ (m_PlayerTurn * 0b00111000);
 		Square kingDestination, rookDestination;
+        CastleSide castleSide;
 
         if (m.Flags & MoveFlag::CastleKingSide) {
             kingDestination = G1 ^ (m_PlayerTurn * 0b00111000);
             rookDestination = F1 ^ (m_PlayerTurn * 0b00111000);
+            castleSide = KingSide;
         } else {
             kingDestination = C1 ^ (m_PlayerTurn * 0b00111000);
             rookDestination = D1 ^ (m_PlayerTurn * 0b00111000);
+            castleSide = QueenSide;
         }
         
         if (IsMoveLegal({ kingStart, kingDestination })) {
             // Move the king
             RemovePiece(kingStart);
-            PlacePiece(TypeAndColour(King, m_PlayerTurn), kingDestination);
+            PlacePiece(PieceTypeAndColour(King, m_PlayerTurn), kingDestination);
 
             // Move the rook
             RemovePiece(rookStart);
-            PlacePiece(TypeAndColour(Rook, m_PlayerTurn), rookDestination);
+            PlacePiece(PieceTypeAndColour(Rook, m_PlayerTurn), rookDestination);
+
+            // Nullify castling rights
+            m_CastlingPath[m_PlayerTurn | castleSide] = NO_CASTLE;
 
             m_PlayerTurn = opponentColour;
             return { kingStart, kingDestination };
@@ -353,12 +362,12 @@ LongAlgebraicMove Board::Move(AlgebraicMove m) {
             // which this comment makes clear
             const bool middle = RankOf(m.Destination) == (3 + m_PlayerTurn);  // If it is on the 4th or 5th rank (according to colour)
             if (middle && GetPieceType(m_Board[source]) != Pawn) {
-                m_EnPassantSquare = source;
+                newEnPassantSquare = source;
                 source -= direction;  // Move 'source' further back one square
             }
 
             if ((1ull << m.Destination) & 0xFF000000000000FFull) {
-                PieceType type = (PieceType)(m.Flags & MoveFlag::IsPromoting);
+                PieceType type = (PieceType)(m.Flags & MoveFlag::PromotionFlags);
 
                 if (!type)
                     throw IllegalMoveException(m.ToString(), "Must promote pawn");
@@ -370,7 +379,7 @@ LongAlgebraicMove Board::Move(AlgebraicMove m) {
                 RemovePiece(source);
                 // We have to erase the piece from the bit boards before we capture it
                 RemovePiece(m.Destination);
-                PlacePiece(TypeAndColour(type, m_PlayerTurn), m.Destination);
+                PlacePiece(PieceTypeAndColour(type, m_PlayerTurn), m.Destination);
 
                 m_PlayerTurn = opponentColour;
 
@@ -414,8 +423,20 @@ LongAlgebraicMove Board::Move(AlgebraicMove m) {
         source = GetSquare(possiblePieces);
 	}
     
+    // If a rook moves or is captured, remove castling rights accordingly
+    if (source == A1 || m.Destination == A1)
+        m_CastlingPath[White | QueenSide] = NO_CASTLE;
+    else if (source == H1 || m.Destination == H1)
+        m_CastlingPath[White | KingSide] = NO_CASTLE;
+    else if (source == A8 || m.Destination == A8)
+        m_CastlingPath[Black | QueenSide] = NO_CASTLE;
+    else if (source == H8 || m.Destination == H8)
+        m_CastlingPath[Black | KingSide] = NO_CASTLE;
+
     if (!IsMoveLegal({ source, m.Destination }))
         throw IllegalMoveException(m.ToString());
+
+    m_EnPassantSquare = newEnPassantSquare;
 
     Piece piece = m_Board[source];
     // Move the piece
@@ -430,11 +451,72 @@ LongAlgebraicMove Board::Move(AlgebraicMove m) {
 }
 
 void Board::UndoMove(const GameMove& move) {
+    m_PlayerTurn = OppositeColour(m_PlayerTurn);
+
+    // Deal with castling first, since "move"'s other fields are
+    // undefined when castling is set during the AlgebraicMove() constructor
+    if (GameMoveFlags castling = move.Flags & GameMoveFlag::CastlingFlags) {
+        bool otherSide = move.Flags & GameMoveFlag::CanCastleOtherSide;
+
+        switch (castling) {
+            case GameMoveFlag::CastleWhiteKingSide:
+            {
+                RemovePiece(G1);
+            	RemovePiece(F1);
+            	PlacePiece(WhiteRook, H1);
+            	PlacePiece(WhiteKing, E1);
+                m_CastlingPath[White | KingSide]  = s_CastlingPaths[White | KingSide];
+                m_CastlingPath[White | QueenSide] = otherSide * s_CastlingPaths[White | QueenSide];
+            	return;
+            }
+            case GameMoveFlag::CastleWhiteQueenSide:
+            {
+                RemovePiece(C1);
+                RemovePiece(D1);
+                PlacePiece(WhiteRook, A1);
+            	PlacePiece(WhiteKing, E1);
+                m_CastlingPath[White | KingSide]  = otherSide * s_CastlingPaths[White | KingSide];
+                m_CastlingPath[White | QueenSide] = s_CastlingPaths[White | QueenSide];
+            	return;
+            }
+            case GameMoveFlag::CastleBlackKingSide:
+            {
+                RemovePiece(G8);
+                RemovePiece(F8);
+                PlacePiece(BlackRook, H8);
+            	PlacePiece(BlackKing, E8);
+                m_CastlingPath[Black | KingSide]  = s_CastlingPaths[Black | KingSide];
+                m_CastlingPath[Black | QueenSide] = otherSide * s_CastlingPaths[Black | QueenSide];
+            	return;
+            }
+            case GameMoveFlag::CastleBlackQueenSide:
+            {
+                RemovePiece(C8);
+                RemovePiece(D8);
+                PlacePiece(BlackRook, A8);
+            	PlacePiece(BlackKing, E8);
+                m_CastlingPath[Black | KingSide]  = otherSide * s_CastlingPaths[Black | KingSide];
+                m_CastlingPath[Black | QueenSide] = s_CastlingPaths[Black | QueenSide];
+            	return;
+            }
+        }
+    }
+    
     RemovePiece(move.Destination);
     PlacePiece(move.MovingPiece, move.Start);
+
+    // Deal with en passant
+    // (promotion already works, no need for special handling)
+    if (move.Flags & GameMoveFlag::EnPassant) {
+        if (GetColour(move.MovingPiece) == White)
+        	PlacePiece(BlackPawn, move.Destination - 8);
+        else
+            PlacePiece(WhitePawn, move.Destination + 8);
+        m_EnPassantSquare = move.Destination;
+    }
+
     if (move.DestinationPiece != None)
         PlacePiece(move.DestinationPiece, move.Destination);
-    m_PlayerTurn = OppositeColour(m_PlayerTurn);
 }
 
 bool Board::HasLegalMoves(Colour colour) {

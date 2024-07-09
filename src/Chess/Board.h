@@ -8,9 +8,11 @@
 #include "BoardFormat.h"
 #include "Move.h"
 
+class Game;
 struct GameMove;
 
 class Board {
+    friend class Game;
 public:
     Board() { Reset(); }
     Board(const std::string& fen) { FromFEN(fen); }
@@ -22,6 +24,7 @@ public:
     
     inline Piece operator[](Square s) const { return m_Board[s]; }
 
+    inline Square GetEnPassantSquare() const { return m_EnPassantSquare; }
     inline Colour GetPlayerTurn() const { return m_PlayerTurn; }
     inline int32_t GetHalfMoves() const { return m_HalfMoves; }
     inline int32_t GetFullMoves() const { return m_FullMoves; }

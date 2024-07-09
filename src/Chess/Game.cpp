@@ -30,20 +30,27 @@ std::string Game::ToPGN() const {
 LongAlgebraicMove Game::Move(AlgebraicMove move) {
 	Piece destinationPiece = m_Position[move.Destination];
 
+	GameMoveFlags flags = move.Flags & GameMoveFlag::PromotionFlags;
+	Square epSquare = m_Position.GetEnPassantSquare();
+	flags |= (move.Destination == epSquare && move.MovingPiece == Pawn) * GameMoveFlag::EnPassant;
+
 	LongAlgebraicMove lam = m_Position.Move(move);
 
 	Colour colour = GetColour(m_Position[lam.DestinationSquare]);
-	// Use ply count parity instead?
-	//Colour colour = (Colour)~(m_Ply & 1);
+
+	if (MoveFlags castlingFlags = move.Flags & MoveFlag::CastlingFlags) {
+		flags = castlingFlags | colour << 5;
+
+		CastleSide otherSide = (move.Flags & MoveFlag::CastleKingSide) ? QueenSide : KingSide;
+		flags |= GameMoveFlag::CanCastleOtherSide * (bool)m_Position.m_CastlingPath[colour | otherSide];
+	}
 
 	GameMove gameMove = {
 		lam.SourceSquare,
 		lam.DestinationSquare,
-		TypeAndColour(move.MovingPiece, colour),
+		PieceTypeAndColour(move.MovingPiece, colour),
 		destinationPiece,
-		// TODO: FIX
-		Pawn,
-		(GameMoveFlags)0
+		flags
 	};
 
 	Move(gameMove);
@@ -52,13 +59,31 @@ LongAlgebraicMove Game::Move(AlgebraicMove move) {
 }
 
 AlgebraicMove Game::Move(LongAlgebraicMove move) {
+	GameMoveFlags flags = move.Promotion;
+	Square epSquare = m_Position.GetEnPassantSquare();
+	PieceType movingPiece = GetPieceType(m_Position[move.SourceSquare]);
+	flags |= (move.DestinationSquare == epSquare && movingPiece == Pawn) * GameMoveFlag::EnPassant;
+	
+	if (movingPiece == King) {
+		int direction = move.DestinationSquare - move.SourceSquare;  // Kingside or queenside
+
+		// If king is castling
+		if (abs(direction) == 2) {
+			Colour colour = GetColour(m_Position[move.SourceSquare]);
+			flags = 1u << (3 + (direction < 0));
+			flags |= colour << 5;
+
+			CastleSide otherDirection = (CastleSide)(1ull << (direction > 0));
+			flags |= GameMoveFlag::CanCastleOtherSide * (bool)m_Position.m_CastlingPath[colour | otherDirection];
+		}
+	}
+
 	GameMove gameMove = {
 		move.SourceSquare,
 		move.DestinationSquare,
 		m_Position[move.SourceSquare],
 		m_Position[move.DestinationSquare],
-		move.Promotion,
-		(GameMoveFlags)0  // TODO: FIX
+		flags,
 	};
 
 	Move(gameMove);
@@ -96,7 +121,7 @@ void Game::Forward() {
 	m_Ply++;
 
 	const GameMove& gm = m_Variation->Moves[m_Ply - m_Variation->StartingPly - 1];
-	m_Position.Move(LongAlgebraicMove(gm.Start, gm.Destination, gm.Promotion));
+	m_Position.Move(LongAlgebraicMove(gm.Start, gm.Destination, (PieceType)(gm.Flags & GameMoveFlag::PromotionFlags)));
 }
 
 void Game::Seek(uint32_t ply, Branch* variation) {
@@ -128,12 +153,9 @@ void Game::Move(GameMove move) {
 	else if (m_Ply < maxPly) {
 		// If the next move is already in the tree, advance
 		// the index and return. Otherwise, split the tree
-		// TODO: LOOK AT THIS?
-		if (m_Ply != 0) {
-			if (m_Variation->Moves[m_Ply - m_Variation->StartingPly - 1] == move) {
-				m_Ply++;
-				return;
-			}
+		if (m_Variation->Moves[m_Ply - m_Variation->StartingPly - 1] == move) {
+			m_Ply++;
+			return;
 		}
 
 		// Reserve space
@@ -159,11 +181,6 @@ void Game::Move(GameMove move) {
 		// Change index to new variation
 		m_Variation = newMoves;
 	}
-
-	// TODO: Determine castle, en passant, or promotion
-	// (Castling and promotion can be determined in the caller
-	// functions since it is a different process for both)
-	// en passant can be determined here
 
 	m_Variation->Moves.emplace_back(std::move(move));
 	m_Ply++;
@@ -285,8 +302,7 @@ void Game::ParseVariation(StringParser& sp) {
 	}
 }
 
-// Don't touch this function; it's very delicate.
-// Don't ask how it works it just does
+// Very delicately tacked-together code (it's all weird formatting tricks)
 static std::ostream& PrintBranch(std::ostream& os, Board& board, const Branch& branch, bool offset) {
 	if ((branch.StartingPly + offset) % 2 == 1 && !offset)
 		os << branch.StartingPly / 2 + 1 << "... ";
@@ -298,7 +314,7 @@ static std::ostream& PrintBranch(std::ostream& os, Board& board, const Branch& b
 		if (ply % 2 == 0)
 			os << ply / 2 + 1 << ". ";
 
-		os << board.Move(LongAlgebraicMove(branch.Moves[i].Start, branch.Moves[i].Destination));
+		os << board.Move(LongAlgebraicMove(branch.Moves[i].Start, branch.Moves[i].Destination, (PieceType)(branch.Moves[i].Flags & GameMoveFlag::PromotionFlags)));
 		if (!branch.Moves[i].Comment.empty()) {
 			os << " {" << branch.Moves[i].Comment << "} ";
 
@@ -320,7 +336,8 @@ static std::ostream& PrintBranch(std::ostream& os, Board& board, const Branch& b
 			os << ply / 2 + 1 << ".";
 
 		GameMove& move = branch.Variations[0]->Moves[0];
-		os << " " << board.Move(LongAlgebraicMove(move.Start, move.Destination)) << " ";
+		PieceType movePromotion = (PieceType)(move.Flags & GameMoveFlag::PromotionFlags);
+		os << " " << board.Move(LongAlgebraicMove(move.Start, move.Destination, movePromotion)) << " ";
 		if (!move.Comment.empty())
 			os << " {" << move.Comment << "} ";
 		board.UndoMove(move);
@@ -340,7 +357,7 @@ static std::ostream& PrintBranch(std::ostream& os, Board& board, const Branch& b
 		}
 
 		// Redo the first move of the first branch
-		board.Move(LongAlgebraicMove(move.Start, move.Destination));
+		board.Move(LongAlgebraicMove(move.Start, move.Destination, movePromotion));
 
 		// Print the rest of the first branch (main line)
 		PrintBranch(os, board, *branch.Variations[0], true);

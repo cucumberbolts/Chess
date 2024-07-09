@@ -8,21 +8,42 @@
 #include <unordered_map>
 #include <vector>
 
-enum GameMoveFlags : uint8_t {
-	CASTLE_WHITE_KINGSIDE	= 1 << 0,
-	CASTLE_WHITE_QUEENSIDE	= 1 << 1,
-	CASTLE_BLACK_KINGSIDE	= 1 << 2,
-	CASTLE_BLACK_QUEENSIDE	= 1 << 3,
-	EN_PASSANT				= 1 << 4,
-};
+// Closely resembles the MoveFlag enum
+// that is designed for AlgebraicMove
+using GameMoveFlags = uint8_t;
+
+namespace GameMoveFlag {
+	enum : uint8_t {
+		PromoteKnight  = 0b001,
+		PromoteBishop  = 0b010,
+		PromoteRook    = 0b011,
+		PromoteQueen   = 0b100,
+
+		PromotionFlags = 0b111,
+		
+		CastleWhiteKingSide  = 0b001000,
+		CastleWhiteQueenSide = 0b010000,
+		CastleBlackKingSide  = 0b101000,
+		CastleBlackQueenSide = 0b110000,
+
+		// Exclude CanCastleOtherSide
+		CastlingFlags        = 0b111000,
+
+		// When using the GameMove class to undo a castling move on a Board,
+		// it is necessary to know whether or not the king could castle the
+		// *other* direction so that we can reset the castling rights accordingly
+		CanCastleOtherSide = 1 << 6,
+
+		EnPassant = 1 << 7,
+	};
+}
 
 struct GameMove {
 	Square Start;
 	Square Destination;
 	Piece MovingPiece;
 	Piece DestinationPiece;
-	PieceType Promotion; // TODO: Not needed?
-	GameMoveFlags Flags = (GameMoveFlags)0;
+	GameMoveFlags Flags = 0;
 
 	std::string Comment;
 
@@ -31,7 +52,6 @@ struct GameMove {
 			&& Destination == m.Destination
 			&& MovingPiece == m.MovingPiece
 			&& DestinationPiece == m.DestinationPiece
-			&& Promotion == m.Promotion
 			&& Flags == m.Flags;
 	}
 };
@@ -80,7 +100,7 @@ public:
 	std::string ToPGN() const;
 
 	const Board& GetPosition() const { return m_Position; }
-	uint32_t CurrentPly() const { return m_Ply; }
+	uint32_t CurrentPly()      const { return m_Ply; }
 	Branch* CurrentVariation() const { return m_Variation; }
 
 	// Add move to tree

@@ -131,7 +131,7 @@ std::string AlgebraicMove::ToString() noexcept {
 		return "O-O-O";
 	}
 
-	// Longest possible string is 7 characters
+	// Longest possible string is 7 characters (ex. axb8=N+, Qf3xh3#)
 	char result[7];
 	char* ptr = result;
 	
@@ -164,7 +164,7 @@ std::string AlgebraicMove::ToString() noexcept {
 	*(ptr++) = (char)('1' + RankOf(Destination));
 
 	// Promotion
-	if (Flags & 0b111) {
+	if (Flags & MoveFlag::PromotionFlags) {
 		*(ptr++) = '=';
 
 		// Uses the promotion-flag as an index

@@ -43,7 +43,7 @@ enum Piece : uint8_t {
 
 // ORed with Colour enum to get the index to the m_CastlingRights array in the Board class
 enum CastleSide : uint64_t {
-    KingSide = 0b00,
+    KingSide  = 0b00,
     QueenSide = 0b10,
 
     NO_CASTLE = 0xFFFFFFFFFFFFFFFF,
@@ -59,7 +59,7 @@ constexpr inline Colour GetColour(Piece p) { return (Colour)((p & 0b1000) >> 3);
 constexpr inline Colour OppositeColour(Colour c) { return (Colour)(1 - c); }
 
 // Returns the Piece of the given PieceType and Colour
-constexpr inline Piece TypeAndColour(PieceType t, Colour c) { return (Piece)(t | (c << 3)); }
+constexpr inline Piece PieceTypeAndColour(PieceType t, Colour c) { return (Piece)(t | (c << 3)); }
 
 inline char PieceToChar(Piece p) {
     constexpr static char s_PieceToChar[] = "PNBRQK  pnbrqk";
@@ -150,18 +150,21 @@ using MoveFlags = uint8_t;
 namespace MoveFlag {
     enum : uint8_t {
         // To check for promotion, & with 0b111
-        IsPromoting   = 0b111,
-        // These numbers match the PieceType enum
-        PromoteKnight = 0b001,
-        PromoteBishop = 0b010,
-        PromoteRook   = 0b011,
-        PromoteQueen  = 0b100,
+        PromotionFlags = 0b111,
 
-        CastleKingSide = 1 << 3,
+        // These numbers match the PieceType enum
+        PromoteKnight  = 0b001,
+        PromoteBishop  = 0b010,
+        PromoteRook    = 0b011,
+        PromoteQueen   = 0b100,
+
+        CastlingFlags   = 0b11000,
+
+        CastleKingSide  = 1 << 3,
         CastleQueenSide = 1 << 4,
 
-        Capture = 1 << 5,
-        Check = 1 << 6,
+        Capture   = 1 << 5,
+        Check     = 1 << 6,
         Checkmate = 1 << 7,
     };
 }
