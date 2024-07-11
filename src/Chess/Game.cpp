@@ -91,9 +91,9 @@ AlgebraicMove Game::Move(LongAlgebraicMove move) {
 	return m_Position.Move(move);
 }
 
-void Game::Back() {
+bool Game::Back() {
 	if (m_Ply == 0)
-		return;
+		return false;
 
 	m_Position.UndoMove(m_Variation->Moves[m_Ply - m_Variation->StartingPly - 1]);
 	
@@ -103,31 +103,134 @@ void Game::Back() {
 		m_Variation = m_Variation->Parent;
 
 	m_Ply--;
+
+	return true;
 }
 
-void Game::Forward() {
+bool Game::Forward() {
 	// The ply of the last move of the branch
 	const uint32_t maxPly = (uint32_t)m_Variation->Moves.size() + m_Variation->StartingPly;
 
 	// If we are at the end of the branch, go to main variation if it exists
 	if (m_Ply == maxPly) {
 		if (m_Variation->Variations.empty())
-			return;
+			return false;
 
 		// Index 0 is the main line
 		m_Variation = m_Variation->Variations[0];
 	}
 
-	m_Ply++;
-
+	++m_Ply;
 	const GameMove& gm = m_Variation->Moves[m_Ply - m_Variation->StartingPly - 1];
 	m_Position.Move(LongAlgebraicMove(gm.Start, gm.Destination, (PieceType)(gm.Flags & GameMoveFlag::PromotionFlags)));
+
+	return true;
+}
+
+void Game::ToBeginning() {
+	m_Variation = m_Branches;
+	m_Ply = m_Variation->StartingPly;
+
+	if (m_Header.count("FEN"))
+		m_Position = m_Header["FEN"];
+	else
+		m_Position.Reset();
+}
+
+void Game::ToEnd() {
+	while (Forward());
+}
+
+void Game::Seek(uint32_t ply) {
+	if (ply < m_Ply) {
+		for (; m_Ply > ply; Back());
+	} else if (ply > m_Ply) {
+		// Test how far the main line goes
+		// Throw an error if it is too short
+		Branch* lastBranch = m_Variation;
+		for (; !lastBranch->Variations.empty(); lastBranch = lastBranch->Variations[0]);
+		if (lastBranch->StartingPly + lastBranch->Moves.size() < ply)
+			throw SeekOutOfBoundsException();
+
+		// Putting Forward() in the second statement
+		// removes the risk of a potential infinite loop
+		// (Forward() goes on the right since it must be evaluated second)
+		for (; m_Ply < ply && Forward(););
+	}
 }
 
 void Game::Seek(uint32_t ply, Branch* variation) {
+	if (variation == m_Variation) {
+		Seek(ply);
+		return;
+	}
+
+	ToBeginning();
+
+	if (variation == m_Branches)
+		return;
+
+	if (ply <= variation->StartingPly) {
+		for (; m_Ply > ply; Back());
+		return;
+	}
+
+	// If the ply is beyond the specified branch, continue down the main line
+	for (; ply > variation->StartingPly + variation->Moves.size(); variation = variation->Variations[0])
+		if (variation->Variations.empty())
+			throw SeekOutOfBoundsException();
+
+	std::vector<Branch*> path;
+	path.reserve(4);  // Just an arbitrary number--variations probably won't go much farther than this
+	for (Branch* branch = variation; branch != m_Branches; branch = branch->Parent)
+		path.push_back(branch);
+	
+	for (size_t i = path.size() - 1; i > 0; i--) {
+		m_Variation = path[i];
+
+		for (int m = 0; m < path[i]->Moves.size() - 1; m++)
+			Forward();
+
+		// Move the last move of the branch manually
+		// since Forward() will default to the main line
+		++m_Ply;
+		const GameMove& gm = m_Variation->Moves[m_Ply - m_Variation->StartingPly - 1];
+		m_Position.Move(LongAlgebraicMove(gm.Start, gm.Destination, (PieceType)(gm.Flags & GameMoveFlag::PromotionFlags)));
+	}
+
+	// Do the last branch
+	m_Variation = path[0];
+	for (; m_Ply < ply; Forward());
 }
 
 void Game::Delete(uint32_t ply, Branch* variation) {
+	// Prohibit deletion of top-most branch
+	if (variation == m_Branches)
+		return;
+
+	bool isSameVariation = variation == m_Variation;
+
+	// If ply is less than the branch's starting ply, move back
+	for (; variation->StartingPly >= ply; variation = variation->Parent, isSameVariation |= variation == m_Variation);
+
+	// If ply is beyond the specified branch, continue down the main line
+	for (; ply > variation->StartingPly + variation->Moves.size(); variation = variation->Variations[0], isSameVariation |= variation == m_Variation)
+		if (variation->Variations.empty())
+			throw DeleteOutOfBoundsException();
+
+	if (ply <= m_Ply && isSameVariation)
+		Seek(ply - 1, variation);
+
+	for (Branch* b : variation->Variations)
+		delete b;
+	variation->Variations.clear();
+
+	variation->Moves.resize(ply - variation->StartingPly - 1);
+	if (variation->Moves.empty()) {
+		auto pos = std::find(variation->Parent->Variations.begin(), variation->Parent->Variations.end(), variation);
+		variation->Parent->Variations.erase(pos);
+		delete variation;
+	}
 }
 
 void Game::Move(GameMove move) {
@@ -187,17 +290,11 @@ void Game::Move(GameMove move) {
 }
 
 
-void Game::AddComment(const std::string& comment) const {
-	if (!m_Branches)
-		return;
-	
+void Game::SetComment(const std::string& comment) {
 	m_Variation->Moves[m_Ply - m_Variation->StartingPly - 1].Comment = comment;
 }
 
-void Game::AddComment(std::string&& comment) const {
-	if (!m_Branches)
-		return;
-	
+void Game::SetComment(std::string&& comment) {
 	m_Variation->Moves[m_Ply - m_Variation->StartingPly - 1].Comment = std::move(comment);
 }
 
@@ -250,8 +347,16 @@ void Game::FromPGN(const std::string& pgn) {
 
 			if (move.front() == '{') {
 				std::string_view comment = sp.Reread("}").value_or("");
-				comment.remove_prefix(1); // Remove the '{' from the beginning
-				AddComment(std::string(comment));
+
+				// Remove the '{' from the beginning
+				comment.remove_prefix(1);
+
+				// Replace all '\n' with ' '
+				std::string c(comment);
+				for (size_t i = c.find('\n'); i != std::string::npos; i = c.find('\n', i))
+					c[i] = ' ';
+
+				SetComment(std::move(c));
 				continue;
 			}
 
@@ -278,7 +383,7 @@ void Game::ParseVariation(StringParser& sp) {
 			if (move.front() == '{') {
 				std::string_view comment = sp.Reread("}").value_or("");
 				comment.remove_prefix(1); // Remove the '{' from the beginning
-				AddComment(std::string(comment));
+				SetComment(std::string(comment));
 				continue;
 			}
 
@@ -316,10 +421,10 @@ static std::ostream& PrintBranch(std::ostream& os, Board& board, const Branch& b
 
 		os << board.Move(LongAlgebraicMove(branch.Moves[i].Start, branch.Moves[i].Destination, (PieceType)(branch.Moves[i].Flags & GameMoveFlag::PromotionFlags)));
 		if (!branch.Moves[i].Comment.empty()) {
-			os << " {" << branch.Moves[i].Comment << "} ";
+			os << " {" << branch.Moves[i].Comment << "}";
 
-			if (i < branch.Moves.size() - 1)
-				os << branch.StartingPly / 2 + 2 << "...";
+			if (i < branch.Moves.size() - 1 && ply % 2 == 0)
+				os << " " << ply / 2 + 1 << "...";
 		}
 
 		if (i < branch.Moves.size() - 1 || branch.Variations.size() > 0)
@@ -337,7 +442,7 @@ static std::ostream& PrintBranch(std::ostream& os, Board& board, const Branch& b
 
 		GameMove& move = branch.Variations[0]->Moves[0];
 		PieceType movePromotion = (PieceType)(move.Flags & GameMoveFlag::PromotionFlags);
-		os << " " << board.Move(LongAlgebraicMove(move.Start, move.Destination, movePromotion)) << " ";
+		os << board.Move(LongAlgebraicMove(move.Start, move.Destination, movePromotion)) << " ";
 		if (!move.Comment.empty())
 			os << " {" << move.Comment << "} ";
 		board.UndoMove(move);

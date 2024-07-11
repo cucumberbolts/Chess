@@ -81,3 +81,17 @@ public:
 private:
 	std::string m_Message;
 };
+
+class SeekOutOfBoundsException : public std::exception {
+public:
+	const char* what() const noexcept override {
+		return "Attempted to Seek() out of bounds!";
+	}
+};
+
+class DeleteOutOfBoundsException : public std::exception {
+public:
+	const char* what() const noexcept override {
+		return "Attempted to Delete() out of bounds!";
+	}
+};

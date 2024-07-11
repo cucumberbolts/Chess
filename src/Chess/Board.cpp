@@ -312,16 +312,17 @@ LongAlgebraicMove Board::Move(AlgebraicMove m) {
 
 	if (m.Flags & MoveFlag::CastlingFlags) {
         Square kingStart = E1 ^ (m_PlayerTurn * 0b00111000);
-        Square rookStart = H1 ^ (m_PlayerTurn * 0b00111000);
-		Square kingDestination, rookDestination;
+		Square kingDestination, rookStart, rookDestination;
         CastleSide castleSide;
 
         if (m.Flags & MoveFlag::CastleKingSide) {
             kingDestination = G1 ^ (m_PlayerTurn * 0b00111000);
+            rookStart       = H1 ^ (m_PlayerTurn * 0b00111000);
             rookDestination = F1 ^ (m_PlayerTurn * 0b00111000);
             castleSide = KingSide;
         } else {
             kingDestination = C1 ^ (m_PlayerTurn * 0b00111000);
+            rookStart       = A1 ^ (m_PlayerTurn * 0b00111000);
             rookDestination = D1 ^ (m_PlayerTurn * 0b00111000);
             castleSide = QueenSide;
         }
@@ -415,9 +416,9 @@ LongAlgebraicMove Board::Move(AlgebraicMove m) {
         
         if (SquareCount(possiblePieces) != 1) {
             if (SquareCount(possiblePieces) == 0)
-                throw IllegalMoveException("No piece can more to specified square!");
+                throw IllegalMoveException(m.ToString(), "No piece can more to specified square!");
             else
-                throw IllegalMoveException("More than one piece can move to the same square!");
+                throw IllegalMoveException(m.ToString(), "More than one piece can move to the same square!");
         }
 
         source = GetSquare(possiblePieces);

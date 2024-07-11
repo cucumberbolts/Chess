@@ -99,22 +99,26 @@ public:
 
 	std::string ToPGN() const;
 
-	const Board& GetPosition() const { return m_Position; }
-	uint32_t CurrentPly()      const { return m_Ply; }
-	Branch* CurrentVariation() const { return m_Variation; }
+	const Board& GetPosition()    const { return m_Position; }
+	uint32_t CurrentPly()         const { return m_Ply; }
+	Branch* CurrentVariation()    const { return m_Variation; }
 
 	// Add move to tree
 	LongAlgebraicMove Move(AlgebraicMove move);
 	AlgebraicMove Move(LongAlgebraicMove move);
 
-	void Back();	// Back 1 move
-	void Forward();	// Forward 1 move
-	void Seek(uint32_t ply, Branch* variation);	  // Back/Forward to an index
-	void Delete(uint32_t ply, Branch* variation); // Deletes the specified move (and every subsequent move)
+	bool Back();	    // Back 1 move
+	bool Forward();	    // Forward 1 move
+	void ToBeginning(); // Starting position
+	void ToEnd();       // End of current variation
+	void Seek(uint32_t ply);                    // Jump to place in current variation
+	void Seek(uint32_t ply, Branch* variation);	// Jump to place in tree. If ply is outside the branch, it will look before and after it as well.
+	
+	void Delete(uint32_t ply, Branch* variation); // Deletes the move at ply and every subsequent move.  If ply is outside the branch, it will look before and after it as well.
 
-	// Add comment to current move
-	void AddComment(const std::string& comment) const;
-	void AddComment(std::string&& comment) const;
+	// Sets the comment on the current move
+	void SetComment(const std::string& comment);
+	void SetComment(std::string&& comment);
 private:
 	void Move(GameMove move);
 
